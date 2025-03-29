@@ -61,10 +61,11 @@ export default function BookUpload({ url, onUpload }) {
           {uploading ? "Uploading ..." : "Upload"}
         </label>
         <input
-          style={{
-            visibility: "hidden",
-            position: "absolute"
-          }}
+          className="bg-teal-500 text-white font-bold py-2 px-4 rounded"
+          // style={{
+          //   visibility: "hidden",
+          //   position: "absolute"
+          // }}
           type="file"
           id="single"
           accept="image/*"

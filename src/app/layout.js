@@ -23,7 +23,9 @@ export default function RootLayout({ children }) {
       <head>
         <link rel="icon" href="/favicon.svg" />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased w-full h-full bg-background text-foreground`}
+      >
         <nav className="flex space-x-4 bg-slate-100 p-4">
           <Link href="/">Root</Link>
           <Link href="/home">Home</Link>

@@ -7,7 +7,7 @@ export async function GET(request) {
   // Get query parameters
   const { searchParams } = new URL(request.url)
   const start = parseInt(searchParams.get("start")) || 0
-  const end = parseInt(searchParams.get("end")) || 9
+  const end = parseInt(searchParams.get("end")) || 20
 
   // Fetch books from Supabase
   let { data: Books, error } = await supabase.from("Books").select("*").range(start, end)
