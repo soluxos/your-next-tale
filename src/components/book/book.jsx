@@ -29,7 +29,7 @@ const Book = ({ title, cover_url, id, description, author }) => {
 
   return (
     <div className="flex flex-col gap-1" key={id}>
-      {coverUrl && <img src={coverUrl} alt={`${title} cover`} className="w-40 h-auto" />}
+      {coverUrl && <img src={coverUrl} alt={`${title} cover`} className="w-full h-auto" />}
       <div className="book-details">
         <h3 className="book-title">{title}</h3>
         {/* <p className="book-author">by {author}</p>
