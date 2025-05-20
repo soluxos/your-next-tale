@@ -45,7 +45,7 @@ const Book = (props) => {
       <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
         <PopoverTrigger asChild>
           <div
-            className={`relative shadow-[0_0_64px_8px_rgba(0,0,0,0.2)] transition-all translate-y-0 duration-200 ease-in-out cursor-pointer transform ${
+            className={`relative shadow-[0_0_64px_8px_rgba(0,0,0,0.2)] transition-all duration-200 ease-in-out cursor-pointer transform ${
               isPopoverOpen ? "-translate-y-2" : "hover:-translate-y-2"
             }`}
             onMouseEnter={handleMouseEnter}
