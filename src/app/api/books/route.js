@@ -20,5 +20,7 @@ export async function GET(request) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json({ Books })
+  const response = NextResponse.json({ Books })
+  response.headers.set("Cache-Control", "no-store") // Disable caching
+  return response
 }
