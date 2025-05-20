@@ -45,14 +45,14 @@ const Book = (props) => {
       <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
         <PopoverTrigger asChild>
           <div
-            className={`relative shadow-[0_0_64px_8px_rgba(0,0,0,0.2)] transition-all duration-200 ease-in-out cursor-pointer transform ${
+            className={`relative shadow-[0_0_64px_8px_rgba(0,0,0,0.2)] rounded-sm overflow-hidden transition-all duration-200 ease-in-out cursor-pointer transform ${
               isPopoverOpen ? "-translate-y-2" : "hover:-translate-y-2"
             }`}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
           >
             <div className="flex flex-col gap-1 relative z-10" key={id}>
-              {coverUrl && <img src={coverUrl} alt={`${title} cover`} className="w-full h-auto rounded-sm" />}
+              {coverUrl && <img src={coverUrl} alt={`${title} cover`} className="w-full h-auto" />}
             </div>
             <div className="w-full h-full absolute top-0 left-0 z-0"></div>
             {/* Invisible buffer area */}
