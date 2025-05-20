@@ -1,6 +1,5 @@
 "use client"
-
-import { useEffect, useState } from "react"
+import React, { useEffect, useState, useRef } from "react"
 import Book from "@/components/book/book"
 
 export default function BooksPage() {
@@ -9,21 +8,23 @@ export default function BooksPage() {
   const [page, setPage] = useState(0)
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
-  const [itemsPerRow, setItemsPerRow] = useState(9) // Default to 9 items per row
+  const [itemsPerRow, setItemsPerRow] = useState(9)
+  const [tallestBookHeight, setTallestBookHeight] = useState() // Default min-height
+  const bookRefs = useRef([]) // Store refs for each book
 
   useEffect(() => {
-    // Calculate how many items fit in a row based on the screen size
     const handleResize = () => {
       const width = window.innerWidth
       if (width >= 1024) {
-        setItemsPerRow(9) // Desktop: 9 items per row
+        setItemsPerRow(9)
       } else if (width >= 768) {
-        setItemsPerRow(6) // Tablet: 6 items per row
+        setItemsPerRow(6)
       } else if (width >= 480) {
-        setItemsPerRow(4) // Mobile: 3 items per row
+        setItemsPerRow(4)
       } else {
-        setItemsPerRow(2) // Small screens: 2 items per row
+        setItemsPerRow(2)
       }
+      updateTallestBookHeight() // Update tallest book height on resize
     }
 
     handleResize()
@@ -33,7 +34,13 @@ export default function BooksPage() {
 
   useEffect(() => {
     fetchMoreBooks()
+    updateTallestBookHeight()
   }, [])
+
+  useEffect(() => {
+    // Call after books or itemsPerRow change
+    updateTallestBookHeight()
+  }, [books, itemsPerRow])
 
   const fetchMoreBooks = async () => {
     setLoading(true)
@@ -59,7 +66,19 @@ export default function BooksPage() {
     setLoading(false)
   }
 
-  // Helper function to chunk books into rows
+  const updateTallestBookHeight = () => {
+    // Ensure refs are populated
+    const heights = bookRefs.current.map((ref) => {
+      if (ref) {
+        return ref.offsetHeight + 16
+      }
+      return 0
+    })
+
+    const tallest = Math.max(...heights, 160) // Default to 260 if no books
+    setTallestBookHeight(tallest)
+  }
+
   const chunkBooks = (books, itemsPerRow) => {
     const rows = []
     for (let i = 0; i < books.length; i += itemsPerRow) {
@@ -75,15 +94,31 @@ export default function BooksPage() {
       <div className="w-4 h-full border border-solid border-border"></div>
       <div className="flex-1 flex-col w-full h-full">
         <div className="left-border w-full h-4 border-1 border-border border flex border-r-0 border-l-0"></div>
-        <div id="grid-container" className="grid gap-4">
+        <div id="grid-container" className="grid">
           {rows.map((row, rowIndex) => (
-            <div key={rowIndex} className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-2">
-              {row.map((book) => (
-                <div key={book.id} className="w-full">
-                  <Book {...book} />
-                </div>
-              ))}
-            </div>
+            <React.Fragment key={rowIndex}>
+              <div
+                key={rowIndex}
+                className="bg-[linear-gradient(to_bottom,_#F0F0F0,_#F8F8F8)] grid grid-cols-2 xs:grid-cols-4 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-2 p-2 pb-0 pt-4 items-end overflow-hidden"
+                style={{ minHeight: `${tallestBookHeight}px` }}
+              >
+                {row.map((book, bookIndex) => (
+                  <div
+                    key={book.id}
+                    className="w-full"
+                    ref={(el) => {
+                      bookRefs.current[rowIndex * itemsPerRow + bookIndex] = el
+                    }}
+                  >
+                    <Book {...book} />
+                  </div>
+                ))}
+              </div>
+              <div
+                id={`row-${rowIndex}`}
+                className="h-4 border-1 border-border border flex border-r-0 border-l-0 w-full"
+              ></div>
+            </React.Fragment>
           ))}
         </div>
         {hasMore && (
