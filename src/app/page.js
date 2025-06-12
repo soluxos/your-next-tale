@@ -110,7 +110,7 @@ export default function BooksPage() {
                       bookRefs.current[rowIndex * itemsPerRow + bookIndex] = el
                     }}
                   >
-                    <Book {...book} />
+                    <Book book={book} {...book} />
                   </div>
                 ))}
               </div>

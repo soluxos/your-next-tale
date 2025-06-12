@@ -7,7 +7,8 @@ import BookPopover from "@/components/book/BookPopover.jsx"
 
 const Book = (props) => {
   const [coverUrl, setCoverUrl] = useState(null)
-  const { id, title, cover_url, author, description } = props
+  const { book } = props
+  const { id, title, cover_url, author, description } = book
   const [isPopoverOpen, setIsPopoverOpen] = useState(false)
 
   useEffect(() => {
@@ -60,21 +61,11 @@ const Book = (props) => {
           </div>
         </PopoverTrigger>
         <PopoverContent
-          className="w-[480px] p-4 bg-white shadow-lg rounded-lg"
+          className="book-popover w-[480px] p-4 bg-white shadow-lg rounded-lg"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
-          <BookPopover
-            title={title}
-            author={author}
-            description={description}
-            onViewDetails={() => {
-              console.log("View all details clicked")
-            }}
-            onPurchase={() => {
-              console.log("Purchase this book clicked")
-            }}
-          />
+          <BookPopover book={book} />
         </PopoverContent>
       </Popover>
     </>

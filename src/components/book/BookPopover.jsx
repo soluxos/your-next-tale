@@ -2,9 +2,11 @@ import React from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 
-const BookPopover = ({ title, author, description, onViewDetails, onPurchase }) => {
+const BookPopover = ({ book }) => {
+  const { title, author, description, amazon_affiliate_link } = book
+
   return (
-    <div className="space-y-4">
+    <div className="book-popover space-y-4">
       {/* Title and Author */}
       <div>
         <h4 className="text-[15px] text-textPrimary font-departureMono uppercase">{title}</h4>
@@ -20,17 +22,20 @@ const BookPopover = ({ title, author, description, onViewDetails, onPurchase }) 
 
       {/* Buttons */}
       <div className="flex justify-between items-center gap-4">
-        <Button
+        {/* <Button
           variant="outline"
           className="text-sm w-full flex justify-between font-departureMono uppercase text-[13px]"
         >
           View All Details <img src="/icons/arrow-right.svg" alt="cart" className="ml-2" />
-        </Button>
+        </Button> */}
         <Button
-          variant="default"
+          asChild
           className="text-sm items-center w-full flex justify-between font-departureMono uppercase text-[13px]"
+          variant="default"
         >
-          Purchase This Book <img src="/icons/trolley.svg" alt="cart" className="ml-2" />
+          <a href={amazon_affiliate_link} target="_blank" rel="noopener noreferrer">
+            Purchase This Book <img src="/icons/trolley.svg" alt="cart" className="ml-2" />
+          </a>
         </Button>
       </div>
     </div>

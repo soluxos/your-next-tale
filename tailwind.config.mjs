@@ -1,4 +1,7 @@
 /* eslint-disable import/no-anonymous-default-export */
+
+import { EB_Garamond } from "next/font/google"
+
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: ["class"],
@@ -94,6 +97,7 @@ export default {
       },
       fontFamily: {
         departureMono: ["departure_monoregular", "sans-serif"],
+        EB_Garamond: ["EB_Garamond", "serif"],
         inter: ["var(--font-inter)"],
         sans: ["var(--font-inter)"]
       }
