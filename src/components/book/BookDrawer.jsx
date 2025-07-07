@@ -20,7 +20,7 @@ const VaulDrawer = forwardRef(({ book, coverUrl }, ref) => {
     <Drawer.Root direction="right">
       <Drawer.Trigger ref={triggerRef} className="hidden" />
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 bg-black/40" />
+        <Drawer.Overlay className="fixed inset-0 bg-black/40 z-10" />
         <Drawer.Content
           className="right-0 top-0 bottom-0 fixed z-10 outline-none w-[840px] max-w-full flex"
           style={{ "--initial-transform": "calc(100% + 8px)" }}

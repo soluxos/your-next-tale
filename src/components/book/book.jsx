@@ -1,5 +1,6 @@
 "use client"
 import React, { useEffect, useState, useRef } from "react"
+import { motion } from "motion/react"
 import { createClient } from "@/utils/supabase/client"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
@@ -63,6 +64,7 @@ const Book = (props) => {
             className="relative transition-all duration-200 ease-in-out cursor-pointer"
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
+            onClick={openDrawer} // Trigger the drawer on click
           >
             <div className="flex flex-col gap-1 relative z-10" key={id}>
               {coverUrl && (
@@ -80,12 +82,12 @@ const Book = (props) => {
             <div className="absolute bottom-[-8px] left-0 w-full h-2 bg-transparent"></div>
           </div>
         </PopoverTrigger>
+        {/* Optional: Keep PopoverContent for hover functionality */}
         <PopoverContent
           className="book-popover w-[480px] p-4 bg-white shadow-lg rounded-lg"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
-          {/* Pass the openDrawer function to BookPopover */}
           <BookPopover book={book} onOpenDrawer={openDrawer} />
         </PopoverContent>
       </Popover>
