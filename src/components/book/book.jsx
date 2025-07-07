@@ -1,15 +1,19 @@
 "use client"
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useRef } from "react"
 import { createClient } from "@/utils/supabase/client"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 import BookPopover from "@/components/book/BookPopover.jsx"
+import VaulDrawer from "@/components/book/BookDrawer.jsx"
 
 const Book = (props) => {
   const [coverUrl, setCoverUrl] = useState(null)
   const { book } = props
   const { id, title, cover_url, author, description } = book
   const [isPopoverOpen, setIsPopoverOpen] = useState(false)
+
+  // Ref for controlling the VaulDrawer
+  const drawerRef = useRef()
 
   useEffect(() => {
     const downloadImage = async (path) => {
@@ -41,19 +45,35 @@ const Book = (props) => {
     setIsPopoverOpen(false)
   }
 
+  // Function to open the drawer
+  const openDrawer = () => {
+    if (drawerRef.current) {
+      drawerRef.current.open()
+    }
+  }
+
   return (
     <>
+      {/* VaulDrawer Component */}
+      <VaulDrawer ref={drawerRef} book={book} coverUrl={coverUrl} />
+
       <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
         <PopoverTrigger asChild>
           <div
-            className={`relative shadow-[0_0_64px_8px_rgba(0,0,0,0.2)] rounded-sm overflow-hidden transition-all duration-200 ease-in-out cursor-pointer transform ${
-              isPopoverOpen ? "-translate-y-2" : "hover:-translate-y-2"
-            }`}
+            className="relative transition-all duration-200 ease-in-out cursor-pointer"
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
           >
             <div className="flex flex-col gap-1 relative z-10" key={id}>
-              {coverUrl && <img src={coverUrl} alt={`${title} cover`} className="w-full h-auto" />}
+              {coverUrl && (
+                <img
+                  src={coverUrl}
+                  alt={`${title} cover`}
+                  className={`w-full h-auto shadow-[0_0_64px_8px_rgba(0,0,0,0.2)] transform transition-all duration-200 ease-in-out rounded-sm ${
+                    isPopoverOpen ? "-translate-y-2" : "hover:-translate-y-2"
+                  }`}
+                />
+              )}
             </div>
             <div className="w-full h-full absolute top-0 left-0 z-0"></div>
             {/* Invisible buffer area */}
@@ -65,7 +85,8 @@ const Book = (props) => {
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
-          <BookPopover book={book} />
+          {/* Pass the openDrawer function to BookPopover */}
+          <BookPopover book={book} onOpenDrawer={openDrawer} />
         </PopoverContent>
       </Popover>
     </>

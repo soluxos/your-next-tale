@@ -30,15 +30,8 @@ export default function RootLayout({ children }) {
         <link rel="icon" href="/favicon.svg" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased w-full h-full bg-background text-foreground`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased w-full h-full bg-background text-foreground relative`}
       >
-        {/* <nav className="flex space-x-4 bg-slate-100 p-4">
-          <Link href="/">Root</Link>
-          <Link href="/home">Home</Link>
-          <Link href="/account">Account</Link>
-          <Link href="/admin/add-new-book">Add new book</Link>
-          <Link href="/books">Books</Link>
-        </nav> */}
         {children}
       </body>
     </html>
