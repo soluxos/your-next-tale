@@ -9,10 +9,12 @@ export default function BooksPage() {
   const [books, setBooks] = useState([])
   const [page, setPage] = useState(0)
   const [loading, setLoading] = useState(false)
+  const [initialLoading, setInitialLoading] = useState(true)
   const [hasMore, setHasMore] = useState(true)
   const [itemsPerRow, setItemsPerRow] = useState(9)
-  const [tallestBookHeight, setTallestBookHeight] = useState() // Default min-height
-  const bookRefs = useRef([]) // Store refs for each book
+  const [tallestBookHeight, setTallestBookHeight] = useState()
+  const bookRefs = useRef([])
+  const observerRef = useRef(null)
 
   useEffect(() => {
     const handleResize = () => {
@@ -26,7 +28,7 @@ export default function BooksPage() {
       } else {
         setItemsPerRow(2)
       }
-      updateTallestBookHeight() // Update tallest book height on resize
+      updateTallestBookHeight()
     }
 
     handleResize()
@@ -35,17 +37,33 @@ export default function BooksPage() {
   }, [])
 
   useEffect(() => {
-    fetchMoreBooks()
+    fetchMoreBooks(true)
     updateTallestBookHeight()
   }, [])
 
   useEffect(() => {
-    // Call after books or itemsPerRow change
     updateTallestBookHeight()
   }, [books, itemsPerRow])
 
-  const fetchMoreBooks = async () => {
-    setLoading(true) // Start loading
+  useEffect(() => {
+    if (!initialLoading && observerRef.current) {
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting && hasMore && !loading) {
+            fetchMoreBooks()
+          }
+        },
+        { rootMargin: "200px" }
+      )
+
+      observer.observe(observerRef.current)
+
+      return () => observer.disconnect()
+    }
+  }, [hasMore, loading, initialLoading])
+
+  const fetchMoreBooks = async (isInitialLoad = false) => {
+    if (!isInitialLoad) setLoading(true)
     const start = page * pageSize
     const end = start + pageSize - 1
 
@@ -65,22 +83,15 @@ export default function BooksPage() {
       console.error("Error fetching more books:", err)
     }
 
-    // Add a buffer before removing the loading state
     setTimeout(() => {
-      setLoading(false) // Stop loading after buffer
-    }, 500) // Adjust the delay (in milliseconds) as needed
+      if (!isInitialLoad) setLoading(false)
+      setInitialLoading(false)
+    }, 500)
   }
 
   const updateTallestBookHeight = () => {
-    // Ensure refs are populated
-    const heights = bookRefs.current.map((ref) => {
-      if (ref) {
-        return ref.offsetHeight + 16
-      }
-      return 0
-    })
-
-    const tallest = Math.max(...heights, 160) // Default to 260 if no books
+    const heights = bookRefs.current.map((ref) => (ref ? ref.offsetHeight + 16 : 0))
+    const tallest = Math.max(...heights, 160)
     setTallestBookHeight(tallest)
   }
 
@@ -96,7 +107,7 @@ export default function BooksPage() {
 
   return (
     <>
-      <AnimatePresence>{loading && <LoadingEffect />}</AnimatePresence>
+      <AnimatePresence>{initialLoading && <LoadingEffect />}</AnimatePresence>
       <div className="grid grid-cols-[16px_auto_16px]">
         <div className="w-4 h-full border border-solid border-border"></div>
         <div className="flex-1 flex-col w-full h-full">
@@ -128,7 +139,7 @@ export default function BooksPage() {
               </React.Fragment>
             ))}
           </div>
-          {/* {hasMore && !loading && <button onClick={fetchMoreBooks}>Load More</button>} */}
+          <div ref={observerRef} className="h-4"></div>
         </div>
         <div className="left-border w-4 h-full border border-solid border-border"></div>
       </div>
