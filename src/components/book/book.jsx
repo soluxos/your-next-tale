@@ -5,7 +5,7 @@ import { createClient } from "@/utils/supabase/client"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 import BookPopover from "@/components/book/BookPopover.jsx"
-import VaulDrawer from "@/components/book/BookDrawer.jsx"
+import BookDrawer from "@/components/book/BookDrawer.jsx"
 
 const Book = (props) => {
   const [coverUrl, setCoverUrl] = useState(null)
@@ -13,7 +13,7 @@ const Book = (props) => {
   const { id, title, cover_url, author, description } = book
   const [isPopoverOpen, setIsPopoverOpen] = useState(false)
 
-  // Ref for controlling the VaulDrawer
+  // Ref for controlling the BookDrawer
   const drawerRef = useRef()
 
   useEffect(() => {
@@ -55,8 +55,7 @@ const Book = (props) => {
 
   return (
     <>
-      {/* VaulDrawer Component */}
-      <VaulDrawer ref={drawerRef} book={book} coverUrl={coverUrl} />
+      <BookDrawer ref={drawerRef} book={book} coverUrl={coverUrl} />
 
       <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
         <PopoverTrigger asChild>
@@ -64,7 +63,7 @@ const Book = (props) => {
             className="relative transition-all duration-200 ease-in-out cursor-pointer"
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
-            onClick={openDrawer} // Trigger the drawer on click
+            onClick={openDrawer}
           >
             <div className="flex flex-col gap-1 relative z-10" key={id}>
               {coverUrl && (
@@ -82,7 +81,6 @@ const Book = (props) => {
             <div className="absolute bottom-[-8px] left-0 w-full h-2 bg-transparent"></div>
           </div>
         </PopoverTrigger>
-        {/* Optional: Keep PopoverContent for hover functionality */}
         <PopoverContent
           className="book-popover w-[480px] p-4 bg-white shadow-lg rounded-lg"
           onMouseEnter={handleMouseEnter}

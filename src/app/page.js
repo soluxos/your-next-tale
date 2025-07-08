@@ -1,6 +1,8 @@
 "use client"
 import React, { useEffect, useState, useRef } from "react"
 import Book from "@/components/book/book"
+import LoadingEffect from "@/components/loadingEffect/LoadingEffect"
+import { AnimatePresence } from "motion/react"
 
 export default function BooksPage() {
   const pageSize = 45
@@ -43,7 +45,7 @@ export default function BooksPage() {
   }, [books, itemsPerRow])
 
   const fetchMoreBooks = async () => {
-    setLoading(true)
+    setLoading(true) // Start loading
     const start = page * pageSize
     const end = start + pageSize - 1
 
@@ -63,7 +65,10 @@ export default function BooksPage() {
       console.error("Error fetching more books:", err)
     }
 
-    setLoading(false)
+    // Add a buffer before removing the loading state
+    setTimeout(() => {
+      setLoading(false) // Stop loading after buffer
+    }, 500) // Adjust the delay (in milliseconds) as needed
   }
 
   const updateTallestBookHeight = () => {
@@ -90,44 +95,43 @@ export default function BooksPage() {
   const rows = chunkBooks(books, itemsPerRow)
 
   return (
-    <div className="grid grid-cols-[16px_auto_16px]">
-      <div className="w-4 h-full border border-solid border-border"></div>
-      <div className="flex-1 flex-col w-full h-full">
-        <div className="left-border w-full h-4 border-1 border-border border flex border-r-0 border-l-0"></div>
-        <div id="grid-container" className="grid">
-          {rows.map((row, rowIndex) => (
-            <React.Fragment key={rowIndex}>
-              <div
-                key={rowIndex}
-                className="bg-[linear-gradient(to_bottom,_#F0F0F0,_#F8F8F8)] grid grid-cols-2 xs:grid-cols-4 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-2 p-2 pb-0 pt-4 items-end overflow-hidden"
-                style={{ minHeight: `${tallestBookHeight}px` }}
-              >
-                {row.map((book, bookIndex) => (
-                  <div
-                    key={book.id}
-                    className="w-full"
-                    ref={(el) => {
-                      bookRefs.current[rowIndex * itemsPerRow + bookIndex] = el
-                    }}
-                  >
-                    <Book book={book} {...book} />
-                  </div>
-                ))}
-              </div>
-              <div
-                id={`row-${rowIndex}`}
-                className="h-4 border-1 border-border border flex border-r-0 border-l-0 w-full"
-              ></div>
-            </React.Fragment>
-          ))}
+    <>
+      <AnimatePresence>{loading && <LoadingEffect />}</AnimatePresence>
+      <div className="grid grid-cols-[16px_auto_16px]">
+        <div className="w-4 h-full border border-solid border-border"></div>
+        <div className="flex-1 flex-col w-full h-full">
+          <div className="left-border w-full h-4 border-1 border-border border flex border-r-0 border-l-0"></div>
+          <div id="grid-container" className="grid">
+            {rows.map((row, rowIndex) => (
+              <React.Fragment key={rowIndex}>
+                <div
+                  key={rowIndex}
+                  className="bg-[linear-gradient(to_bottom,_#F0F0F0,_#F8F8F8)] grid grid-cols-2 xs:grid-cols-4 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-2 p-2 pb-0 pt-4 items-end overflow-hidden"
+                  style={{ minHeight: `${tallestBookHeight}px` }}
+                >
+                  {row.map((book, bookIndex) => (
+                    <div
+                      key={book.id}
+                      className="w-full"
+                      ref={(el) => {
+                        bookRefs.current[rowIndex * itemsPerRow + bookIndex] = el
+                      }}
+                    >
+                      <Book book={book} {...book} />
+                    </div>
+                  ))}
+                </div>
+                <div
+                  id={`row-${rowIndex}`}
+                  className="h-4 border-1 border-border border flex border-r-0 border-l-0 w-full"
+                ></div>
+              </React.Fragment>
+            ))}
+          </div>
+          {/* {hasMore && !loading && <button onClick={fetchMoreBooks}>Load More</button>} */}
         </div>
-        {hasMore && (
-          <button onClick={fetchMoreBooks} disabled={loading}>
-            {loading ? "Loading..." : "Load More"}
-          </button>
-        )}
+        <div className="left-border w-4 h-full border border-solid border-border"></div>
       </div>
-      <div className="left-border w-4 h-full border border-solid border-border"></div>
-    </div>
+    </>
   )
 }

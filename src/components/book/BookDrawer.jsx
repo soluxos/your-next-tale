@@ -1,6 +1,7 @@
 "use client"
 import React, { forwardRef, useImperativeHandle, useRef } from "react"
 import { Drawer } from "vaul"
+import { Button } from "@/components/ui/button"
 
 const VaulDrawer = forwardRef(({ book, coverUrl }, ref) => {
   const { title, author, description, amazon_affiliate_link } = book
@@ -22,20 +23,44 @@ const VaulDrawer = forwardRef(({ book, coverUrl }, ref) => {
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/40 z-10" />
         <Drawer.Content
-          className="right-0 top-0 bottom-0 fixed z-10 outline-none w-[840px] max-w-full flex"
+          className="right-0 top-0 bottom-0 fixed z-10 outline-none w-[840px] max-w-full flex h-full" // Add h-full here
           style={{ "--initial-transform": "calc(100% + 8px)" }}
         >
           <section className="drawer-container bg-white w-[840px] h-full flex flex-row">
             <div className="drawer-left w-4 h-full border border-solid border-border"></div>
             <div className="drawer-center w-full h-full flex flex-col">
               <div className="drawer-top w-full h-4 border-1 border-border border flex border-r-0 border-l-0"></div>
-              <div className="drawer-content flex flex-col h-full items-center justify-center">
-                <div className="content-container flex flex-col w-[332px] max-w-full">
-                  {coverUrl && <img src={coverUrl} alt={`${title} cover`} className="w-full h-auto" />}
-                  <Drawer.Title className="text-[16px] text-textPrimary font-EB_Garamond">{title}</Drawer.Title>
-                  <Drawer.Description className="text-[16px] font-EB_Garamond text-textSecondary">
-                    By <span className="text-textPrimary">{author}</span>
-                  </Drawer.Description>
+              <div className="drawer-content overflow-y-scroll py-10 flex flex-col h-full items-center justify-start">
+                <div className="content-container flex flex-col gap-10 w-[380px] max-w-full h-auto">
+                  {coverUrl && <img src={coverUrl} alt={`${title} cover`} className="h-auto w-[80%] self-center" />}
+                  <div>
+                    <Drawer.Title className="text-[16px] text-textPrimary font-departureMono uppercase">
+                      {title}
+                    </Drawer.Title>
+                    <Drawer.Description className="text-[16px] font-departureMono uppercase text-textSecondary">
+                      By <span className="text-textPrimary">{author}</span>
+                    </Drawer.Description>
+                    <div className="text-[12px] font-inter text-textSecondary mt-2">
+                      {description
+                        ? description.split("\n").map((paragraph, index) => (
+                            <p key={index} className="mb-2">
+                              {paragraph}
+                            </p>
+                          ))
+                        : "No description available."}
+                    </div>
+                  </div>
+                  {amazon_affiliate_link && (
+                    <Button
+                      asChild
+                      className="text-sm items-center w-full flex justify-between font-departureMono uppercase font-normal text-[13px]"
+                      variant="default"
+                    >
+                      <a href={amazon_affiliate_link} target="_blank" rel="noopener noreferrer">
+                        Buy on Amazon <img src="/icons/trolley.svg" alt="cart" className="ml-2" />
+                      </a>
+                    </Button>
+                  )}
                 </div>
               </div>
               <div className="drawer-bottom w-full h-4 border-1 border-border border flex border-r-0 border-l-0"></div>
