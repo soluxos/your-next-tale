@@ -9,7 +9,7 @@ import BookDrawer from "@/components/book/BookDrawer.jsx"
 
 const Book = (props) => {
   const [coverUrl, setCoverUrl] = useState(null)
-  const { book } = props
+  const { book, onImageLoad } = props
   const { id, title, cover_url, author, description } = book
   const [isPopoverOpen, setIsPopoverOpen] = useState(false)
 
@@ -73,6 +73,7 @@ const Book = (props) => {
                   className={`w-full h-auto shadow-[0_0_64px_8px_rgba(0,0,0,0.2)] transform transition-all duration-200 ease-in-out rounded-sm ${
                     isPopoverOpen ? "-translate-y-2" : "hover:-translate-y-2"
                   }`}
+                  onLoad={onImageLoad}
                 />
               )}
             </div>

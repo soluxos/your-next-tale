@@ -15,6 +15,8 @@ export default function BooksPage() {
   const [tallestBookHeight, setTallestBookHeight] = useState()
   const bookRefs = useRef([])
   const observerRef = useRef(null)
+  const [imagesLoaded, setImagesLoaded] = useState(0)
+  const loadedImages = useRef(new Set()) // Track loaded images to prevent duplicate calls
 
   useEffect(() => {
     const handleResize = () => {
@@ -76,6 +78,9 @@ export default function BooksPage() {
         setBooks((prevBooks) => [...prevBooks, ...data.Books])
         setPage((prevPage) => prevPage + 1)
         if (data.Books.length < pageSize) setHasMore(false)
+        // Reset imagesLoaded and loadedImages when new books are fetched
+        setImagesLoaded(0)
+        loadedImages.current.clear()
       } else {
         console.error("Fetched data is not an array:", data)
       }
@@ -85,7 +90,6 @@ export default function BooksPage() {
 
     setTimeout(() => {
       if (!isInitialLoad) setLoading(false)
-      setInitialLoading(false)
     }, 500)
   }
 
@@ -102,6 +106,22 @@ export default function BooksPage() {
     }
     return rows
   }
+
+  const handleImageLoad = (id) => {
+    // Prevent duplicate calls for the same image
+    if (!loadedImages.current.has(id)) {
+      loadedImages.current.add(id)
+      setImagesLoaded((prev) => prev + 1)
+    }
+  }
+
+  useEffect(() => {
+    console.log(`Images Loaded: ${imagesLoaded}, Total Books: ${books.length}`)
+    if (imagesLoaded === books.length && books.length > 0) {
+      console.log("All images loaded. Stopping initial loading.")
+      setInitialLoading(false)
+    }
+  }, [imagesLoaded, books.length])
 
   const rows = chunkBooks(books, itemsPerRow)
 
@@ -128,7 +148,7 @@ export default function BooksPage() {
                         bookRefs.current[rowIndex * itemsPerRow + bookIndex] = el
                       }}
                     >
-                      <Book book={book} {...book} />
+                      <Book book={book} onImageLoad={() => handleImageLoad(book.id)} {...book} />
                     </div>
                   ))}
                 </div>
