@@ -29,7 +29,7 @@ export const metadata = {
     type: "website",
     images: [
       {
-        url: "/thumbnail-1200-630.png", // Path to your social share image
+        url: "https://yournexttale.com/thumbnail-1200-630.png", // Absolute URL for the social share image
         width: 1200,
         height: 630,
         alt: "Your Next Tale Social Share Image"
@@ -40,7 +40,7 @@ export const metadata = {
     card: "summary_large_image",
     title: "Your Next Tale",
     description: "Discover your next favorite book with our curated book case.",
-    images: ["/thumbnail-1200-630.png"] // Path to your social share image
+    images: ["https://yournexttale.com/thumbnail-1200-630.png"] // Absolute URL for the social share image
   },
   icons: {
     icon: "/favicon.svg" // Path to your favicon

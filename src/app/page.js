@@ -116,9 +116,7 @@ export default function BooksPage() {
   }
 
   useEffect(() => {
-    console.log(`Images Loaded: ${imagesLoaded}, Total Books: ${books.length}`)
     if (imagesLoaded === books.length && books.length > 0) {
-      console.log("All images loaded. Stopping initial loading.")
       setInitialLoading(false)
     }
   }, [imagesLoaded, books.length])
