@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import Script from "next/script"
+import Head from "next/head"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,11 +26,25 @@ const inter = Inter({
 })
 
 export default function RootLayout({ children }) {
+  const pageTitle = "Your Next Tale"
+  const pageDescription = "Discover your next favorite book with our curated book case."
+  const socialImage = "/thumbnail-1200-630.png" // Updated to reference the image in the public folder
+
   return (
     <html lang="en" className={inter.variable}>
-      <head>
+      <Head>
+        <title>{pageTitle}</title>
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDescription} />
+        <meta property="og:image" content={socialImage} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://yournexttale.com" /> {/* Replace with your page URL */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={pageTitle} />
+        <meta name="twitter:description" content={pageDescription} />
+        <meta name="twitter:image" content={socialImage} />
         <link rel="icon" href="/favicon.svg" />
-      </head>
+      </Head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased w-full h-full bg-background text-foreground relative`}
       >
