@@ -19,7 +19,8 @@ export default async function AddNewBook() {
       <div className="flex flex-col h-full">
         <div className="navigation w-full p-5 flex items-center justify-between border-b-[1px] border-solid border-gray-300 bg-[#E7E7E7]">
           <a href="/admin/books" className="text-primary font-departureMono uppercase text-[14px]">
-            Your Next Tale<sup className="text-[12px] align-super ml-1 text-[#0D00FF]">Admin</sup>
+            Your Next Tale
+            <sup className="text-[12px] align-super ml-1 text-[#0D00FF]">Admin</sup>
           </a>
         </div>
         <AddBookForm />
