@@ -2,6 +2,7 @@
 import { useState } from "react"
 import { createClient } from "@/utils/supabase/client"
 import BookUpload from "./BookUpload"
+import BookSimple from "@/components/book/BookSimple"
 
 const AddBookForm = () => {
   const supabase = createClient()
@@ -11,17 +12,26 @@ const AddBookForm = () => {
   const [coverUrl, setCoverUrl] = useState("")
   const [amazonAffiliateLink, setAmazonAffiliateLink] = useState("") // New state for affiliate link
   const [uploadKey, setUploadKey] = useState(Date.now()) // Add a key to reset BookUpload
-  const [similarTitles, setSimilarTitles] = useState([]) // State to store similar titles
+  const [similarBooks, setSimilarBooks] = useState([]) // State to store similar books
 
   const checkSimilarTitles = async (title) => {
-    const { data, error } = await supabase.from("Books").select("title").ilike("title", `%${title}%`) // Case-insensitive partial match
+    // Trim whitespace and check if the input is meaningful and has more than 2 characters
+    if (title.trim().length <= 2) {
+      setSimilarBooks([]) // Clear similar books if input is empty, just whitespace, or too short
+      return
+    }
+
+    const { data, error } = await supabase
+      .from("Books")
+      .select("*") // Fetch all book details
+      .ilike("title", `%${title}%`) // Case-insensitive partial match
 
     if (error) {
       console.error("Error checking similar titles:", error)
       return
     }
 
-    setSimilarTitles(data.map((book) => book.title))
+    setSimilarBooks(data) // Store the full book objects
   }
 
   const handleSubmit = async (event) => {
@@ -52,24 +62,27 @@ const AddBookForm = () => {
 
       // Reset the upload component by changing its key
       setUploadKey(Date.now())
-      setSimilarTitles([]) // Clear similar titles
+      setSimilarBooks([]) // Clear similar books
     }
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
-      <div className="bg-white shadow-md rounded-lg p-8 w-full max-w-lg border border-solid border-gray-300">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center border-b border-solid border-gray-300 pb-4">
-          Add New Book
-        </h1>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+    <div className="bg-[#0D00FF] p-5 pt-10 max-w-[401px] flex flex-col gap-5 min-h-full">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-primary font-departureMono uppercase text-[20px] text-white">Add New Book</h1>
+        <p className="text-primary font-departureMono uppercase text-[12px] text-white">
+          Hey buddy, i’m sorry I look like a windows error screen. Just add a book...
+        </p>
+      </div>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6 justify-between h-full">
+        <div className="flex flex-col gap-6">
           {/* Title Input */}
           <div className="w-full">
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="title" className="text-primary font-departureMono uppercase text-[12px] text-white mb-1">
               Title:
             </label>
             <input
-              className="w-full border border-solid border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              className="w-full border border-solid border-white h-[32px] px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-transparent text-white font-departureMono text-[12px]"
               type="text"
               id="title"
               value={title}
@@ -79,25 +92,29 @@ const AddBookForm = () => {
               }}
               required
             />
-            {similarTitles.length > 0 && (
-              <div className="mt-2 text-sm text-red-500">
-                <p>Similar titles found:</p>
-                <ul>
-                  {similarTitles.map((similarTitle, index) => (
-                    <li key={index}>{similarTitle}</li>
+            {similarBooks.length > 0 && (
+              <div className="mt-2 text-sm text-white">
+                <p className="text-primary font-departureMono uppercase text-[12px] text-white mb-1">
+                  Similar titles found:
+                </p>
+                <div className="grid grid-cols-3 gap-4 mt-2">
+                  {similarBooks.map((book) => (
+                    <div key={book.id}>
+                      <BookSimple book={book} onImageLoad={() => {}} />
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
             )}
           </div>
 
           {/* Author Input */}
           <div className="w-full">
-            <label htmlFor="author" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="author" className="text-primary font-departureMono uppercase text-[12px] text-white mb-1">
               Author:
             </label>
             <input
-              className="w-full border border-solid border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              className="w-full border border-solid border-white h-[32px] px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-transparent text-white font-departureMono text-[12px]"
               type="text"
               id="author"
               value={author}
@@ -108,11 +125,14 @@ const AddBookForm = () => {
 
           {/* Description Input */}
           <div className="w-full">
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="description"
+              className="text-primary font-departureMono uppercase text-[12px] text-white mb-1"
+            >
               Description:
             </label>
             <textarea
-              className="w-full border border-solid border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              className="w-full border border-solid border-white px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-transparent text-white font-departureMono text-[12px]"
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -123,14 +143,19 @@ const AddBookForm = () => {
 
           {/* Cover Upload */}
           <div className="w-full">
-            <label htmlFor="coverUrl" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="coverUrl" className="text-primary font-departureMono uppercase text-[12px] text-white mb-1">
               Cover Image:
             </label>
-            <div className="border border-solid border-gray-300 rounded-lg p-4">
-              <BookUpload key={uploadKey} url={coverUrl} size={150} onUpload={(url) => setCoverUrl(url)} />
+            <div className="border border-solid border-white p-4 bg-transparent flex items-center gap-4">
+              <BookUpload
+                key={uploadKey}
+                url={coverUrl}
+                size={150}
+                onUpload={(url) => setCoverUrl(url)} // Handle the uploaded file URL
+              />
             </div>
             <input
-              className="opacity-0 w-0 h-0 border border-solid border-gray-300"
+              className="opacity-0 w-0 h-0"
               type="text"
               id="coverUrl"
               value={coverUrl}
@@ -141,11 +166,14 @@ const AddBookForm = () => {
 
           {/* Amazon Affiliate Link Input */}
           <div className="w-full">
-            <label htmlFor="amazonAffiliateLink" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="amazonAffiliateLink"
+              className="text-primary font-departureMono uppercase text-[12px] text-white mb-1"
+            >
               Amazon Affiliate Link:
             </label>
             <input
-              className="w-full border border-solid border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              className="w-full border border-solid border-white h-[32px] px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-transparent text-white font-departureMono text-[12px]"
               type="text"
               id="amazonAffiliateLink"
               value={amazonAffiliateLink}
@@ -153,16 +181,16 @@ const AddBookForm = () => {
               required
             />
           </div>
+        </div>
 
-          {/* Submit Button */}
-          <button
-            className="bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-6 rounded-lg transition duration-200 border border-solid border-orange-600"
-            type="submit"
-          >
-            Add Book
-          </button>
-        </form>
-      </div>
+        {/* Submit Button */}
+        <button
+          className="bg-white text-[#0D00FF] font-departureMono uppercase text-[12px] h-[48px] px-6 transition duration-200 border border-solid border-[#0D00FF] hover:bg-gray-200"
+          type="submit"
+        >
+          Add the book pls
+        </button>
+      </form>
     </div>
   )
 }

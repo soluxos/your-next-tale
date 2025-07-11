@@ -17,10 +17,11 @@ html {
 
 body {
   width: 100%;
+  min-height: 100%;
   height: 100%;
 }
 
-body::before {
+body.books-page::before {
   content: "";
   position: fixed; /* Change to fixed to ensure it stays in place */
   top: 0;
@@ -39,7 +40,7 @@ body::before {
   animation: scanlines 0.2s infinite linear;
 }
 
-body::after {
+body.books-page::after {
   content: "";
   position: fixed;
   top: 0;

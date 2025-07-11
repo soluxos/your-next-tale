@@ -54,24 +54,26 @@ export default function BookUpload({ url, onUpload }) {
   }
 
   return (
-    <div>
-      {bookUrl ? <img src={bookUrl} alt="Avatar" className="avatar image" /> : <div className="avatar no-image" />}
-      <div>
-        <label className="button primary block" htmlFor="single">
-          {uploading ? "Uploading ..." : "Upload"}
-        </label>
-        <input
-          className="bg-teal-500 text-white font-bold py-2 px-4 rounded"
-          // style={{
-          //   visibility: "hidden",
-          //   position: "absolute"
-          // }}
-          type="file"
-          id="single"
-          accept="image/*"
-          onChange={uploadAvatar}
-          disabled={uploading}
-        />
+    <div className="w-full">
+      <div className="bg-transparent flex flex-col items-start gap-4">
+        {bookUrl && <img src={bookUrl} alt="Book Cover" className="w-auto h-[150px] object-cover" />}
+        <div className="flex flex-row gap-2 items-center">
+          <label
+            htmlFor="fileUpload"
+            className="bg-white text-[#0D00FF] font-departureMono uppercase text-[12px] py-2 px-4 cursor-pointer"
+          >
+            {uploading ? "Uploading..." : "Browse"}
+          </label>
+          <p className="text-white font-departureMono uppercase text-[12px]">No file selected</p>
+          <input
+            id="fileUpload"
+            type="file"
+            className="hidden"
+            accept="image/*"
+            onChange={uploadAvatar}
+            disabled={uploading}
+          />
+        </div>
       </div>
     </div>
   )

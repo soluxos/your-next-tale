@@ -38,6 +38,14 @@ export default function BooksPage() {
     return () => window.removeEventListener("resize", handleResize)
   }, [])
 
+  // Add a class to the body before the page is loaded
+  useEffect(() => {
+    document.body.classList.add("books-page")
+    return () => {
+      document.body.classList.remove("books-page")
+    }
+  }, [])
+
   useEffect(() => {
     fetchMoreBooks(true)
     updateTallestBookHeight()
