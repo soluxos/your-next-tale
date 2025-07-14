@@ -10,7 +10,7 @@ const BookPopover = ({ book, onOpenDrawer }) => {
   const { title, author, description, amazon_affiliate_link } = book
 
   return (
-    <div className="book-popover space-y-4">
+    <div className="book-popover space-y-4 max-w-full">
       {/* Title and Author */}
       <div>
         <h4 className="text-[16px] text-textPrimary font-departureMono uppercase">{title}</h4>

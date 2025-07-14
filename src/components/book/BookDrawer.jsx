@@ -39,7 +39,7 @@ const VaulDrawer = forwardRef(({ book, coverUrl }, ref) => {
                       />
                     )}
                   </div>
-                  <div className="p-10 flex flex-col gap-5 w-full max-w-full">
+                  <div className="p-10 flex flex-col gap-5 w-full max-w-full pb-20 xs:pb-10">
                     <div>
                       <Drawer.Title className="text-[16px] text-textPrimary font-departureMono uppercase">
                         {title}

@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import Script from "next/script"
+import Navigation from "../components/navigation/Navigation" // Import the Navigation component
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -54,8 +55,9 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground relative`}
       >
         {children}
+        {/* <Navigation /> */}
+        <Script src="https://scripts.simpleanalyticscdn.com/latest.js" />
       </body>
-      <Script src="https://scripts.simpleanalyticscdn.com/latest.js" />
     </html>
   )
 }

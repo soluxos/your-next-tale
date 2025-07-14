@@ -67,14 +67,14 @@ const AddBookForm = () => {
   }
 
   return (
-    <div className="bg-[#0D00FF] p-5 pt-10 max-w-[401px] flex flex-col gap-5 h-full">
+    <div className="bg-[#0D00FF] p-5 pt-10 max-w-[401px] flex flex-col gap-5 min-h-full flex-grow">
       <div className="flex flex-col gap-2">
         <h1 className="text-primary font-departureMono uppercase text-[20px] text-white">Add New Book</h1>
         <p className="text-primary font-departureMono uppercase text-[12px] text-white">
           Hey buddy, i’m sorry I look like a windows error screen. Just add a book...
         </p>
       </div>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6 justify-between h-full">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6 justify-between flex-grow h-full">
         <div className="flex flex-col gap-6">
           {/* Title Input */}
           <div className="w-full">

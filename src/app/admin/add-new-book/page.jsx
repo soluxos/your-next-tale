@@ -16,7 +16,7 @@ export default async function AddNewBook() {
 
   return (
     <>
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col min-h-full flex-grow">
         <div className="navigation w-full p-5 flex items-center justify-between border-b-[1px] border-solid border-gray-300 bg-[#E7E7E7]">
           <a href="/admin/books" className="text-primary font-departureMono uppercase text-[14px]">
             Your Next Tale

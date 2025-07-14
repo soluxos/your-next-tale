@@ -169,6 +169,7 @@ export default function BooksPage() {
         </div>
         <div className="left-border w-4 h-full border border-solid border-border"></div>
       </div>
+      <div className="fixed z-40 bottom-0 left-0 w-full h-[100px] bg-gradient-to-t from-[rgba(0,0,0,0.4)] to-[rgba(0,0,0,0)] via-[rgba(0,0,0,0.1)] pointer-events-none"></div>
     </>
   )
 }
