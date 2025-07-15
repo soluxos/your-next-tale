@@ -83,7 +83,7 @@ const Book = (props) => {
           </div>
         </PopoverTrigger>
         <PopoverContent
-          className="book-popover w-[480px] max-w-full p-4 bg-white shadow-lg rounded-lg"
+          className="book-popover w-full max-w-[80vw] xs:max-w-[480px] p-4 bg-white shadow-lg rounded-lg"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >

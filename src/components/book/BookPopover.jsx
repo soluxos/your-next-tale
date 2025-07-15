@@ -20,10 +20,12 @@ const BookPopover = ({ book, onOpenDrawer }) => {
       </div>
 
       {/* Description */}
-      <p className="text-[13px] leading-[1.5] text-textSecondary font-inter">{truncateDescription(description, 240)}</p>
+      <p className="text-[12px] leading-[1.4] text-textSecondary font-departureMono">
+        {truncateDescription(description, 240)}
+      </p>
 
       {/* Buttons */}
-      <div className="flex justify-between items-center gap-2">
+      <div className="flex flex-col xs:flex-row xs:justify-between items-center gap-2">
         <Button
           variant="outline"
           className="text-sm w-full flex justify-between font-departureMono uppercase font-normal text-[13px]"

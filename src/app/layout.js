@@ -3,6 +3,7 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import Script from "next/script"
 import Navigation from "../components/navigation/Navigation" // Import the Navigation component
+import { createClient } from "@/utils/supabase/server"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -48,14 +49,19 @@ export const metadata = {
   }
 }
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const supabase = await createClient()
+  const {
+    data: { session }
+  } = await supabase.auth.getSession()
+
   return (
     <html lang="en" className={inter.variable}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground relative`}
       >
         {children}
-        {/* <Navigation /> */}
+        <Navigation isLoggedIn={session} />
         <Script src="https://scripts.simpleanalyticscdn.com/latest.js" />
       </body>
     </html>
