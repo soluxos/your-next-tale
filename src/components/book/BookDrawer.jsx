@@ -63,7 +63,7 @@ const VaulDrawer = forwardRef(({ book, coverUrl }, ref) => {
                       <Drawer.Description className="text-[16px] font-departureMono uppercase text-textSecondary">
                         By <span className="text-textPrimary">{author}</span>
                       </Drawer.Description>
-                      <div className="text-[13px] font-inter text-textSecondary mt-2">
+                      <div className="text-[12px] leading-[1.4] font-departureMono text-textSecondary mt-2">
                         {description
                           ? description.split("\n").map((paragraph, index) => (
                               <p key={index} className="mb-2">

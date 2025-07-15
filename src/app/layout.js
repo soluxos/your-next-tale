@@ -52,8 +52,8 @@ export const metadata = {
 export default async function RootLayout({ children }) {
   const supabase = await createClient()
   const {
-    data: { session }
-  } = await supabase.auth.getSession()
+    data: { user }
+  } = await supabase.auth.getUser() // Use getUser() for secure authentication
 
   return (
     <html lang="en" className={inter.variable}>
@@ -61,7 +61,6 @@ export default async function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground relative`}
       >
         {children}
-        <Navigation isLoggedIn={session} />
         <Script src="https://scripts.simpleanalyticscdn.com/latest.js" />
       </body>
     </html>
