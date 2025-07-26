@@ -64,7 +64,6 @@ const Book = (props) => {
   return (
     <>
       <BookDrawer ref={drawerRef} book={book} coverUrl={coverUrl} />
-
       <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
         <PopoverTrigger asChild>
           <div
@@ -91,7 +90,7 @@ const Book = (props) => {
           </div>
         </PopoverTrigger>
         <PopoverContent
-          className="book-popover w-full max-w-[80vw] xs:max-w-[480px] p-4 bg-white shadow-lg rounded-lg"
+          className="book-popover w-full max-w-[80vw] xs:max-w-[480px] p-4 bg-white shadow-lg rounded-lg z-10"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
