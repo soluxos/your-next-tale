@@ -69,8 +69,10 @@ const Book = (props) => {
         <PopoverTrigger asChild>
           <div
             className="relative transition-all duration-200 ease-in-out cursor-pointer"
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
+            {...(!isTouchDevice && {
+              onMouseEnter: handleMouseEnter,
+              onMouseLeave: handleMouseLeave
+            })}
             onClick={openDrawer}
           >
             <div className="flex flex-col gap-1 relative z-10" key={id}>
