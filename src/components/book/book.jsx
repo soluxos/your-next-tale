@@ -12,6 +12,7 @@ const Book = (props) => {
   const { book, onImageLoad } = props
   const { id, title, cover_url, author, description } = book
   const [isPopoverOpen, setIsPopoverOpen] = useState(false)
+  const [isTouchDevice, setIsTouchDevice] = useState(false)
 
   // Ref for controlling the BookDrawer
   const drawerRef = useRef()
@@ -36,14 +37,21 @@ const Book = (props) => {
     if (cover_url) {
       downloadImage(cover_url)
     }
+
+    // Detect if the device is touch-enabled
+    setIsTouchDevice("ontouchstart" in window || navigator.maxTouchPoints > 0)
   }, [cover_url])
 
   const handleMouseEnter = () => {
-    setIsPopoverOpen(true)
+    if (!isTouchDevice) {
+      setIsPopoverOpen(true)
+    }
   }
 
   const handleMouseLeave = () => {
-    setIsPopoverOpen(false)
+    if (!isTouchDevice) {
+      setIsPopoverOpen(false)
+    }
   }
 
   // Function to open the drawer
