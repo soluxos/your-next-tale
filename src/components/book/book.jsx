@@ -43,19 +43,16 @@ const Book = (props) => {
   }, [cover_url])
 
   const handleMouseEnter = () => {
-    if (!isTouchDevice) {
-      setIsPopoverOpen(true)
-    }
+    setIsPopoverOpen(true)
   }
 
   const handleMouseLeave = () => {
-    if (!isTouchDevice) {
-      setIsPopoverOpen(false)
-    }
+    setIsPopoverOpen(false)
   }
 
   // Function to open the drawer
   const openDrawer = () => {
+    setIsPopoverOpen(false)
     if (drawerRef.current) {
       drawerRef.current.open()
     }
