@@ -3,6 +3,7 @@ import { useState } from "react"
 import { createClient } from "@/utils/supabase/client"
 import BookUpload from "./BookUpload"
 import BookSimple from "@/components/book/BookSimple"
+import BookSearch from "@/components/add-book-form/BookSearch"
 
 const AddBookForm = () => {
   const supabase = createClient()
@@ -29,6 +30,9 @@ const AddBookForm = () => {
 
     setSimilarBooks(data)
   }
+
+  // Utility function to replace ' . . .' with '...'
+  const normalizeEllipsis = (value) => value.replace(/ \. \. \./g, "...")
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -73,6 +77,7 @@ const AddBookForm = () => {
           Hey buddy, i’m sorry I look like a windows error screen. Just add a book...
         </p>
       </div>
+      <BookSearch />
       <form onSubmit={handleSubmit} className="flex flex-col gap-6 justify-between flex-grow h-auto">
         <div className="flex flex-col gap-6">
           {/* Title Input */}
@@ -90,8 +95,8 @@ const AddBookForm = () => {
                 checkSimilarTitles(e.target.value)
               }}
               onBlur={(e) => {
-                const trimmedValue = e.target.value.trim()
-                setTitle(trimmedValue)
+                const normalizedValue = normalizeEllipsis(e.target.value.trim())
+                setTitle(normalizedValue)
               }}
               required
             />
@@ -123,7 +128,10 @@ const AddBookForm = () => {
               id="author"
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
-              onBlur={(e) => setAuthor(e.target.value.trim())}
+              onBlur={(e) => {
+                const normalizedValue = normalizeEllipsis(e.target.value.trim())
+                setAuthor(normalizedValue)
+              }}
               required
             />
           </div>
@@ -141,7 +149,10 @@ const AddBookForm = () => {
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              onBlur={(e) => setDescription(e.target.value.trim())}
+              onBlur={(e) => {
+                const normalizedValue = normalizeEllipsis(e.target.value.trim())
+                setDescription(normalizedValue)
+              }}
               rows="4"
               required
             ></textarea>
@@ -180,7 +191,10 @@ const AddBookForm = () => {
               id="amazonAffiliateLink"
               value={amazonAffiliateLink}
               onChange={(e) => setAmazonAffiliateLink(e.target.value)}
-              onBlur={(e) => setAmazonAffiliateLink(e.target.value.trim())}
+              onBlur={(e) => {
+                const normalizedValue = normalizeEllipsis(e.target.value.trim())
+                setAmazonAffiliateLink(normalizedValue)
+              }}
               required
             />
           </div>

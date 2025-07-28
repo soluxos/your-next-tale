@@ -8,6 +8,15 @@ const BookSimple = (props) => {
   const { cover_url, title } = book
 
   useEffect(() => {
+    const isValidUrl = (url) => {
+      try {
+        new URL(url) // Attempt to construct a URL object
+        return true
+      } catch {
+        return false
+      }
+    }
+
     const downloadImage = async (path) => {
       try {
         const supabase = await createClient()
@@ -25,7 +34,13 @@ const BookSimple = (props) => {
     }
 
     if (cover_url) {
-      downloadImage(cover_url)
+      if (isValidUrl(cover_url)) {
+        // If it's a valid URL, use it directly
+        setCoverUrl(cover_url)
+      } else {
+        // Otherwise, download the image
+        downloadImage(cover_url)
+      }
     }
   }, [cover_url])
 
