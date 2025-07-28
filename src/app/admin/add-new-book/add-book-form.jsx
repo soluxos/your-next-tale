@@ -66,7 +66,7 @@ const AddBookForm = () => {
   }
 
   return (
-    <div className="bg-[#0D00FF] p-5 pt-10 max-w-[401px] flex flex-col gap-5 h-[100vh] min-h-full flex-grow fixed z-[1000] overflow-scroll">
+    <div className="submit-form bg-[#0D00FF] p-5 pt-10 max-w-[401px] flex flex-col gap-5 h-[100vh] min-h-full flex-grow fixed z-[1000] overflow-scroll">
       <div className="flex flex-col gap-2">
         <h1 className="text-primary font-departureMono uppercase text-[20px] text-white">Add New Book</h1>
         <p className="text-primary font-departureMono uppercase text-[12px] text-white">

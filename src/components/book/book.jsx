@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef } from "react"
 import { motion } from "motion/react"
 import { createClient } from "@/utils/supabase/client"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card"
 
 import BookPopover from "@/components/book/BookPopover.jsx"
 import BookDrawer from "@/components/book/BookDrawer.jsx"
@@ -10,11 +10,9 @@ import BookDrawer from "@/components/book/BookDrawer.jsx"
 const Book = (props) => {
   const [coverUrl, setCoverUrl] = useState(null)
   const { book, onImageLoad } = props
-  const { id, title, cover_url, author, description } = book
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false)
-  const [isTouchDevice, setIsTouchDevice] = useState(false)
+  const { id, title, cover_url } = book
+  const [isHovered, setIsHovered] = useState(false)
 
-  // Ref for controlling the BookDrawer
   const drawerRef = useRef()
 
   useEffect(() => {
@@ -37,63 +35,65 @@ const Book = (props) => {
     if (cover_url) {
       downloadImage(cover_url)
     }
-
-    // Detect if the device is touch-enabled
-    setIsTouchDevice("ontouchstart" in window || navigator.maxTouchPoints > 0)
   }, [cover_url])
 
-  const handleMouseEnter = () => {
-    setIsPopoverOpen(true)
-  }
-
-  const handleMouseLeave = () => {
-    setIsPopoverOpen(false)
-  }
-
-  // Function to open the drawer
   const openDrawer = () => {
-    setIsPopoverOpen(false)
     if (drawerRef.current) {
       drawerRef.current.open()
     }
   }
 
+  const closeDrawer = () => {
+    if (drawerRef.current) {
+      drawerRef.current.close()
+    }
+    // Reset hover state when the drawer is closed
+    setIsHovered(false)
+  }
+
+  const handleMouseEnter = () => {
+    console.log("Mouse entered book cover")
+    setIsHovered(true)
+  }
+
+  const handleMouseLeave = () => {
+    setIsHovered(false)
+  }
+
   return (
     <>
-      <BookDrawer ref={drawerRef} book={book} coverUrl={coverUrl} />
-      <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-        <PopoverTrigger asChild>
-          <div
-            className="relative transition-all duration-200 ease-in-out cursor-pointer"
-            onMouseEnter={!isTouchDevice ? handleMouseEnter : undefined}
-            onMouseLeave={!isTouchDevice ? handleMouseLeave : undefined}
-            onClick={openDrawer}
-          >
-            <div className="flex flex-col gap-1 relative z-10" key={id}>
-              {coverUrl && (
-                <img
-                  src={coverUrl}
-                  alt={`${title} cover`}
-                  className={`w-full h-auto shadow-[0_0_64px_8px_rgba(0,0,0,0.2)] transform transition-all duration-200 ease-in-out rounded-sm ${
-                    isPopoverOpen ? "-translate-y-2" : "hover:-translate-y-2"
-                  }`}
-                  onLoad={onImageLoad}
-                />
-              )}
+      <BookDrawer ref={drawerRef} book={book} coverUrl={coverUrl} onClose={closeDrawer} />
+
+      <div className="ham" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+        <HoverCard>
+          <HoverCardTrigger asChild>
+            <div className="relative transition-all duration-200 ease-in-out cursor-pointer" onClick={openDrawer}>
+              <div className="flex flex-col gap-1 relative z-10" key={id}>
+                {coverUrl && (
+                  <img
+                    src={coverUrl}
+                    alt={`${title} cover`}
+                    className={`w-full h-auto shadow-[0_0_64px_8px_rgba(0,0,0,0.2)] transform transition-all duration-200 ease-in-out rounded-sm ${
+                      isHovered ? "-translate-y-2" : "hover:-translate-y-2"
+                    }`}
+                    onLoad={onImageLoad}
+                  />
+                )}
+              </div>
+              <div className="w-full h-full absolute top-0 left-0 z-0"></div>
+              {/* Invisible buffer area */}
+              <div className="absolute bottom-[-8px] left-0 w-full h-2 bg-transparent"></div>
             </div>
-            <div className="w-full h-full absolute top-0 left-0 z-0"></div>
-            {/* Invisible buffer area */}
-            <div className="absolute bottom-[-8px] left-0 w-full h-2 bg-transparent"></div>
-          </div>
-        </PopoverTrigger>
-        <PopoverContent
-          className="book-popover w-full max-w-[80vw] xs:max-w-[480px] p-4 bg-white shadow-lg rounded-lg z-10"
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-        >
-          <BookPopover book={book} onOpenDrawer={openDrawer} />
-        </PopoverContent>
-      </Popover>
+          </HoverCardTrigger>
+          <HoverCardContent
+            className="book-popover w-full max-w-[80vw] xs:max-w-[480px] p-4 bg-white shadow-lg rounded-lg"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          >
+            <BookPopover book={book} onOpenDrawer={openDrawer} />
+          </HoverCardContent>
+        </HoverCard>
+      </div>
     </>
   )
 }

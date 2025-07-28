@@ -256,3 +256,33 @@ label {
   height: 20px;
   background-color: transparent;
 }
+
+.book-case-bottom-gradient {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 10vh; /* Adjusted to match the height of the book case */
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.5),
+    rgba(0, 0, 0, 0.3) 50%,
+    rgba(0, 0, 0, 0.1) 75%,
+    rgba(0, 0, 0, 0) 100% /* Fully transparent at the top */
+  );
+  pointer-events: none; /* Ensures it doesn't block interactions */
+}
+
+.submit-form input::selection,
+.submit-form textarea::selection,
+.submit-form label::selection,
+.submit-form p::selection,
+.submit-form h1::selection,
+.submit-form h2::selection,
+.submit-form h3::selection,
+.submit-form h4::selection,
+.submit-form h5::selection,
+.submit-form h6::selection {
+  background: white;
+  color: #0d00ff; /* Blue text */
+}

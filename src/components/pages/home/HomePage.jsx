@@ -111,8 +111,16 @@ export default function HomePage(props) {
 
   const chunkBooks = (books, itemsPerRow) => {
     const rows = []
-    for (let i = 0; i < books.length; i += itemsPerRow) {
-      rows.push(books.slice(i, i + itemsPerRow))
+    const minBooks = itemsPerRow * 5 // Minimum books needed for 5 rows
+
+    // Pad the books array with placeholders if there are not enough books
+    const paddedBooks = [...books]
+    while (paddedBooks.length < minBooks) {
+      paddedBooks.push({ id: `placeholder-${paddedBooks.length}`, placeholder: true })
+    }
+
+    for (let i = 0; i < paddedBooks.length; i += itemsPerRow) {
+      rows.push(paddedBooks.slice(i, i + itemsPerRow))
     }
     return rows
   }
@@ -153,10 +161,12 @@ export default function HomePage(props) {
                       key={book.id}
                       className="w-full"
                       ref={(el) => {
-                        bookRefs.current[rowIndex * itemsPerRow + bookIndex] = el
+                        if (!book.placeholder) {
+                          bookRefs.current[rowIndex * itemsPerRow + bookIndex] = el
+                        }
                       }}
                     >
-                      <Book book={book} onImageLoad={() => handleImageLoad(book.id)} {...book} />
+                      {!book.placeholder && <Book book={book} onImageLoad={() => handleImageLoad(book.id)} {...book} />}
                     </div>
                   ))}
                 </div>
@@ -171,7 +181,7 @@ export default function HomePage(props) {
         </div>
         <div className="left-border w-4 h-full border border-solid border-border"></div>
       </div>
-      <div className="fixed z-40 bottom-0 left-0 w-full h-20 bg-gradient-to-t from-[rgba(0,0,0,0.6)] to-[rgba(0,0,0,0)] via-[rgba(0,0,0,0.1)] pointer-events-none"></div>
+      <div className="book-case-bottom-gradient"></div>
       {!initialLoading && <Navigation isLoggedIn={isLoggedIn} />}
     </>
   )
