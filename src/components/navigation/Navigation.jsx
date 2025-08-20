@@ -49,20 +49,20 @@ export default function Navigation({ isLoggedIn = false }) {
               </p>
             </div>
             <AboutPopover isPopoverVisible={isPopoverVisible} handleMouseLeave={handleMouseLeave} />
-            <div className="separator w-[1px] h-6 bg-[#ECECEC]" />
+            {/* <div className="separator w-[1px] h-6 bg-[#ECECEC]" />
             <div className="flex flex-col items-start px-4 py-[10px]">
               <p className="font-departureMono uppercase text-[10px] text-textSecondary">Get In</p>
               <a className="font-departureMono uppercase text-[12px] flex gap-1">
                 <span className="text-[#FF3131]">♥</span> Contact
               </a>
-            </div>
-            <div className="separator w-[1px] h-6 bg-[#ECECEC]" />
+            </div> */}
+            {/* <div className="separator w-[1px] h-6 bg-[#ECECEC]" />
             <a href="/" className="flex flex-col items-start px-4 py-[10px]">
               <p className="font-departureMono uppercase text-[10px] text-textSecondary">Head</p>
               <p className="font-departureMono uppercase text-[12px] flex gap-1">
                 <span className="text-[#2CA7FF]">♦</span> Home
               </p>
-            </a>
+            </a> */}
           </nav>
         </motion.div>
         {isLoggedIn && (
