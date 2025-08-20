@@ -52,7 +52,6 @@ const Book = (props) => {
   }
 
   const handleMouseEnter = () => {
-    console.log("Mouse entered book cover")
     setIsHovered(true)
   }
 
