@@ -54,7 +54,7 @@ import BookSimple from "@/components/book/BookSimple"
 }
 */
 
-const BookSearch = () => {
+const BookSearch = ({ onBookSelect }) => {
   const [query, setQuery] = useState("")
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
@@ -85,7 +85,15 @@ const BookSearch = () => {
       }
 
       const data = await response.json()
-      setResults(data.books || [])
+      console.log("Fetched book:", data) // Log the entire response data for debugging
+
+      // Filter results to only include books with description data
+      const filteredResults = (data.books || []).filter((book) => {
+        const hasDescription = book.synopsis || book.overview || book.excerpt
+        return hasDescription && hasDescription.trim().length > 0
+      })
+
+      setResults(filteredResults)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -94,37 +102,55 @@ const BookSearch = () => {
   }
 
   return (
-    <div className="book-search p-4">
-      <h2 className="text-lg font-bold mb-4">Search for a Book</h2>
+    <div className="book-search">
+      <h2 className="text-primary font-departureMono uppercase text-[12px] text-white mb-2">Search for a Book</h2>
       <div className="flex gap-2 mb-4">
         <input
           type="text"
-          className="border border-gray-300 p-2 flex-grow"
+          className="w-full border border-solid border-white h-[32px] px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-transparent text-white font-departureMono text-[12px] flex-grow"
           placeholder="Enter book title..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
         />
-        <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={handleSearch} disabled={loading}>
-          {loading ? "Searching..." : "Search"}
+        <button
+          className="bg-white text-[#0D00FF] font-departureMono uppercase text-[12px] px-4 py-2 transition duration-200 border border-solid border-white hover:bg-gray-200 disabled:opacity-50"
+          onClick={handleSearch}
+          disabled={loading}
+        >
+          {loading ? "..." : "Search"}
         </button>
       </div>
-      {error && <p className="text-red-500">{error}</p>}
+      {error && <p className="text-red-300 font-departureMono text-[12px]">{error}</p>}
       <div className="results grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
         {results.length > 0 ? (
           <>
             {console.log("Results:", results)} {/* Log the results array once */}
             {results.map((book) => (
-              <BookSimple
-                key={book.isbn13} // Use ISBN-13 as a unique key
-                book={{
-                  title: book.title, // Pass the title
-                  cover_url: book.image_original // Pass the cover image URL
+              <div
+                key={book.isbn13}
+                className="cursor-pointer hover:opacity-80 transition-opacity border border-transparent hover:border-white/30 p-2 rounded"
+                onClick={() => {
+                  if (onBookSelect) {
+                    onBookSelect(book)
+                    // Clear search results after selection
+                    setResults([])
+                    setQuery("")
+                  }
                 }}
-              />
+                title="Click to populate form fields"
+              >
+                <BookSimple
+                  book={{
+                    title: book.title, // Pass the title
+                    cover_url: book.image_original // Pass the cover image URL
+                  }}
+                />
+              </div>
             ))}
           </>
         ) : (
-          !loading && <p>No results found.</p>
+          !loading && <p className="text-white font-departureMono text-[12px]">No results found.</p>
         )}
       </div>
     </div>

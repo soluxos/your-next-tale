@@ -14,6 +14,7 @@ const AddBookForm = () => {
   const [amazonAffiliateLink, setAmazonAffiliateLink] = useState("")
   const [uploadKey, setUploadKey] = useState(Date.now())
   const [similarBooks, setSimilarBooks] = useState([])
+  const [isUploadingCover, setIsUploadingCover] = useState(false)
 
   const checkSimilarTitles = async (title) => {
     if (title.trim().length <= 2) {
@@ -33,6 +34,90 @@ const AddBookForm = () => {
 
   // Utility function to replace ' . . .' with '...'
   const normalizeEllipsis = (value) => value.replace(/ \. \. \./g, "...")
+
+  // Function to upload image from URL to Supabase storage
+  const uploadImageFromUrl = async (imageUrl) => {
+    try {
+      if (!imageUrl) return null
+
+      // Fetch the image from the URL
+      const response = await fetch(imageUrl)
+      if (!response.ok) throw new Error("Failed to fetch image")
+
+      const blob = await response.blob()
+
+      // Generate a unique filename
+      const fileExt = imageUrl.split(".").pop()?.split("?")[0] || "jpg" // Remove query params and get extension
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+
+      // Upload to Supabase storage
+      const { data, error } = await supabase.storage.from("books").upload(fileName, blob, {
+        contentType: blob.type,
+        upsert: false
+      })
+
+      if (error) throw error
+
+      return data.path
+    } catch (error) {
+      console.error("Error uploading image from URL:", error)
+      return null
+    }
+  }
+
+  // Function to populate form fields from search result
+  const handleBookSelect = async (bookData) => {
+    // Check if description is available before proceeding
+    const rawDescription = bookData.synopsis || bookData.overview || bookData.excerpt || ""
+    const cleanedDescription = rawDescription
+      .replace(/<br\s*\/?>/gi, "\n") // Replace <br> tags with line breaks
+      .replace(/<[^>]*>/g, "") // Remove any other HTML tags
+      .replace(/\n\s*\n/g, "\n\n") // Clean up multiple consecutive line breaks
+      .trim()
+
+    // Exit early if no description is available
+    if (!cleanedDescription) {
+      console.log("No description available for this book, skipping selection")
+      return
+    }
+
+    setTitle(bookData.title || "")
+    setAuthor(bookData.authors ? bookData.authors.join(", ") : "")
+    setDescription(cleanedDescription)
+
+    // Upload image from URL and set cover URL
+    const imageUrl = bookData.image_original || bookData.image
+    if (imageUrl) {
+      setIsUploadingCover(true)
+      try {
+        const uploadedPath = await uploadImageFromUrl(imageUrl)
+        if (uploadedPath) {
+          setCoverUrl(uploadedPath)
+          setUploadKey(Date.now()) // Trigger re-render of BookUpload component
+        } else {
+          // Fallback to direct URL if upload fails
+          setCoverUrl(imageUrl)
+        }
+      } catch (error) {
+        console.error("Error uploading cover image:", error)
+        // Fallback to direct URL if upload fails
+        setCoverUrl(imageUrl)
+      } finally {
+        setIsUploadingCover(false)
+      }
+    } else {
+      setCoverUrl("")
+    }
+
+    // Try to find an Amazon link in the prices array
+    const amazonPrice = bookData.prices?.find(
+      (price) => price.merchant?.toLowerCase().includes("amazon") || price.link?.toLowerCase().includes("amazon")
+    )
+    setAmazonAffiliateLink(amazonPrice?.link || "")
+
+    // Clear similar books when selecting from search
+    setSimilarBooks([])
+  }
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -66,6 +151,7 @@ const AddBookForm = () => {
       setAmazonAffiliateLink("")
       setUploadKey(Date.now())
       setSimilarBooks([])
+      setIsUploadingCover(false)
     }
   }
 
@@ -77,7 +163,7 @@ const AddBookForm = () => {
           Hey buddy, i’m sorry I look like a windows error screen. Just add a book...
         </p>
       </div>
-      <BookSearch />
+      <BookSearch onBookSelect={handleBookSelect} />
       <form onSubmit={handleSubmit} className="flex flex-col gap-6 justify-between flex-grow h-auto">
         <div className="flex flex-col gap-6">
           {/* Title Input */}
@@ -161,7 +247,7 @@ const AddBookForm = () => {
           {/* Cover Upload */}
           <div className="w-full">
             <label htmlFor="coverUrl" className="text-primary font-departureMono uppercase text-[12px] text-white mb-1">
-              Cover Image:
+              Cover Image: {isUploadingCover && <span className="text-orange-500">Uploading...</span>}
             </label>
             <div className="border border-solid border-white p-4 bg-transparent flex items-center gap-4">
               <BookUpload key={uploadKey} url={coverUrl} size={150} onUpload={(url) => setCoverUrl(url.trim())} />
