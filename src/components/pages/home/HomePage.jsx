@@ -1,145 +1,150 @@
-"use client"
-import React, { useEffect, useState, useRef } from "react"
-import Book from "@/components/book/book"
-import LoadingEffect from "@/components/loadingEffect/LoadingEffect"
-import { AnimatePresence } from "motion/react"
-import Navigation from "@/components/navigation/Navigation"
+"use client";
+import React, { useEffect, useState, useRef } from "react";
+import Book from "@/components/book/book";
+import LoadingEffect from "@/components/loadingEffect/LoadingEffect";
+import { AnimatePresence } from "motion/react";
+import Navigation from "@/components/navigation/Navigation";
 
 export default function HomePage(props) {
-  const { isLoggedIn } = props
-  const pageSize = 45
-  const [books, setBooks] = useState([])
-  const [page, setPage] = useState(0)
-  const [loading, setLoading] = useState(false)
-  const [initialLoading, setInitialLoading] = useState(true)
-  const [hasMore, setHasMore] = useState(true)
-  const [itemsPerRow, setItemsPerRow] = useState(9)
-  const [tallestBookHeight, setTallestBookHeight] = useState()
-  const bookRefs = useRef([])
-  const observerRef = useRef(null)
-  const [imagesLoaded, setImagesLoaded] = useState(0)
-  const loadedImages = useRef(new Set()) // Track loaded images to prevent duplicate calls
+  const { isLoggedIn } = props;
+  const pageSize = 45;
+  const [books, setBooks] = useState([]);
+  const [page, setPage] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(true);
+  const [itemsPerRow, setItemsPerRow] = useState(9);
+  const [tallestBookHeight, setTallestBookHeight] = useState();
+  const bookRefs = useRef([]);
+  const observerRef = useRef(null);
+  const [imagesLoaded, setImagesLoaded] = useState(0);
+  const loadedImages = useRef(new Set()); // Track loaded images to prevent duplicate calls
 
   useEffect(() => {
     const handleResize = () => {
-      const width = window.innerWidth
+      const width = window.innerWidth;
       if (width >= 1024) {
-        setItemsPerRow(9)
+        setItemsPerRow(9);
       } else if (width >= 768) {
-        setItemsPerRow(6)
+        setItemsPerRow(6);
       } else if (width >= 480) {
-        setItemsPerRow(4)
+        setItemsPerRow(4);
       } else {
-        setItemsPerRow(2)
+        setItemsPerRow(2);
       }
-      updateTallestBookHeight()
-    }
+      updateTallestBookHeight();
+    };
 
-    handleResize()
-    window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
-  }, [])
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Add a class to the body before the page is loaded
   useEffect(() => {
-    document.body.classList.add("books-page")
+    document.body.classList.add("books-page");
     return () => {
-      document.body.classList.remove("books-page")
-    }
-  }, [])
+      document.body.classList.remove("books-page");
+    };
+  }, []);
 
   useEffect(() => {
-    fetchMoreBooks(true)
-    updateTallestBookHeight()
-  }, [])
+    fetchMoreBooks(true);
+    updateTallestBookHeight();
+  }, []);
 
   useEffect(() => {
-    updateTallestBookHeight()
-  }, [books, itemsPerRow])
+    updateTallestBookHeight();
+  }, [books, itemsPerRow]);
 
   useEffect(() => {
     if (!initialLoading && observerRef.current) {
       const observer = new IntersectionObserver(
         ([entry]) => {
           if (entry.isIntersecting && hasMore && !loading) {
-            fetchMoreBooks()
+            fetchMoreBooks();
           }
         },
         { rootMargin: "200px" }
-      )
+      );
 
-      observer.observe(observerRef.current)
+      observer.observe(observerRef.current);
 
-      return () => observer.disconnect()
+      return () => observer.disconnect();
     }
-  }, [hasMore, loading, initialLoading])
+  }, [hasMore, loading, initialLoading]);
 
   const fetchMoreBooks = async (isInitialLoad = false) => {
-    if (!isInitialLoad) setLoading(true)
-    const start = page * pageSize
-    const end = start + pageSize - 1
+    if (!isInitialLoad) setLoading(true);
+    const start = page * pageSize;
+    const end = start + pageSize - 1;
 
     try {
-      const res = await fetch(`/api/books?start=${start}&end=${end}`)
-      if (!res.ok) throw new Error("Failed to fetch books")
+      const res = await fetch(`/api/books?start=${start}&end=${end}`);
+      if (!res.ok) throw new Error("Failed to fetch books");
 
-      const data = await res.json()
+      const data = await res.json();
       if (data.Books && Array.isArray(data.Books)) {
-        setBooks((prevBooks) => [...prevBooks, ...data.Books])
-        setPage((prevPage) => prevPage + 1)
-        if (data.Books.length < pageSize) setHasMore(false)
+        setBooks((prevBooks) => [...prevBooks, ...data.Books]);
+        setPage((prevPage) => prevPage + 1);
+        if (data.Books.length < pageSize) setHasMore(false);
         // Reset imagesLoaded and loadedImages when new books are fetched
-        setImagesLoaded(0)
-        loadedImages.current.clear()
+        setImagesLoaded(0);
+        loadedImages.current.clear();
       } else {
-        console.error("Fetched data is not an array:", data)
+        console.error("Fetched data is not an array:", data);
       }
     } catch (err) {
-      console.error("Error fetching more books:", err)
+      console.error("Error fetching more books:", err);
     }
 
     setTimeout(() => {
-      if (!isInitialLoad) setLoading(false)
-    }, 500)
-  }
+      if (!isInitialLoad) setLoading(false);
+    }, 500);
+  };
 
   const updateTallestBookHeight = () => {
-    const heights = bookRefs.current.map((ref) => (ref ? ref.offsetHeight + 16 : 0))
-    const tallest = Math.max(...heights, 160)
-    setTallestBookHeight(tallest)
-  }
+    const heights = bookRefs.current.map((ref) =>
+      ref ? ref.offsetHeight + 16 : 0
+    );
+    const tallest = Math.max(...heights, 160);
+    setTallestBookHeight(tallest);
+  };
 
   const chunkBooks = (books, itemsPerRow) => {
-    const rows = []
-    const minBooks = itemsPerRow * 5 // Minimum books needed for 5 rows
+    const rows = [];
+    const minBooks = itemsPerRow * 5; // Minimum books needed for 5 rows
 
     // Pad the books array with placeholders if there are not enough books
-    const paddedBooks = [...books]
+    const paddedBooks = [...books];
     while (paddedBooks.length < minBooks) {
-      paddedBooks.push({ id: `placeholder-${paddedBooks.length}`, placeholder: true })
+      paddedBooks.push({
+        id: `placeholder-${paddedBooks.length}`,
+        placeholder: true
+      });
     }
 
     for (let i = 0; i < paddedBooks.length; i += itemsPerRow) {
-      rows.push(paddedBooks.slice(i, i + itemsPerRow))
+      rows.push(paddedBooks.slice(i, i + itemsPerRow));
     }
-    return rows
-  }
+    return rows;
+  };
 
   const handleImageLoad = (id) => {
     // Prevent duplicate calls for the same image
     if (!loadedImages.current.has(id)) {
-      loadedImages.current.add(id)
-      setImagesLoaded((prev) => prev + 1)
+      loadedImages.current.add(id);
+      setImagesLoaded((prev) => prev + 1);
     }
-  }
+  };
 
   useEffect(() => {
     if (imagesLoaded === books.length && books.length > 0) {
-      setInitialLoading(false)
+      setInitialLoading(false);
     }
-  }, [imagesLoaded, books.length])
+  }, [imagesLoaded, books.length]);
 
-  const rows = chunkBooks(books, itemsPerRow)
+  const rows = chunkBooks(books, itemsPerRow);
 
   return (
     <>
@@ -162,11 +167,18 @@ export default function HomePage(props) {
                       className="w-full"
                       ref={(el) => {
                         if (!book.placeholder) {
-                          bookRefs.current[rowIndex * itemsPerRow + bookIndex] = el
+                          bookRefs.current[rowIndex * itemsPerRow + bookIndex] =
+                            el;
                         }
                       }}
                     >
-                      {!book.placeholder && <Book book={book} onImageLoad={() => handleImageLoad(book.id)} {...book} />}
+                      {!book.placeholder && (
+                        <Book
+                          book={book}
+                          onImageLoad={() => handleImageLoad(book.id)}
+                          {...book}
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -184,5 +196,5 @@ export default function HomePage(props) {
       <div className="book-case-bottom-gradient"></div>
       {!initialLoading && <Navigation isLoggedIn={isLoggedIn} />}
     </>
-  )
+  );
 }

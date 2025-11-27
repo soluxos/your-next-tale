@@ -1,6 +1,6 @@
 /* eslint-disable import/no-anonymous-default-export */
 
-import { EB_Garamond } from "next/font/google"
+import { EB_Garamond } from "next/font/google";
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -18,8 +18,8 @@ export default {
         border: "hsl(var(--border))",
         bookLightDark: "#F0F0F0",
         bookLightLight: "#F8F8F8",
-        textPrimary: "#494A51",
-        textSecondary: "#868892",
+        textPrimary: "#2100FF",
+        textSecondary: "#757190",
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))"
@@ -97,6 +97,7 @@ export default {
       },
       fontFamily: {
         departureMono: ["departure_monoregular", "sans-serif"],
+        ppMondwest: ["ppmondwest", "sans-serif"],
         EB_Garamond: ["EB_Garamond", "serif"],
         inter: ["var(--font-inter)"],
         sans: ["var(--font-inter)"]
@@ -111,4 +112,4 @@ export default {
     }
   },
   plugins: [require("tailwindcss-animate")]
-}
+};
