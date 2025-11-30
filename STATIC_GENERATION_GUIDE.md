@@ -3,6 +3,7 @@
 ## Overview
 
 This implementation uses Next.js static generation to pre-render all book pages at build time, providing:
+
 - ✅ **Excellent SEO** - Pages are fully rendered HTML
 - ✅ **Fast Performance** - No database queries at runtime
 - ✅ **Social Sharing** - Proper Open Graph metadata
@@ -24,14 +25,15 @@ export function createStaticClient() {
     {
       auth: {
         persistSession: false,
-        autoRefreshToken: false,
-      },
+        autoRefreshToken: false
+      }
     }
   );
 }
 ```
 
 **Key Points:**
+
 - No cookies dependency
 - No session persistence
 - Works during static generation
@@ -42,6 +44,7 @@ export function createStaticClient() {
 The page now uses three key Next.js functions:
 
 #### `generateStaticParams()`
+
 ```javascript
 export async function generateStaticParams() {
   const supabase = createStaticClient();
@@ -49,17 +52,19 @@ export async function generateStaticParams() {
     .from("Books")
     .select("id")
     .order("created_at", { ascending: false });
-  
+
   return books.map((book) => ({
-    id: book.id.toString(),
+    id: book.id.toString()
   }));
 }
 ```
+
 - Runs at build time
 - Fetches all book IDs from database
 - Next.js generates a static page for each ID
 
 #### `generateMetadata()`
+
 ```javascript
 export async function generateMetadata({ params }) {
   const { id } = await params;
@@ -77,11 +82,13 @@ export async function generateMetadata({ params }) {
   };
 }
 ```
+
 - Generates SEO metadata for each page
 - Enables rich social media previews
 - Improves search engine rankings
 
 #### Page Component
+
 ```javascript
 export default async function BookPage({ params }) {
   const { id } = await params;
@@ -95,6 +102,7 @@ export default async function BookPage({ params }) {
   return <BookDetailPage book={book} />;
 }
 ```
+
 - Server Component (runs at build time)
 - Fetches book data once during build
 - Serves static HTML to users
@@ -103,10 +111,11 @@ export default async function BookPage({ params }) {
 
 ```javascript
 export const dynamic = "force-static"; // Force static generation
-export const revalidate = 3600;        // Revalidate every hour
+export const revalidate = 3600; // Revalidate every hour
 ```
 
 **Revalidation Strategy:**
+
 - Static pages are cached
 - Every hour, Next.js regenerates pages in the background
 - New books added will appear within 1 hour
@@ -150,15 +159,19 @@ When you run `npm run build`:
 ## Deployment
 
 ### Vercel (Recommended)
+
 ```bash
 git push origin main
 ```
+
 Vercel automatically:
+
 - Builds all static pages
 - Serves them from edge network
 - Handles ISR (revalidation) automatically
 
 ### Manual Build
+
 ```bash
 npm run build
 npm start
@@ -181,6 +194,7 @@ npm start
 ## Monitoring
 
 Check build output for:
+
 ```
 Route (app)                              Size
 ┌ ○ /                                    142 kB
@@ -191,6 +205,7 @@ Route (app)                              Size
 ```
 
 Legend:
+
 - ● = Static page (good!)
 - ○ = Dynamic page
 - ƒ = Server function
@@ -198,14 +213,17 @@ Legend:
 ## Troubleshooting
 
 ### "Error: cookies was called outside request scope"
+
 - ✅ Fixed by using `createStaticClient()` instead of `createClient()`
 
 ### Pages not updating
+
 - Check `revalidate` setting (3600 = 1 hour)
 - Manually trigger revalidation with `revalidatePath('/books/[id]')`
 - Redeploy to regenerate all pages
 
 ### Build fails
+
 - Ensure Supabase credentials are in environment variables
 - Check database is accessible during build
 - Verify Books table has correct permissions (anon can read)

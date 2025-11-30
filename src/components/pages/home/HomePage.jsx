@@ -149,51 +149,59 @@ export default function HomePage(props) {
   return (
     <>
       <AnimatePresence>{initialLoading && <LoadingEffect />}</AnimatePresence>
-      <div className="grid grid-cols-[16px_auto_16px] pb-[88px]">
-        <div className="w-4 h-full border border-solid border-border"></div>
-        <div className="flex-1 flex-col w-full h-full">
-          <div className="left-border w-full h-4 border-1 border-border border flex border-r-0 border-l-0"></div>
-          <div id="grid-container" className="grid">
-            {rows.map((row, rowIndex) => (
-              <React.Fragment key={rowIndex}>
-                <div
-                  key={rowIndex}
-                  className="bg-[linear-gradient(to_bottom,_#F0F0F0,_#F8F8F8)] grid grid-cols-2 xs:grid-cols-4 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-2 p-2 pb-0 pt-4 items-end overflow-hidden"
-                  style={{ minHeight: `${tallestBookHeight}px` }}
-                >
-                  {row.map((book, bookIndex) => (
-                    <div
-                      key={book.id}
-                      className="w-full"
-                      ref={(el) => {
-                        if (!book.placeholder) {
-                          bookRefs.current[rowIndex * itemsPerRow + bookIndex] =
-                            el;
-                        }
-                      }}
-                    >
-                      {!book.placeholder && (
-                        <Book
-                          book={book}
-                          onImageLoad={() => handleImageLoad(book.id)}
-                          {...book}
-                        />
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <div
-                  id={`row-${rowIndex}`}
-                  className="h-4 border-1 border-border border flex border-r-0 border-l-0 w-full"
-                ></div>
-              </React.Fragment>
-            ))}
+      <div className="flex">
+        <div className="sticky left-0 h-screen top-0 w-12 min-w-12 z-10 flex items-start justify-center py-5">
+          <div>
+            <img src="/icons/logo.svg" alt="logo" className="w-6" />
           </div>
-          <div ref={observerRef} className="h-0"></div>
         </div>
-        <div className="left-border w-4 h-full border border-solid border-border"></div>
+        <div className="grid grid-cols-[16px_auto_16px] pb-[88px]">
+          <div className="w-4 h-full border border-solid border-border"></div>
+          <div className="flex-1 flex-col w-full h-full">
+            <div className="left-border w-full h-4 border-1 border-border border flex border-r-0 border-l-0"></div>
+            <div id="grid-container" className="grid">
+              {rows.map((row, rowIndex) => (
+                <React.Fragment key={rowIndex}>
+                  <div
+                    key={rowIndex}
+                    className="bg-[linear-gradient(to_bottom,_#F0F0F0,_#F8F8F8)] grid grid-cols-2 xs:grid-cols-4 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-2 p-2 pb-0 pt-4 items-end overflow-hidden"
+                    style={{ minHeight: `${tallestBookHeight}px` }}
+                  >
+                    {row.map((book, bookIndex) => (
+                      <div
+                        key={book.id}
+                        className="w-full"
+                        ref={(el) => {
+                          if (!book.placeholder) {
+                            bookRefs.current[
+                              rowIndex * itemsPerRow + bookIndex
+                            ] = el;
+                          }
+                        }}
+                      >
+                        {!book.placeholder && (
+                          <Book
+                            book={book}
+                            onImageLoad={() => handleImageLoad(book.id)}
+                            {...book}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div
+                    id={`row-${rowIndex}`}
+                    className="h-4 border-1 border-border border flex border-r-0 border-l-0 w-full"
+                  ></div>
+                </React.Fragment>
+              ))}
+            </div>
+            <div ref={observerRef} className="h-0"></div>
+          </div>
+          <div className="left-border w-4 h-full border border-solid border-border"></div>
+        </div>
       </div>
-      <div className="book-case-bottom-gradient"></div>
+      <div className="book-case-bottom-gradient z-20"></div>
       {!initialLoading && <Navigation isLoggedIn={isLoggedIn} />}
     </>
   );

@@ -9,8 +9,8 @@ export function createStaticClient() {
     {
       auth: {
         persistSession: false,
-        autoRefreshToken: false,
-      },
+        autoRefreshToken: false
+      }
     }
   );
 }

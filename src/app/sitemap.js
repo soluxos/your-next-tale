@@ -1,4 +1,5 @@
 import { createStaticClient } from "@/utils/supabase/static";
+import { generateBookSlug } from "@/lib/slugify";
 
 export default async function sitemap() {
   const supabase = createStaticClient();
@@ -6,12 +7,15 @@ export default async function sitemap() {
   // Fetch all books
   const { data: books } = await supabase
     .from("Books")
-    .select("id, created_at")
+    .select("id, title, author, created_at")
     .order("created_at", { ascending: false });
 
   const bookUrls =
     books?.map((book) => ({
-      url: `https://yournexttale.com/books/${book.id}`,
+      url: `https://yournexttale.com/books/${generateBookSlug(
+        book.title,
+        book.author
+      )}`,
       lastModified: book.created_at,
       changeFrequency: "monthly",
       priority: 0.8

@@ -1,6 +1,7 @@
 import { createStaticClient } from "@/utils/supabase/static";
 import { notFound } from "next/navigation";
 import BookDetailPage from "@/components/pages/book/BookDetailPage";
+import { generateBookSlug, getBookFromSlug } from "@/lib/slugify";
 
 // Enable static generation
 export const dynamic = "force-static";
@@ -12,7 +13,7 @@ export async function generateStaticParams() {
 
   const { data: books, error } = await supabase
     .from("Books")
-    .select("id")
+    .select("id, title, author")
     .order("created_at", { ascending: false });
 
   if (error || !books) {
@@ -21,24 +22,20 @@ export async function generateStaticParams() {
   }
 
   return books.map((book) => ({
-    id: book.id.toString(),
+    slug: generateBookSlug(book.title, book.author)
   }));
 }
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }) {
-  const { id } = await params;
+  const { slug } = await params;
   const supabase = createStaticClient();
 
-  const { data: book } = await supabase
-    .from("Books")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const book = await getBookFromSlug(slug, supabase);
 
   if (!book) {
     return {
-      title: "Book Not Found | Your Next Tale",
+      title: "Book Not Found | Your Next Tale"
     };
   }
 
@@ -47,27 +44,24 @@ export async function generateMetadata({ params }) {
     description: book.description || `Discover ${book.title} by ${book.author}`,
     openGraph: {
       title: `${book.title} by ${book.author}`,
-      description: book.description || `Discover ${book.title} by ${book.author}`,
+      description:
+        book.description || `Discover ${book.title} by ${book.author}`,
       type: "book",
       book: {
-        author: book.author,
-      },
-    },
+        author: book.author
+      }
+    }
   };
 }
 
 // Main page component
 export default async function BookPage({ params }) {
-  const { id } = await params;
+  const { slug } = await params;
   const supabase = createStaticClient();
 
-  const { data: book, error } = await supabase
-    .from("Books")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const book = await getBookFromSlug(slug, supabase);
 
-  if (error || !book) {
+  if (!book) {
     notFound();
   }
 

@@ -1,72 +1,77 @@
-"use client"
-import React, { useEffect, useState, useRef } from "react"
-import { motion } from "motion/react"
-import { createClient } from "@/utils/supabase/client"
-import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card"
+"use client";
+import React, { useEffect, useState, useRef, useMemo } from "react";
+import { motion } from "motion/react";
+import { createClient } from "@/utils/supabase/client";
+import {
+  HoverCard,
+  HoverCardTrigger,
+  HoverCardContent
+} from "@/components/ui/hover-card";
 
-import BookPopover from "@/components/book/BookPopover.jsx"
-import BookDrawer from "@/components/book/BookDrawer.jsx"
+import BookPopover from "@/components/book/BookPopover.jsx";
+import BookDrawer from "@/components/book/BookDrawer.jsx";
 
 const Book = (props) => {
-  const [coverUrl, setCoverUrl] = useState(null)
-  const { book, onImageLoad } = props
-  const { id, title, cover_url } = book
-  const [isHovered, setIsHovered] = useState(false)
+  const [coverUrl, setCoverUrl] = useState(null);
+  const { book, onImageLoad } = props;
+  const { id, title, cover_url } = book;
+  const [isHovered, setIsHovered] = useState(false);
 
-  const drawerRef = useRef()
+  const drawerRef = useRef();
 
   useEffect(() => {
-    const downloadImage = async (path) => {
-      try {
-        const supabase = await createClient()
-        const { data, error } = await supabase.storage.from("books").download(path)
-        if (error) {
-          console.log("Error downloading image: ", error)
-          throw error
-        }
+    if (!cover_url) return;
 
-        const url = URL.createObjectURL(data)
-        setCoverUrl(url)
-      } catch (error) {
-        console.log("Error downloading image: ", error)
-      }
-    }
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const bucketName = "books";
 
-    if (cover_url) {
-      downloadImage(cover_url)
-    }
-  }, [cover_url])
+    // Use public URL directly - much faster than blob downloads
+    const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucketName}/${cover_url}`;
+    setCoverUrl(publicUrl);
+  }, [cover_url]);
 
   const openDrawer = () => {
     if (drawerRef.current) {
-      drawerRef.current.open()
+      drawerRef.current.open();
     }
-  }
+  };
 
   const closeDrawer = () => {
     if (drawerRef.current) {
-      drawerRef.current.close()
+      drawerRef.current.close();
     }
     // Reset hover state when the drawer is closed
-    setIsHovered(false)
-  }
+    setIsHovered(false);
+  };
 
   const handleMouseEnter = () => {
-    setIsHovered(true)
-  }
+    setIsHovered(true);
+  };
 
   const handleMouseLeave = () => {
-    setIsHovered(false)
-  }
+    setIsHovered(false);
+  };
 
   return (
     <>
-      <BookDrawer ref={drawerRef} book={book} coverUrl={coverUrl} onClose={closeDrawer} />
+      <BookDrawer
+        ref={drawerRef}
+        book={book}
+        coverUrl={coverUrl}
+        onClose={closeDrawer}
+      />
 
-      <div className="ham" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+      <div
+        className="ham"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
         <HoverCard>
           <HoverCardTrigger asChild>
-            <div className="relative transition-all duration-200 ease-in-out cursor-pointer" onClick={openDrawer}>
+            <div
+              className="relative transition-all duration-200 ease-in-out cursor-pointer"
+              onClick={openDrawer}
+            >
               <div className="flex flex-col gap-1 relative z-10" key={id}>
                 {coverUrl && (
                   <img
@@ -76,6 +81,7 @@ const Book = (props) => {
                       isHovered ? "-translate-y-2" : "hover:-translate-y-2"
                     }`}
                     onLoad={onImageLoad}
+                    loading="lazy"
                   />
                 )}
               </div>
@@ -94,7 +100,7 @@ const Book = (props) => {
         </HoverCard>
       </div>
     </>
-  )
-}
+  );
+};
 
-export default Book
+export default Book;

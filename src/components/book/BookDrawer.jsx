@@ -8,11 +8,15 @@ import React, {
 import { Drawer } from "vaul";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { generateBookSlug } from "@/lib/slugify";
 
 const VaulDrawer = forwardRef(({ book, coverUrl }, ref) => {
   const { id, title, author, description, amazon_affiliate_link } = book;
   const triggerRef = useRef();
   const [copied, setCopied] = useState(false);
+
+  // Generate book page URL based on slug
+  const bookPageUrl = `/books/${generateBookSlug(title, author)}`;
 
   useImperativeHandle(ref, () => ({
     open: () => {
@@ -21,17 +25,6 @@ const VaulDrawer = forwardRef(({ book, coverUrl }, ref) => {
       }
     }
   }));
-
-  const handleCopyLink = async () => {
-    const bookUrl = `${window.location.origin}/books/${id}`;
-    try {
-      await navigator.clipboard.writeText(bookUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy link:", err);
-    }
-  };
 
   return (
     <Drawer.Root direction="right">
@@ -74,11 +67,13 @@ const VaulDrawer = forwardRef(({ book, coverUrl }, ref) => {
                         src={coverUrl}
                         alt={`${title} cover`}
                         className="h-auto w-[50%] self-center shadow-[0_0_64px_8px_rgba(0,0,0,0.2)]"
+                        loading="eager"
+                        decoding="async"
                       />
                     )}
                   </div>
                   <div className="drawer-bottom w-full h-4 border-1 border-border border flex border-r-0 border-l-0"></div>
-                  <div className="py-5 px-10 xs:p-10 flex flex-col gap-5 w-full max-w-full pb-20 xs:pb-24">
+                  <div className="py-5 px-10 xs:p-5 flex flex-col gap-5 w-full max-w-full pb-20 xs:pb-24">
                     <div>
                       <Drawer.Title className="text-[24px] text-textPrimary font-ppMondwest">
                         {title}
@@ -96,15 +91,33 @@ const VaulDrawer = forwardRef(({ book, coverUrl }, ref) => {
                           : "No description available."}
                       </div>
                     </div>
-                    <Button
-                      onClick={handleCopyLink}
-                      className="text-sm items-center h-[48px] flex justify-center font-departureMono uppercase font-normal text-[13px]"
+                  </div>
+                  <div className="fixed bottom-8 left-8 w-[calc(100%-64px)] flex gap-4">
+                    {amazon_affiliate_link && (
+                      <Button
+                        asChild
+                        className="text-sm items-center h-[48px] gap-2 flex justify-center font-departureMono uppercase font-normal text-[13px] w-full"
+                        variant="default"
+                      >
+                        <a
+                          href={amazon_affiliate_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Buy on Amazon{" "}
+                          <img src="/icons/trolley.svg" alt="cart" />
+                        </a>
+                      </Button>
+                    )}
+                    <a
+                      href={bookPageUrl}
+                      className="rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground text-sm items-center h-[48px] flex justify-center font-departureMono uppercase font-normal text-[13px] w-full gap-2"
                       variant="outline"
                     >
-                      {copied ? "Link Copied!" : "Share Book"}
+                      View page
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        className="w-4 h-4 ml-2"
+                        className="w-4 h-4"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -116,28 +129,8 @@ const VaulDrawer = forwardRef(({ book, coverUrl }, ref) => {
                           d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
                         />
                       </svg>
-                    </Button>
+                    </a>
                   </div>
-                  {amazon_affiliate_link && (
-                    <Button
-                      asChild
-                      className="text-sm items-center h-[48px] flex justify-center font-departureMono uppercase font-normal text-[13px] fixed bottom-8 left-8 w-[calc(100%-64px)]"
-                      variant="default"
-                    >
-                      <a
-                        href={amazon_affiliate_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Buy on Amazon{" "}
-                        <img
-                          src="/icons/trolley.svg"
-                          alt="cart"
-                          className="ml-2"
-                        />
-                      </a>
-                    </Button>
-                  )}
                 </div>
               </div>
               <div className="drawer-bottom w-full h-4 border-1 border-border border flex border-r-0 border-l-0"></div>

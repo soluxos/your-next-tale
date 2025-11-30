@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -10,27 +10,14 @@ export default function BookDetailPage({ book }) {
   const { title, author, description, amazon_affiliate_link, cover_url } = book;
 
   useEffect(() => {
-    const downloadImage = async (path) => {
-      try {
-        const supabase = await createClient();
-        const { data, error } = await supabase.storage
-          .from("books")
-          .download(path);
-        if (error) {
-          console.log("Error downloading image: ", error);
-          throw error;
-        }
+    if (!cover_url) return;
 
-        const url = URL.createObjectURL(data);
-        setCoverUrl(url);
-      } catch (error) {
-        console.log("Error downloading image: ", error);
-      }
-    };
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const bucketName = "books";
 
-    if (cover_url) {
-      downloadImage(cover_url);
-    }
+    // Use public URL directly - much faster than blob downloads
+    const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucketName}/${cover_url}`;
+    setCoverUrl(publicUrl);
   }, [cover_url]);
 
   return (
@@ -74,6 +61,9 @@ export default function BookDetailPage({ book }) {
                       src={coverUrl}
                       alt={`${title} cover`}
                       className="w-full h-auto shadow-[0_0_64px_8px_rgba(0,0,0,0.2)] rounded-sm"
+                      loading="eager"
+                      decoding="async"
+                      fetchPriority="high"
                     />
                   ) : (
                     <div className="w-full aspect-[2/3] bg-gray-200 animate-pulse rounded-sm"></div>
