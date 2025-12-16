@@ -148,14 +148,14 @@ export default function HomePage(props) {
 
   return (
     <>
-      <AnimatePresence>{initialLoading && <LoadingEffect />}</AnimatePresence>
+      {/* <AnimatePresence>{initialLoading && <LoadingEffect />}</AnimatePresence> */}
       <div className="flex">
-        <div className="sticky left-0 h-screen top-0 w-12 min-w-12 z-10 flex items-start justify-center py-5">
+        {/* <div className="sticky left-0 h-screen top-0 w-12 min-w-12 z-10 flex items-start justify-center py-5">
           <div>
             <img src="/icons/logo.svg" alt="logo" className="w-6" />
           </div>
-        </div>
-        <div className="grid grid-cols-[16px_auto_16px] pb-[88px]">
+        </div> */}
+        <div className="grid grid-cols-[16px_auto_16px] pb-[88px] w-full">
           <div className="w-4 h-full border border-solid border-border"></div>
           <div className="flex-1 flex-col w-full h-full">
             <div className="left-border w-full h-4 border-1 border-border border flex border-r-0 border-l-0"></div>
@@ -164,7 +164,7 @@ export default function HomePage(props) {
                 <React.Fragment key={rowIndex}>
                   <div
                     key={rowIndex}
-                    className="bg-[linear-gradient(to_bottom,_#F0F0F0,_#F8F8F8)] grid grid-cols-2 xs:grid-cols-4 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-2 p-2 pb-0 pt-4 items-end overflow-hidden"
+                    className="row min-h-28 bg-[linear-gradient(to_bottom,_#F0F0F0,_#F8F8F8)] grid grid-cols-2 xs:grid-cols-4 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-2 p-2 pb-0 pt-4 items-end overflow-hidden"
                     style={{ minHeight: `${tallestBookHeight}px` }}
                   >
                     {row.map((book, bookIndex) => (

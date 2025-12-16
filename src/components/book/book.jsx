@@ -13,6 +13,7 @@ import BookDrawer from "@/components/book/BookDrawer.jsx";
 
 const Book = (props) => {
   const [coverUrl, setCoverUrl] = useState(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const { book, onImageLoad } = props;
   const { id, title, cover_url } = book;
   const [isHovered, setIsHovered] = useState(false);
@@ -29,6 +30,11 @@ const Book = (props) => {
     const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucketName}/${cover_url}`;
     setCoverUrl(publicUrl);
   }, [cover_url]);
+
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+    if (onImageLoad) onImageLoad();
+  };
 
   const openDrawer = () => {
     if (drawerRef.current) {
