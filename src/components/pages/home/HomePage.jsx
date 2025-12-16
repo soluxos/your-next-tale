@@ -14,11 +14,12 @@ export default function HomePage(props) {
   const [initialLoading, setInitialLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [itemsPerRow, setItemsPerRow] = useState(9);
-  const [tallestBookHeight, setTallestBookHeight] = useState();
+  const [rowHeights, setRowHeights] = useState({}); // Store height for each row
   const bookRefs = useRef([]);
   const observerRef = useRef(null);
   const [imagesLoaded, setImagesLoaded] = useState(0);
   const loadedImages = useRef(new Set()); // Track loaded images to prevent duplicate calls
+  const rowRefs = useRef({}); // Store refs for each row
 
   useEffect(() => {
     const handleResize = () => {
@@ -32,7 +33,8 @@ export default function HomePage(props) {
       } else {
         setItemsPerRow(2);
       }
-      updateTallestBookHeight();
+      // Reset row heights on resize to recalculate
+      setRowHeights({});
     };
 
     handleResize();
@@ -50,12 +52,17 @@ export default function HomePage(props) {
 
   useEffect(() => {
     fetchMoreBooks(true);
-    updateTallestBookHeight();
   }, []);
 
+  // Update row heights after images load
   useEffect(() => {
-    updateTallestBookHeight();
-  }, [books, itemsPerRow]);
+    if (books.length > 0) {
+      // Use requestAnimationFrame to ensure DOM has updated
+      requestAnimationFrame(() => {
+        updateRowHeights();
+      });
+    }
+  }, [books, itemsPerRow, imagesLoaded]);
 
   useEffect(() => {
     if (!initialLoading && observerRef.current) {
@@ -103,12 +110,21 @@ export default function HomePage(props) {
     }, 500);
   };
 
-  const updateTallestBookHeight = () => {
-    const heights = bookRefs.current.map((ref) =>
-      ref ? ref.offsetHeight + 16 : 0
-    );
-    const tallest = Math.max(...heights, 160);
-    setTallestBookHeight(tallest);
+  const updateRowHeights = () => {
+    const newRowHeights = { ...rowHeights };
+
+    Object.keys(rowRefs.current).forEach((rowIndex) => {
+      const rowElement = rowRefs.current[rowIndex];
+      if (rowElement && !newRowHeights[rowIndex]) {
+        // Only set height if not already set (prevents layout shift)
+        const height = rowElement.offsetHeight;
+        if (height > 0) {
+          newRowHeights[rowIndex] = Math.max(height, 160); // Min height of 160px
+        }
+      }
+    });
+
+    setRowHeights(newRowHeights);
   };
 
   const chunkBooks = (books, itemsPerRow) => {
@@ -148,7 +164,7 @@ export default function HomePage(props) {
 
   return (
     <>
-      <AnimatePresence>{initialLoading && <LoadingEffect />}</AnimatePresence>
+      {/* <AnimatePresence>{initialLoading && <LoadingEffect />}</AnimatePresence> */}
       <div className="flex">
         {/* <div className="sticky left-0 h-screen top-0 w-12 min-w-12 z-10 flex items-start justify-center py-5">
           <div>
@@ -164,8 +180,17 @@ export default function HomePage(props) {
                 <React.Fragment key={rowIndex}>
                   <div
                     key={rowIndex}
+                    ref={(el) => {
+                      if (el) {
+                        rowRefs.current[rowIndex] = el;
+                      }
+                    }}
                     className="row min-h-28 bg-[linear-gradient(to_bottom,_#F0F0F0,_#F8F8F8)] grid grid-cols-2 xs:grid-cols-4 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-2 p-2 pb-0 pt-4 items-end overflow-hidden"
-                    style={{ minHeight: `${tallestBookHeight}px` }}
+                    style={{
+                      minHeight: rowHeights[rowIndex]
+                        ? `${rowHeights[rowIndex]}px`
+                        : "160px"
+                    }}
                   >
                     {row.map((book, bookIndex) => (
                       <div
