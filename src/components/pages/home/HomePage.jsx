@@ -148,7 +148,7 @@ export default function HomePage(props) {
 
   return (
     <>
-      {/* <AnimatePresence>{initialLoading && <LoadingEffect />}</AnimatePresence> */}
+      <AnimatePresence>{initialLoading && <LoadingEffect />}</AnimatePresence>
       <div className="flex">
         {/* <div className="sticky left-0 h-screen top-0 w-12 min-w-12 z-10 flex items-start justify-center py-5">
           <div>
