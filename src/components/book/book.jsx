@@ -14,11 +14,17 @@ import BookDrawer from "@/components/book/BookDrawer.jsx";
 const Book = (props) => {
   const [coverUrl, setCoverUrl] = useState(null);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { book, onImageLoad } = props;
   const { id, title, cover_url } = book;
   const [isHovered, setIsHovered] = useState(false);
 
   const drawerRef = useRef();
+
+  // Ensure drawer only renders on client to avoid hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!cover_url) return;
@@ -60,12 +66,14 @@ const Book = (props) => {
 
   return (
     <>
-      <BookDrawer
-        ref={drawerRef}
-        book={book}
-        coverUrl={coverUrl}
-        onClose={closeDrawer}
-      />
+      {mounted && (
+        <BookDrawer
+          ref={drawerRef}
+          book={book}
+          coverUrl={coverUrl}
+          onClose={closeDrawer}
+        />
+      )}
 
       <div
         className="ham"

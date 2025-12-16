@@ -6,12 +6,14 @@ import { AnimatePresence } from "motion/react";
 import Navigation from "@/components/navigation/Navigation";
 
 export default function HomePage(props) {
-  const { isLoggedIn } = props;
+  const { isLoggedIn, initialBooks = [] } = props;
   const pageSize = 45;
-  const [books, setBooks] = useState([]);
-  const [page, setPage] = useState(0);
+  const [books, setBooks] = useState(initialBooks);
+  const [page, setPage] = useState(initialBooks.length > 0 ? 1 : 0); // Start at page 1 if we have initial books
   const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(
+    initialBooks.length === 0
+  );
   const [hasMore, setHasMore] = useState(true);
   const [itemsPerRow, setItemsPerRow] = useState(9);
   const [rowHeights, setRowHeights] = useState({}); // Store height for each row
@@ -51,7 +53,10 @@ export default function HomePage(props) {
   }, []);
 
   useEffect(() => {
-    fetchMoreBooks(true);
+    // Only fetch more books if we don't have initial books
+    if (initialBooks.length === 0) {
+      fetchMoreBooks(true);
+    }
   }, []);
 
   // Update row heights after images load
@@ -164,7 +169,7 @@ export default function HomePage(props) {
 
   return (
     <>
-      {/* <AnimatePresence>{initialLoading && <LoadingEffect />}</AnimatePresence> */}
+      <AnimatePresence>{initialLoading && <LoadingEffect />}</AnimatePresence>
       <div className="flex">
         {/* <div className="sticky left-0 h-screen top-0 w-12 min-w-12 z-10 flex items-start justify-center py-5">
           <div>
