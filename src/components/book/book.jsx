@@ -76,7 +76,7 @@ const Book = (props) => {
       )}
 
       <div
-        className="ham"
+        className="z-10"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
@@ -87,17 +87,28 @@ const Book = (props) => {
               onClick={openDrawer}
             >
               <div className="flex flex-col gap-1 relative z-10" key={id}>
-                {coverUrl && (
-                  <img
-                    src={coverUrl}
-                    alt={`${title} cover`}
-                    className={`w-full h-auto shadow-[0_0_64px_8px_rgba(0,0,0,0.2)] transform transition-all duration-200 ease-in-out rounded-sm ${
-                      isHovered ? "-translate-y-2" : "hover:-translate-y-2"
-                    }`}
-                    onLoad={onImageLoad}
-                    loading="lazy"
-                  />
-                )}
+                <div className="relative w-full">
+                  {/* Skeleton placeholder shown until image loads */}
+                  {!imageLoaded && (
+                    <div
+                      className="w-full bg-[#e0e0e0] rounded-sm animate-pulse"
+                      style={{ aspectRatio: "2 / 3" }}
+                    />
+                  )}
+                  {coverUrl && (
+                    <img
+                      src={coverUrl}
+                      alt={`${title} cover`}
+                      className={`w-full h-auto transform transition-all duration-200 ease-in-out rounded-sm ${
+                        imageLoaded ? "opacity-100" : "opacity-0"
+                      } ${imageLoaded ? "" : "absolute top-0 left-0"} ${
+                        isHovered ? "-translate-y-2" : "hover:-translate-y-2"
+                      }`}
+                      onLoad={handleImageLoad}
+                      loading="lazy"
+                    />
+                  )}
+                </div>
               </div>
               <div className="w-full h-full absolute top-0 left-0 z-0"></div>
               {/* Invisible buffer area */}

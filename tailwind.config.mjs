@@ -15,10 +15,10 @@ export default {
       colors: {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
-        border: "hsl(var(--border))",
+        border: "#DDDDDD",
         bookLightDark: "#F0F0F0",
         bookLightLight: "#F8F8F8",
-        textPrimary: "#2100FF",
+        textPrimary: "#565656",
         textSecondary: "#757190",
         card: {
           DEFAULT: "hsl(var(--card))",

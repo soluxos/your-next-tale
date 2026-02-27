@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import Book from "@/components/book/book";
 import LoadingEffect from "@/components/loadingEffect/LoadingEffect";
+import Hero from "@/components/pages/home/Hero";
 import { AnimatePresence } from "motion/react";
 import Navigation from "@/components/navigation/Navigation";
 
@@ -170,13 +171,61 @@ export default function HomePage(props) {
   return (
     <>
       <AnimatePresence>{initialLoading && <LoadingEffect />}</AnimatePresence>
+      <Hero />
       <div className="flex">
         {/* <div className="sticky left-0 h-screen top-0 w-12 min-w-12 z-10 flex items-start justify-center py-5">
           <div>
             <img src="/icons/logo.svg" alt="logo" className="w-6" />
           </div>
         </div> */}
-        <div className="grid grid-cols-[16px_auto_16px] pb-[88px] w-full">
+        <div className="grid grid-cols-[16px_auto_16px] pb-[88px] w-full relative">
+          {/* Top shelf surface: left angle + center bar + right angle */}
+          <div className="col-span-3 flex h-[40px]">
+            {/* Left angled section */}
+            <div className="w-[40px] shrink-0 relative overflow-hidden">
+              <svg
+                width="40"
+                height="40"
+                viewBox="0 0 40 40"
+                aria-hidden="true"
+                style={{ display: "block" }}
+              >
+                <polygon points="0,40 40,40 40,0" fill="#F5F5F5" />
+                <line
+                  x1="0"
+                  y1="40"
+                  x2="40"
+                  y2="0"
+                  stroke="#dddddd"
+                  strokeWidth="1"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
+            </div>
+            {/* Center bar */}
+            <div className="flex-1 bg-[#F5F5F5] border-t border-[#dddddd]" />
+            {/* Right angled section */}
+            <div className="w-[40px] shrink-0 relative overflow-hidden">
+              <svg
+                width="40"
+                height="40"
+                viewBox="0 0 40 40"
+                aria-hidden="true"
+                style={{ display: "block" }}
+              >
+                <polygon points="0,0 0,40 40,40" fill="#F5F5F5" />
+                <line
+                  x1="0"
+                  y1="0"
+                  x2="40"
+                  y2="40"
+                  stroke="#dddddd"
+                  strokeWidth="1"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
+            </div>
+          </div>
           <div className="w-4 h-full border border-solid border-border"></div>
           <div className="flex-1 flex-col w-full h-full">
             <div className="left-border w-full h-4 border-1 border-border border flex border-r-0 border-l-0"></div>
@@ -190,38 +239,87 @@ export default function HomePage(props) {
                         rowRefs.current[rowIndex] = el;
                       }
                     }}
-                    className="row min-h-28 bg-[linear-gradient(to_bottom,_#F0F0F0,_#F8F8F8)] grid grid-cols-2 xs:grid-cols-4 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-2 p-2 pb-0 pt-4 items-end overflow-hidden"
+                    className="row flex flex-row items-stretch bg-[#F4F4F4] overflow-hidden"
                     style={{
                       minHeight: rowHeights[rowIndex]
                         ? `${rowHeights[rowIndex]}px`
                         : "160px"
                     }}
                   >
-                    {row.map((book, bookIndex) => (
-                      <div
-                        key={book.id}
-                        className="w-full"
-                        ref={(el) => {
-                          if (!book.placeholder) {
-                            bookRefs.current[
-                              rowIndex * itemsPerRow + bookIndex
-                            ] = el;
-                          }
-                        }}
+                    {/* Left inner shelf panel: rectangle + fixed angled SVG at bottom */}
+                    <div className="flex flex-col shrink-0 w-[40px]">
+                      <div className="flex-1 bg-[#E6E6E6]" />
+                      <svg
+                        width="40"
+                        height="40"
+                        viewBox="0 0 40 40"
+                        aria-hidden="true"
+                        style={{ display: "block", flexShrink: 0 }}
                       >
-                        {!book.placeholder && (
-                          <Book
-                            book={book}
-                            onImageLoad={() => handleImageLoad(book.id)}
-                            {...book}
-                          />
-                        )}
+                        <polygon
+                          points="0,0 40,0 0,40"
+                          style={{ fill: "#E6E6E6" }}
+                        />
+                        <polygon
+                          points="40,0 40,40 0,40"
+                          style={{ fill: "transparent" }}
+                        />
+                      </svg>
+                    </div>
+
+                    {/* Books grid */}
+                    <div className="flex-1 flex flex-col overflow-hidden relative">
+                      <div className="flex-1 grid grid-cols-2 xs:grid-cols-4 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-2 p-2 pb-2 pt-4 items-end overflow-hidden bg-[#d5d5d5]">
+                        {row.map((book, bookIndex) => (
+                          <div
+                            key={book.id}
+                            className="w-full"
+                            ref={(el) => {
+                              if (!book.placeholder) {
+                                bookRefs.current[
+                                  rowIndex * itemsPerRow + bookIndex
+                                ] = el;
+                              }
+                            }}
+                          >
+                            {!book.placeholder && (
+                              <Book
+                                book={book}
+                                onImageLoad={() => handleImageLoad(book.id)}
+                                {...book}
+                              />
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                      {/* Bottom bar matching the height of the corner SVGs */}
+                      <div className="h-[40px] w-full bg-[#f5f5f5] shrink-0 absolute bottom-0 left-0 z-[1]" />
+                    </div>
+
+                    {/* Right inner shelf panel: rectangle + fixed angled SVG at bottom */}
+                    <div className="flex flex-col shrink-0 w-[40px]">
+                      <div className="flex-1 bg-[#E0E0E0]" />
+                      <svg
+                        width="40"
+                        height="40"
+                        viewBox="0 0 40 40"
+                        aria-hidden="true"
+                        style={{ display: "block", flexShrink: 0 }}
+                      >
+                        <polygon
+                          points="0,0 40,0 40,40"
+                          style={{ fill: "#E0E0E0" }}
+                        />
+                        <polygon
+                          points="0,0 0,40 40,40"
+                          style={{ fill: "transparent" }}
+                        />
+                      </svg>
+                    </div>
                   </div>
                   <div
                     id={`row-${rowIndex}`}
-                    className="h-4 border-1 border-border border flex border-r-0 border-l-0 w-full"
+                    className="h-4 flex w-full border-t border-b border-[#ddd] bg-[#F4F4F4]"
                   ></div>
                 </React.Fragment>
               ))}
