@@ -18,12 +18,10 @@ export default function HomePage(props) {
   );
   const [hasMore, setHasMore] = useState(true);
   const [itemsPerRow, setItemsPerRow] = useState(9);
-  const [rowHeights, setRowHeights] = useState({}); // Store height for each row
   const bookRefs = useRef([]);
   const observerRef = useRef(null);
   const [imagesLoaded, setImagesLoaded] = useState(0);
   const loadedImages = useRef(new Set()); // Track loaded images to prevent duplicate calls
-  const rowRefs = useRef({}); // Store refs for each row
 
   useEffect(() => {
     const handleResize = () => {
@@ -37,8 +35,6 @@ export default function HomePage(props) {
       } else {
         setItemsPerRow(2);
       }
-      // Reset row heights on resize to recalculate
-      setRowHeights({});
     };
 
     handleResize();
@@ -60,16 +56,6 @@ export default function HomePage(props) {
       fetchMoreBooks(true);
     }
   }, []);
-
-  // Update row heights after images load
-  useEffect(() => {
-    if (books.length > 0) {
-      // Use requestAnimationFrame to ensure DOM has updated
-      requestAnimationFrame(() => {
-        updateRowHeights();
-      });
-    }
-  }, [books, itemsPerRow, imagesLoaded]);
 
   useEffect(() => {
     if (!initialLoading && observerRef.current) {
@@ -115,23 +101,6 @@ export default function HomePage(props) {
     setTimeout(() => {
       if (!isInitialLoad) setLoading(false);
     }, 500);
-  };
-
-  const updateRowHeights = () => {
-    const newRowHeights = { ...rowHeights };
-
-    Object.keys(rowRefs.current).forEach((rowIndex) => {
-      const rowElement = rowRefs.current[rowIndex];
-      if (rowElement && !newRowHeights[rowIndex]) {
-        // Only set height if not already set (prevents layout shift)
-        const height = rowElement.offsetHeight;
-        if (height > 0) {
-          newRowHeights[rowIndex] = Math.max(height, 160); // Min height of 160px
-        }
-      }
-    });
-
-    setRowHeights(newRowHeights);
   };
 
   const chunkBooks = (books, itemsPerRow) => {
@@ -236,17 +205,7 @@ export default function HomePage(props) {
                 <React.Fragment key={rowIndex}>
                   <div
                     key={rowIndex}
-                    ref={(el) => {
-                      if (el) {
-                        rowRefs.current[rowIndex] = el;
-                      }
-                    }}
                     className="row flex flex-row items-stretch bg-[#F4F4F4] overflow-hidden"
-                    style={{
-                      minHeight: rowHeights[rowIndex]
-                        ? `${rowHeights[rowIndex]}px`
-                        : "160px"
-                    }}
                   >
                     {/* Left inner shelf panel: rectangle + fixed angled SVG at bottom */}
                     <div className="flex flex-col shrink-0 w-[40px]">

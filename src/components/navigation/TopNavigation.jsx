@@ -89,7 +89,7 @@ export default function TopNavigation({ user }) {
       }}
       className="fixed top-0 left-0 right-0 z-50 px-6 py-4"
     >
-      <div className="max-w-full px-5 mx-auto flex items-center justify-between">
+      <div className="max-w-full px-5 mx-auto flex items-center justify-between md:grid md:grid-cols-3">
         {/* Logo */}
         <a href="/" className="flex items-center gap-3">
           <span className="font-ppMondwest text-[18px] text-textPrimary">
@@ -99,7 +99,7 @@ export default function TopNavigation({ user }) {
 
         {/* Center Navigation */}
         <nav
-          className="hidden md:flex items-center relative"
+          className="hidden md:flex justify-center items-center relative"
           ref={searchContainerRef}
         >
           <div className="bg-white border border-border rounded-[8px] flex items-center p-1 shadow-sm">
@@ -129,9 +129,9 @@ export default function TopNavigation({ user }) {
               </a>
             ))}
             {/* Divider */}
-            <div className="w-px h-5 bg-border mx-1" />
+            {/* <div className="w-px h-5 bg-border mx-1" /> */}
             {/* Search Button */}
-            <button
+            {/* <button
               onClick={() => setSearchOpen(!searchOpen)}
               className={cn(
                 "relative px-3 py-2 font-departureMono uppercase text-[11px] transition-colors rounded-[6px] flex items-center gap-1.5",
@@ -154,7 +154,7 @@ export default function TopNavigation({ user }) {
                 <path d="m21 21-4.35-4.35" />
               </svg>
               <span>Search</span>
-            </button>
+            </button> */}
           </div>
 
           {/* Search Dropdown */}
@@ -246,7 +246,7 @@ export default function TopNavigation({ user }) {
         </nav>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-end gap-3">
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -318,16 +318,15 @@ export default function TopNavigation({ user }) {
               <>
                 <a
                   href="/login"
-                  className="hidden sm:flex h-9 px-4 items-center justify-center font-departureMono uppercase text-[11px] text-textSecondary rounded-[8px] bg-white border border-border hover:bg-[#f4f4f4] transition-colors"
+                  className="hidden md:flex h-9 px-4 items-center justify-center font-departureMono uppercase text-[11px] text-textSecondary rounded-[8px] bg-white border border-border hover:bg-[#f4f4f4] transition-colors"
                 >
                   Sign In
                 </a>
                 <a
-                  href="/login"
-                  className="h-9 px-4 flex items-center justify-center gap-2 font-departureMono uppercase text-[11px] text-white rounded-[8px] bg-[#1f1f1f] hover:bg-[#353535] transition-colors"
+                  href="/get-started"
+                  className="hidden md:flex h-9 px-4 items-center justify-center gap-2 font-departureMono uppercase text-[11px] text-white rounded-[8px] bg-[#1f1f1f] hover:bg-[#353535] transition-colors"
                 >
-                  <span className="hidden sm:inline">Get Started</span>
-                  <span className="sm:hidden">Start</span>
+                  Get Started
                   <svg
                     width="12"
                     height="12"
@@ -392,6 +391,61 @@ export default function TopNavigation({ user }) {
                 </svg>
                 Search
               </a>
+              {mounted && (
+                <>
+                  <div className="h-px bg-border my-1" />
+                  {isLoggedIn ? (
+                    <>
+                      <div className="px-4 py-2">
+                        <p className="font-departureMono uppercase text-[10px] text-textSecondary truncate">
+                          {fullName || user?.email}
+                        </p>
+                      </div>
+                      <a
+                        href="/account"
+                        className="px-4 py-3 font-departureMono uppercase text-[11px] text-textSecondary rounded-[6px] hover:bg-[#f4f4f4] hover:text-textPrimary transition-colors"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        Account Settings
+                      </a>
+                      <button
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          handleSignOut();
+                        }}
+                        className="px-4 py-3 font-departureMono uppercase text-[11px] text-red-500 rounded-[6px] hover:bg-[#f4f4f4] transition-colors text-left"
+                      >
+                        Sign Out
+                      </button>
+                    </>
+                  ) : (
+                    <div className="flex flex-col gap-2 p-2 pt-1">
+                      <a
+                        href="/login"
+                        className="w-full h-10 flex items-center justify-center font-departureMono uppercase text-[11px] text-textPrimary rounded-[8px] bg-[#f4f4f4] hover:bg-[#eaeaea] transition-colors"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        Sign In
+                      </a>
+                      <a
+                        href="/get-started"
+                        className="w-full h-10 flex items-center justify-center gap-2 font-departureMono uppercase text-[11px] text-white rounded-[8px] bg-[#1f1f1f] hover:bg-[#353535] transition-colors"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        Get Started
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                        >
+                          <path d="M13.172 12l-4.95-4.95 1.414-1.414L16 12l-6.364 6.364-1.414-1.414z" />
+                        </svg>
+                      </a>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </motion.div>
         )}

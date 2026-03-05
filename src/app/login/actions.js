@@ -52,7 +52,7 @@ export async function signup(formData) {
 
   // If Supabase requires email confirmation, session will be null
   if (!data.session) {
-    redirect("/login?message=check-email");
+    redirect("/get-started?message=check-email");
   }
 
   revalidatePath("/", "layout");

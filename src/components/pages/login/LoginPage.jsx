@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { login, signup } from "@/app/login/actions";
+import { useState } from "react";
+import { login } from "@/app/login/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,10 +16,7 @@ import {
 export default function LoginPage({ message }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isSignup, setIsSignup] = useState(false);
-  const isSignupRef = useRef(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState(
     message === "check-email"
@@ -34,14 +31,11 @@ export default function LoginPage({ message }) {
     setSuccessMessage("");
     const formData = new FormData(e.target);
     try {
-      const result = isSignupRef.current
-        ? await signup(formData)
-        : await login(formData);
+      const result = await login(formData);
       if (result?.error) {
         setErrorMessage(result.error);
       }
     } catch (err) {
-      // redirect() throws a special error in Next.js — let it propagate
       if (
         err?.message === "NEXT_REDIRECT" ||
         err?.digest?.startsWith("NEXT_REDIRECT")
@@ -52,14 +46,6 @@ export default function LoginPage({ message }) {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const switchMode = () => {
-    const next = !isSignupRef.current;
-    isSignupRef.current = next;
-    setIsSignup(next);
-    setErrorMessage("");
-    setSuccessMessage("");
   };
 
   return (
@@ -80,38 +66,14 @@ export default function LoginPage({ message }) {
       <Card className="w-full max-w-[380px] shadow-sm border-gray-200">
         <CardHeader className="p-6 pb-0">
           <CardTitle className="text-xl font-ppMondwest text-textPrimary">
-            {isSignup ? "Create an account" : "Welcome back"}
+            Welcome back
           </CardTitle>
           <CardDescription className="font-departureMono uppercase text-[11px] text-textSecondary mt-2">
-            {isSignup
-              ? "Enter your details to get started"
-              : "Sign in to your account to continue"}
+            Sign in to your account to continue
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
-            {isSignup && (
-              <div className="space-y-2">
-                <Label
-                  htmlFor="full_name"
-                  className="font-departureMono uppercase text-[11px] text-textPrimary"
-                >
-                  Full name
-                </Label>
-                <Input
-                  id="full_name"
-                  name="full_name"
-                  type="text"
-                  placeholder="Jane Doe"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="h-10 bg-white border-gray-200 focus:border-gray-400"
-                  required={isSignup}
-                  autoComplete="name"
-                />
-              </div>
-            )}
-
             <div className="space-y-2">
               <Label
                 htmlFor="email"
@@ -140,14 +102,12 @@ export default function LoginPage({ message }) {
                 >
                   Password
                 </Label>
-                {!isSignup && (
-                  <a
-                    href="#"
-                    className="font-departureMono uppercase text-[10px] text-textSecondary hover:text-textPrimary transition-colors"
-                  >
-                    Forgot password?
-                  </a>
-                )}
+                <a
+                  href="#"
+                  className="font-departureMono uppercase text-[10px] text-textSecondary hover:text-textPrimary transition-colors"
+                >
+                  Forgot password?
+                </a>
               </div>
               <Input
                 id="password"
@@ -158,14 +118,8 @@ export default function LoginPage({ message }) {
                 onChange={(e) => setPassword(e.target.value)}
                 className="h-10 bg-white border-gray-200 focus:border-gray-400"
                 required
-                minLength={isSignup ? 8 : undefined}
-                autoComplete={isSignup ? "new-password" : "current-password"}
+                autoComplete="current-password"
               />
-              {isSignup && (
-                <p className="font-departureMono uppercase text-[10px] text-textSecondary">
-                  Minimum 8 characters
-                </p>
-              )}
             </div>
 
             {errorMessage && (
@@ -179,33 +133,26 @@ export default function LoginPage({ message }) {
               </p>
             )}
 
-            <div className="pt-2 flex flex-col gap-2">
+            <div className="pt-2">
               <Button
                 type="submit"
                 className="w-full h-10"
                 disabled={isLoading}
               >
-                {isLoading
-                  ? isSignup
-                    ? "Creating account..."
-                    : "Signing in..."
-                  : isSignup
-                    ? "Create account"
-                    : "Sign in"}
+                {isLoading ? "Signing in..." : "Sign in"}
               </Button>
             </div>
           </form>
 
           <div className="mt-4 text-center">
             <p className="font-departureMono uppercase text-[11px] text-textSecondary">
-              {isSignup ? "Already have an account?" : "Don't have an account?"}{" "}
-              <button
-                type="button"
-                onClick={switchMode}
+              Don&apos;t have an account?{" "}
+              <a
+                href="/get-started"
                 className="text-textPrimary underline underline-offset-2 hover:opacity-70 transition-opacity"
               >
-                {isSignup ? "Sign in" : "Sign up"}
-              </button>
+                Get started
+              </a>
             </p>
           </div>
         </CardContent>

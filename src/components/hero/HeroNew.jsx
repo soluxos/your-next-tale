@@ -17,7 +17,7 @@ export default function HeroNew() {
         >
           <span className="w-2 h-2 rounded-full bg-[#2BD26B] animate-pulse" />
           <span className="font-departureMono uppercase text-[10px] text-textSecondary">
-            Now with community shelves
+            Signups open now
           </span>
         </motion.div>
 
@@ -31,11 +31,9 @@ export default function HeroNew() {
             damping: 25,
             delay: 0.1
           }}
-          className="text-textPrimary text-[40px] sm:text-[52px] leading-[1.1] font-ppMondwest"
+          className="text-textPrimary text-[40px] sm:text-[48px] leading-[1.1] font-ppMondwest"
         >
-          Build your perfect
-          <br />
-          <span className="text-[#348DFC]">bookshelf</span>
+          Discover new books, fill your personal bookcase
         </motion.h1>
 
         {/* Subtitle */}
@@ -48,7 +46,7 @@ export default function HeroNew() {
             damping: 25,
             delay: 0.15
           }}
-          className="text-textSecondary text-[16px] sm:text-[18px] leading-[1.5] max-w-[520px] font-ppMondwest"
+          className="text-textSecondary text-[16px] leading-[1.5] max-w-[640px] font-ppMondwest"
         >
           Create custom bookshelves, discover hand-curated fantasy and sci-fi
           reads, and share your collection with fellow book lovers.
