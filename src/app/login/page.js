@@ -1,6 +1,7 @@
-import { login, signup } from "./actions";
 import LoginPage from "@/components/pages/login/LoginPage";
 
-export default function Login() {
-  return <LoginPage login={login} signup={signup} />;
+export default async function Login({ searchParams }) {
+  const params = await searchParams;
+  const message = params?.message || null;
+  return <LoginPage message={message} />;
 }

@@ -5,6 +5,7 @@ import LoadingEffect from "@/components/loadingEffect/LoadingEffect";
 import Hero from "@/components/pages/home/Hero";
 import { AnimatePresence } from "motion/react";
 import Navigation from "@/components/navigation/Navigation";
+import HeroNew from "@/components/hero/HeroNew";
 
 export default function HomePage(props) {
   const { isLoggedIn, initialBooks = [] } = props;
@@ -171,7 +172,8 @@ export default function HomePage(props) {
   return (
     <>
       <AnimatePresence>{initialLoading && <LoadingEffect />}</AnimatePresence>
-      <Hero />
+      {/* <Hero /> */}
+      <HeroNew />
       <div className="flex">
         {/* <div className="sticky left-0 h-screen top-0 w-12 min-w-12 z-10 flex items-start justify-center py-5">
           <div>
@@ -330,7 +332,7 @@ export default function HomePage(props) {
         </div>
       </div>
       <div className="book-case-bottom-gradient z-20"></div>
-      {!initialLoading && <Navigation isLoggedIn={isLoggedIn} />}
+      {/* {!initialLoading && <Navigation isLoggedIn={isLoggedIn} />} */}
     </>
   );
 }

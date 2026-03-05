@@ -1,45 +1,60 @@
-"use server"
+"use server";
 
-import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
-import { createClient } from "@/utils/supabase/server"
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { createClient } from "@/utils/supabase/server";
 
 export async function login(formData) {
-  const supabase = await createClient()
+  const supabase = await createClient();
 
-  // type-casting here for convenience
-  // in practice, you should validate your inputs
   const data = {
     email: formData.get("email"),
     password: formData.get("password")
-  }
+  };
 
-  const { error } = await supabase.auth.signInWithPassword(data)
+  const { error } = await supabase.auth.signInWithPassword(data);
 
   if (error) {
-    console.log("error is", error)
-    redirect("/error")
+    return { error: error.message };
   }
 
-  revalidatePath("/", "layout")
-  redirect("/account")
+  revalidatePath("/", "layout");
+  redirect("/account");
 }
 
 export async function signup(formData) {
-  const supabase = await createClient()
+  const supabase = await createClient();
 
-  const data = {
-    email: formData.get("email"),
-    password: formData.get("password")
-  }
+  const email = formData.get("email");
+  const password = formData.get("password");
+  const fullName = formData.get("full_name") || "";
 
-  const { error } = await supabase.auth.signUp(data)
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { full_name: fullName }
+    }
+  });
 
   if (error) {
-    console.log("error is", error)
-    redirect("/error")
+    return { error: error.message };
   }
 
-  revalidatePath("/", "layout")
-  redirect("/account")
+  // Create profile record
+  if (data.user) {
+    await supabase.from("profiles").upsert({
+      id: data.user.id,
+      full_name: fullName,
+      updated_at: new Date().toISOString()
+    });
+  }
+
+  // If Supabase requires email confirmation, session will be null
+  if (!data.session) {
+    redirect("/login?message=check-email");
+  }
+
+  revalidatePath("/", "layout");
+  redirect("/account");
 }
