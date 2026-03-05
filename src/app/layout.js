@@ -4,6 +4,7 @@ import "./globals.css";
 import Script from "next/script";
 import Navigation from "../components/navigation/Navigation"; // Import the Navigation component
 import { createClient } from "@/utils/supabase/server";
+import TopNavigation from "@/components/navigation/TopNavigation";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -61,6 +62,7 @@ export default async function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased text-foreground relative`}
       >
         <div aria-hidden="true" className="noise-overlay" />
+        <TopNavigation user={user} />
         {children}
         <Script src="https://scripts.simpleanalyticscdn.com/latest.js" />
       </body>
