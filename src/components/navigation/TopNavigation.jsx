@@ -87,9 +87,9 @@ export default function TopNavigation({ user }) {
         damping: 25,
         duration: 0.6
       }}
-      className="fixed top-0 left-0 right-0 z-50 px-6 py-4"
+      className="z-50 px-6 py-4"
     >
-      <div className="max-w-full px-5 mx-auto flex items-center justify-between md:grid md:grid-cols-3">
+      <div className="max-w-full w-full px-5 mx-auto flex items-center justify-between md:grid md:grid-cols-2">
         {/* Logo */}
         <a href="/" className="flex items-center gap-3">
           <span className="font-ppMondwest text-[18px] text-textPrimary">
@@ -98,152 +98,6 @@ export default function TopNavigation({ user }) {
         </a>
 
         {/* Center Navigation */}
-        <nav
-          className="hidden md:flex justify-center items-center relative"
-          ref={searchContainerRef}
-        >
-          <div className="bg-white border border-border rounded-[8px] flex items-center p-1 shadow-sm">
-            {navItems.map((item) => (
-              <a
-                key={item.id}
-                href={item.href}
-                onClick={(e) => {
-                  e.preventDefault();
-                  setActiveItem(item.id);
-                }}
-                className={cn(
-                  "relative px-4 py-2 font-departureMono uppercase text-[11px] transition-colors rounded-[6px]",
-                  activeItem === item.id
-                    ? "text-textPrimary"
-                    : "text-textSecondary hover:text-textPrimary"
-                )}
-              >
-                {activeItem === item.id && (
-                  <motion.div
-                    layoutId="activeNavBg"
-                    className="absolute inset-0 bg-[#f4f4f4] rounded-[6px]"
-                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                  />
-                )}
-                <span className="relative z-10">{item.label}</span>
-              </a>
-            ))}
-            {/* Divider */}
-            {/* <div className="w-px h-5 bg-border mx-1" /> */}
-            {/* Search Button */}
-            {/* <button
-              onClick={() => setSearchOpen(!searchOpen)}
-              className={cn(
-                "relative px-3 py-2 font-departureMono uppercase text-[11px] transition-colors rounded-[6px] flex items-center gap-1.5",
-                searchOpen
-                  ? "text-textPrimary bg-[#f4f4f4]"
-                  : "text-textSecondary hover:text-textPrimary"
-              )}
-            >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.35-4.35" />
-              </svg>
-              <span>Search</span>
-            </button> */}
-          </div>
-
-          {/* Search Dropdown */}
-          <AnimatePresence>
-            {searchOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: -8, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -8, scale: 0.96 }}
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[400px]"
-              >
-                <div className="bg-white border border-border rounded-[8px] shadow-lg p-3">
-                  <div className="flex items-center gap-3 px-3 py-2 bg-[#f9f9fb] rounded-[6px] border border-border">
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="text-textSecondary shrink-0"
-                    >
-                      <circle cx="11" cy="11" r="8" />
-                      <path d="m21 21-4.35-4.35" />
-                    </svg>
-                    <input
-                      ref={searchInputRef}
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search books, authors, shelves..."
-                      className="w-full bg-transparent border-none outline-none font-ppMondwest text-[14px] text-textPrimary placeholder:text-textSecondary"
-                      onKeyDown={(e) => {
-                        if (e.key === "Escape") {
-                          setSearchOpen(false);
-                          setSearchQuery("");
-                        }
-                      }}
-                    />
-                    {searchQuery && (
-                      <button
-                        onClick={() => setSearchQuery("")}
-                        className="shrink-0 w-5 h-5 flex items-center justify-center rounded hover:bg-white transition-colors"
-                      >
-                        <svg
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="text-textSecondary"
-                        >
-                          <line x1="18" y1="6" x2="6" y2="18" />
-                          <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Quick suggestions */}
-                  <div className="mt-3 pt-3 border-t border-border">
-                    <p className="font-departureMono uppercase text-[10px] text-textSecondary mb-2 px-1">
-                      Quick searches
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {["Fantasy", "Sci-Fi", "New Releases", "Popular"].map(
-                        (tag) => (
-                          <button
-                            key={tag}
-                            onClick={() => setSearchQuery(tag)}
-                            className="px-3 py-1.5 font-departureMono uppercase text-[10px] text-textSecondary bg-[#f4f4f4] hover:bg-[#eaeaea] rounded-[6px] transition-colors"
-                          >
-                            {tag}
-                          </button>
-                        )
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </nav>
 
         {/* Right Actions */}
         <div className="flex items-center justify-end gap-3">

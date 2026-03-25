@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import Script from "next/script";
 import Navigation from "../components/navigation/Navigation"; // Import the Navigation component
@@ -8,18 +9,32 @@ import TopNavigation from "@/components/navigation/TopNavigation";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
-  subsets: ["latin"]
+  subsets: ["latin"],
+  display: "swap"
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
-  subsets: ["latin"]
+  subsets: ["latin"],
+  display: "swap"
 });
 
 const inter = Inter({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-inter" // optional if using with Tailwind
+  variable: "--font-inter"
+});
+
+const ppMondwest = localFont({
+  src: "../../public/fonts/PPMondwest-Regular.woff2",
+  variable: "--font-pp-mondwest",
+  display: "block"
+});
+
+const departureMono = localFont({
+  src: "../../public/fonts/departuremono-regular-webfont.woff2",
+  variable: "--font-departure-mono",
+  display: "block"
 });
 
 export const metadata = {
@@ -57,7 +72,7 @@ export default async function RootLayout({ children }) {
   } = await supabase.auth.getUser(); // Use getUser() for secure authentication
 
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={`${inter.variable} ${ppMondwest.variable} ${departureMono.variable}`}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased text-foreground relative`}
       >

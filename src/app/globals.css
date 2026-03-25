@@ -72,23 +72,6 @@ h6 {
   isolation: isolate;
 }
 
-@font-face {
-  font-family: "departure_monoregular";
-  src:
-    url("/fonts/departuremono-regular-webfont.woff2") format("woff2"),
-    url("/fonts/departuremono-regular-webfont.woff") format("woff");
-  font-weight: normal;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: "ppmondwest";
-  src:
-    url("/fonts/PPMondwest-Regular.woff2") format("woff2"),
-    url("/fonts/PPMondwest-Regular.woff") format("woff");
-  font-weight: normal;
-  font-style: normal;
-}
 
 html {
   height: 100%;
@@ -102,9 +85,8 @@ body {
   background-color: #f9f9fb;
 }
 
-body.books-page::before {
-  content: "";
-  position: fixed; /* Change to fixed to ensure it stays in place */
+.scanlines-overlay {
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
@@ -116,20 +98,19 @@ body.books-page::before {
     transparent 2px,
     transparent 4px
   );
-  pointer-events: none; /* Ensure it doesn't block user interactions */
-  z-index: 9999; /* Keep it above all other elements */
+  pointer-events: none;
+  z-index: 9999;
   animation: scanlines 0.2s infinite linear;
 }
 
-body.books-page::after {
-  content: "";
+.vignette-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: 9998; /* Below scanlines */
+  z-index: 9998;
   background: radial-gradient(
     circle at center,
     transparent 70%,

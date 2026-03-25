@@ -42,14 +42,6 @@ export default function HomePage(props) {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Add a class to the body before the page is loaded
-  useEffect(() => {
-    document.body.classList.add("books-page");
-    return () => {
-      document.body.classList.remove("books-page");
-    };
-  }, []);
-
   useEffect(() => {
     // Only fetch more books if we don't have initial books
     if (initialBooks.length === 0) {
@@ -140,6 +132,8 @@ export default function HomePage(props) {
 
   return (
     <>
+      <div aria-hidden="true" className="scanlines-overlay" />
+      <div aria-hidden="true" className="vignette-overlay" />
       <AnimatePresence>{initialLoading && <LoadingEffect />}</AnimatePresence>
       {/* <Hero /> */}
       <HeroNew />

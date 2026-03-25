@@ -96,8 +96,8 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out"
       },
       fontFamily: {
-        departureMono: ["departure_monoregular", "sans-serif"],
-        ppMondwest: ["ppmondwest", "sans-serif"],
+        departureMono: ["var(--font-departure-mono)", "monospace"],
+        ppMondwest: ["var(--font-pp-mondwest)", "sans-serif"],
         EB_Garamond: ["EB_Garamond", "serif"],
         inter: ["var(--font-inter)"],
         sans: ["var(--font-inter)"]
