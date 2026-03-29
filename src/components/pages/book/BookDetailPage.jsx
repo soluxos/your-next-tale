@@ -7,8 +7,7 @@ import Link from "next/link";
 
 export default function BookDetailPage({ book }) {
   const [coverUrl, setCoverUrl] = useState(null);
-  const { title, authors, description, cover_url } =
-    book;
+  const { title, authors, description, cover_url } = book;
 
   useEffect(() => {
     if (!cover_url) return;

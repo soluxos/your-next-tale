@@ -1,20 +1,20 @@
-"use client"
-import React, { forwardRef, useImperativeHandle, useRef } from "react"
-import { Drawer } from "vaul"
-import { Button } from "@/components/ui/button"
-import BuyButton from "@/components/book/BuyButton"
+"use client";
+import React, { forwardRef, useImperativeHandle, useRef } from "react";
+import { Drawer } from "vaul";
+import { Button } from "@/components/ui/button";
+import BuyButton from "@/components/book/BuyButton";
 
 const VaulDrawer = forwardRef(({ book, coverUrl }, ref) => {
-  const { title, author, description } = book
-  const triggerRef = useRef()
+  const { title, author, description } = book;
+  const triggerRef = useRef();
 
   useImperativeHandle(ref, () => ({
     open: () => {
       if (triggerRef.current) {
-        triggerRef.current.click()
+        triggerRef.current.click();
       }
     }
-  }))
+  }));
 
   return (
     <Drawer.Root direction="left">
@@ -41,7 +41,11 @@ const VaulDrawer = forwardRef(({ book, coverUrl }, ref) => {
                     stroke="currentColor"
                     strokeWidth={2}
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </Drawer.Close>
               </div>
@@ -90,9 +94,9 @@ const VaulDrawer = forwardRef(({ book, coverUrl }, ref) => {
         </Drawer.Content>
       </Drawer.Portal>
     </Drawer.Root>
-  )
-})
+  );
+});
 
-VaulDrawer.displayName = "VaulDrawer"
+VaulDrawer.displayName = "VaulDrawer";
 
-export default VaulDrawer
+export default VaulDrawer;
