@@ -41,7 +41,8 @@ export async function generateMetadata({ params }) {
 
   return {
     title: `${book.title} by ${book.authors?.[0]} | Your Next Tale`,
-    description: book.description || `Discover ${book.title} by ${book.authors?.[0]}`,
+    description:
+      book.description || `Discover ${book.title} by ${book.authors?.[0]}`,
     openGraph: {
       title: `${book.title} by ${book.authors?.[0]}`,
       description:

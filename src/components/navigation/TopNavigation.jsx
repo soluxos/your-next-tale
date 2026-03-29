@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/utils/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,18 +22,36 @@ export default function TopNavigation({ user }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
+  const [role, setRole] = useState("");
   const [mounted, setMounted] = useState(false);
   const searchInputRef = useRef(null);
   const searchContainerRef = useRef(null);
 
+  const router = useRouter();
   const supabase = createClient();
+
+  const isAdmin = role === "admin";
+
+  const navItems = [
+    { id: "discover", label: "Discover", href: "/" },
+    {
+      id: "profile",
+      label: "My Profile",
+      href: username ? `/u/${encodeURIComponent(username)}` : "/account"
+    },
+    { id: "community", label: "Community", href: "/community" },
+    { id: "admin", label: "Admin", href: "/admin", adminOnly: true }
+  ];
 
   useEffect(() => {
     setMounted(true);
     const path = window.location.pathname;
-    const match = navItems.find(item => item.href === path);
+    const match = navItems.find((item) => item.href === path);
     if (match) setActiveItem(match.id);
-  }, []);
+    if (path.startsWith("/u/")) setActiveItem("profile");
+    if (path.startsWith("/admin")) setActiveItem("admin");
+  }, [username]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -40,12 +59,14 @@ export default function TopNavigation({ user }) {
     async function loadProfile() {
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, avatar_url")
+        .select("full_name, username, avatar_url, role")
         .eq("id", user.id)
         .single();
 
       if (data) {
         setFullName(data.full_name || "");
+        setUsername(data.username || "");
+        setRole(data.role || "");
         if (data.avatar_url) {
           const { data: blob, error } = await supabase.storage
             .from("avatars")
@@ -74,12 +95,6 @@ export default function TopNavigation({ user }) {
     window.location.href = "/";
   };
 
-  const navItems = [
-    { id: "discover", label: "Discover", href: "/" },
-    { id: "bookshelves", label: "My Shelves", href: "/bookshelves" },
-    { id: "community", label: "Community", href: "/community" }
-  ];
-
   return (
     <motion.header
       initial={{ opacity: 0, y: -20 }}
@@ -103,12 +118,21 @@ export default function TopNavigation({ user }) {
         {/* Center Navigation */}
         <nav className="hidden md:flex items-center justify-center gap-1">
           {navItems
-            .filter(item => isLoggedIn || item.id === "discover")
-            .map(item => (
+            .filter((item) => {
+              if (item.adminOnly) return isLoggedIn && isAdmin;
+              return isLoggedIn || item.id === "discover";
+            })
+            .map((item) => (
               <a
                 key={item.id}
                 href={item.href}
-                onClick={() => setActiveItem(item.id)}
+                onClick={(e) => {
+                  if (item.id === "profile") {
+                    e.preventDefault();
+                    router.push(item.href);
+                  }
+                  setActiveItem(item.id);
+                }}
                 className={cn(
                   "px-4 py-2 font-departureMono uppercase text-[11px] rounded-[8px] transition-colors",
                   activeItem === item.id
@@ -118,8 +142,7 @@ export default function TopNavigation({ user }) {
               >
                 {item.label}
               </a>
-            ))
-          }
+            ))}
         </nav>
 
         {/* Right Actions */}
@@ -173,6 +196,26 @@ export default function TopNavigation({ user }) {
                     </p>
                   </div>
                   <DropdownMenuSeparator />
+                  {username && (
+                    <DropdownMenuItem
+                      className="font-departureMono uppercase text-[11px] cursor-pointer"
+                      onClick={() => {
+                        window.location.href = `/u/${encodeURIComponent(username)}`;
+                      }}
+                    >
+                      My Profile
+                    </DropdownMenuItem>
+                  )}
+                  {isAdmin && (
+                    <DropdownMenuItem
+                      className="font-departureMono uppercase text-[11px] cursor-pointer"
+                      onClick={() => {
+                        window.location.href = "/admin";
+                      }}
+                    >
+                      Admin Dashboard
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem
                     className="font-departureMono uppercase text-[11px] cursor-pointer"
                     onClick={() => {
@@ -230,25 +273,32 @@ export default function TopNavigation({ user }) {
           >
             <div className="bg-white border border-border rounded-[8px] shadow-lg p-2 flex flex-col gap-1">
               {navItems
-                .filter(item => isLoggedIn || item.id === "discover")
+                .filter((item) => {
+                  if (item.adminOnly) return isLoggedIn && isAdmin;
+                  return isLoggedIn || item.id === "discover";
+                })
                 .map((item) => (
-                <a
-                  key={item.id}
-                  href={item.href}
-                  onClick={() => {
-                    setActiveItem(item.id);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={cn(
-                    "px-4 py-3 font-departureMono uppercase text-[11px] rounded-[6px] transition-colors",
-                    activeItem === item.id
-                      ? "bg-[#f4f4f4] text-textPrimary"
-                      : "text-textSecondary hover:bg-[#f4f4f4] hover:text-textPrimary"
-                  )}
-                >
-                  {item.label}
-                </a>
-              ))}
+                  <a
+                    key={item.id}
+                    href={item.href}
+                    onClick={(e) => {
+                      if (item.id === "profile") {
+                        e.preventDefault();
+                        router.push(item.href);
+                      }
+                      setActiveItem(item.id);
+                      setMobileMenuOpen(false);
+                    }}
+                    className={cn(
+                      "px-4 py-3 font-departureMono uppercase text-[11px] rounded-[6px] transition-colors",
+                      activeItem === item.id
+                        ? "bg-[#f4f4f4] text-textPrimary"
+                        : "text-textSecondary hover:bg-[#f4f4f4] hover:text-textPrimary"
+                    )}
+                  >
+                    {item.label}
+                  </a>
+                ))}
               <div className="h-px bg-border my-1" />
               <a
                 href="/search"
@@ -279,6 +329,24 @@ export default function TopNavigation({ user }) {
                           {fullName || user?.email}
                         </p>
                       </div>
+                      {username && (
+                        <a
+                          href={`/u/${encodeURIComponent(username)}`}
+                          className="px-4 py-3 font-departureMono uppercase text-[11px] text-textSecondary rounded-[6px] hover:bg-[#f4f4f4] hover:text-textPrimary transition-colors"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          My Profile
+                        </a>
+                      )}
+                      {isAdmin && (
+                        <a
+                          href="/admin"
+                          className="px-4 py-3 font-departureMono uppercase text-[11px] text-textSecondary rounded-[6px] hover:bg-[#f4f4f4] hover:text-textPrimary transition-colors"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          Admin Dashboard
+                        </a>
+                      )}
                       <a
                         href="/account"
                         className="px-4 py-3 font-departureMono uppercase text-[11px] text-textSecondary rounded-[6px] hover:bg-[#f4f4f4] hover:text-textPrimary transition-colors"

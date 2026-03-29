@@ -5,7 +5,7 @@ import PublicShelvesClient from "./PublicShelvesClient";
 export async function generateMetadata({ params }) {
   const { username } = await params;
   return {
-    title: `${username}'s Shelves | Your Next Tale`,
+    title: `${username}'s Shelves | Your Next Tale`
   };
 }
 
@@ -30,7 +30,7 @@ export default async function PublicShelvesPage({ params }) {
 
   // Check if the viewer is the owner
   const {
-    data: { user: viewer },
+    data: { user: viewer }
   } = await supabase.auth.getUser();
 
   const isOwner = viewer?.id === profile.id;
@@ -58,7 +58,8 @@ export default async function PublicShelvesPage({ params }) {
     (shelves || []).map(async (shelf) => {
       const { data: shelfBooks } = await supabase
         .from(TABLES.BOOKSHELF_BOOKS)
-        .select(`
+        .select(
+          `
           id,
           user_book_id,
           user_books (
@@ -71,7 +72,8 @@ export default async function PublicShelvesPage({ params }) {
             date_finished,
             books (id, title, authors, cover_url, page_count, description)
           )
-        `)
+        `
+        )
         .eq("bookshelf_id", shelf.id);
 
       const books = (shelfBooks || [])
@@ -84,8 +86,8 @@ export default async function PublicShelvesPage({ params }) {
             progress_pages: sb.user_books?.progress_pages,
             progress_percent: sb.user_books?.progress_percent,
             date_started: sb.user_books?.date_started,
-            date_finished: sb.user_books?.date_finished,
-          },
+            date_finished: sb.user_books?.date_finished
+          }
         }))
         .filter((b) => b.id);
 

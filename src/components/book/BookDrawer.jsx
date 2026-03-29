@@ -7,11 +7,12 @@ import React, {
 } from "react";
 import { Drawer } from "vaul";
 import { Button } from "@/components/ui/button";
+import BuyButton from "@/components/book/BuyButton";
 import Link from "next/link";
 import { generateBookSlug } from "@/lib/slugify";
 
 const VaulDrawer = forwardRef(({ book, coverUrl }, ref) => {
-  const { id, title, authors, description, amazon_affiliate_link } = book;
+  const { id, title, authors, description } = book;
   const triggerRef = useRef();
   const [copied, setCopied] = useState(false);
 
@@ -79,7 +80,8 @@ const VaulDrawer = forwardRef(({ book, coverUrl }, ref) => {
                         {title}
                       </Drawer.Title>
                       <Drawer.Description className="text-[24px] font-ppMondwest text-textSecondary">
-                        By <span className="text-textPrimary">{authors?.[0]}</span>
+                        By{" "}
+                        <span className="text-textPrimary">{authors?.[0]}</span>
                       </Drawer.Description>
                       <div className="text-[16px] leading-[1.4] font-ppMondwest text-textSecondary mt-2">
                         {description
@@ -93,22 +95,12 @@ const VaulDrawer = forwardRef(({ book, coverUrl }, ref) => {
                     </div>
                   </div>
                   <div className="fixed bottom-8 left-8 w-[calc(100%-64px)] flex gap-4">
-                    {amazon_affiliate_link && (
-                      <Button
-                        asChild
-                        className="text-sm items-center h-[48px] gap-2 flex justify-center font-departureMono uppercase font-normal text-[13px] w-full"
-                        variant="default"
-                      >
-                        <a
-                          href={amazon_affiliate_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Buy on Amazon{" "}
-                          <img src="/icons/trolley.svg" alt="cart" />
-                        </a>
-                      </Button>
-                    )}
+                    <BuyButton
+                      isbn_13={book.isbn_13}
+                      title={book.title}
+                      authors={book.authors}
+                      className="w-full"
+                    />
                     <a
                       href={bookPageUrl}
                       className="rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground text-sm items-center h-[48px] flex justify-center font-departureMono uppercase font-normal text-[13px] w-full gap-2"

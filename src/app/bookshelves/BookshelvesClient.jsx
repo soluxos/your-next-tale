@@ -1,3 +1,4 @@
+// Safe to delete once /u/[username] is confirmed working
 "use client";
 
 import { useState } from "react";
@@ -9,7 +10,7 @@ import {
   createShelf,
   deleteShelf,
   renameShelf,
-  updateShelfOrder,
+  updateShelfOrder
 } from "@/lib/bookshelves";
 import Link from "next/link";
 
@@ -19,32 +20,36 @@ export default function BookshelvesClient({ shelves: initialShelves, userId }) {
   const [newShelfName, setNewShelfName] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState("");
+  const [error, setError] = useState(null);
 
   const handleCreate = async () => {
     if (!newShelfName.trim()) return;
+    setError(null);
     try {
       const shelf = await createShelf(supabase, userId, {
-        name: newShelfName.trim(),
+        name: newShelfName.trim()
       });
       setShelves((prev) => [...prev, { ...shelf, books: [] }]);
       setNewShelfName("");
     } catch (e) {
-      console.error("Error creating shelf:", e);
+      setError(e.message || "Error creating shelf");
     }
   };
 
   const handleDelete = async (shelfId, isDefault) => {
     if (isDefault) return;
+    setError(null);
     try {
       await deleteShelf(supabase, shelfId);
       setShelves((prev) => prev.filter((s) => s.id !== shelfId));
     } catch (e) {
-      console.error("Error deleting shelf:", e);
+      setError(e.message || "Error deleting shelf");
     }
   };
 
   const handleRename = async (shelfId) => {
     if (!editName.trim()) return;
+    setError(null);
     try {
       const updated = await renameShelf(supabase, shelfId, editName.trim());
       setShelves((prev) =>
@@ -57,7 +62,7 @@ export default function BookshelvesClient({ shelves: initialShelves, userId }) {
       setEditingId(null);
       setEditName("");
     } catch (e) {
-      console.error("Error renaming shelf:", e);
+      setError(e.message || "Error renaming shelf");
     }
   };
 
@@ -67,7 +72,7 @@ export default function BookshelvesClient({ shelves: initialShelves, userId }) {
     if (targetIndex < 0 || targetIndex >= newShelves.length) return;
     [newShelves[index], newShelves[targetIndex]] = [
       newShelves[targetIndex],
-      newShelves[index],
+      newShelves[index]
     ];
     setShelves(newShelves);
     try {
@@ -76,7 +81,7 @@ export default function BookshelvesClient({ shelves: initialShelves, userId }) {
         newShelves.map((s) => s.id)
       );
     } catch (e) {
-      console.error("Error reordering shelves:", e);
+      setError(e.message || "Error reordering shelves");
     }
   };
 
@@ -91,6 +96,13 @@ export default function BookshelvesClient({ shelves: initialShelves, userId }) {
             Organise your books into shelves.
           </p>
         </div>
+
+        {/* Inline error display */}
+        {error && (
+          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+            {error}
+          </p>
+        )}
 
         {/* Create new shelf */}
         <div className="flex gap-2">
@@ -190,10 +202,7 @@ export default function BookshelvesClient({ shelves: initialShelves, userId }) {
                 {shelf.books?.length > 0 ? (
                   <div className="flex gap-3 overflow-x-auto pb-2">
                     {shelf.books.map((book) => (
-                      <div
-                        key={book.id}
-                        className="flex-shrink-0 w-20"
-                      >
+                      <div key={book.id} className="flex-shrink-0 w-20">
                         {book.cover_url && (
                           <img
                             src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/books/${book.cover_url}`}

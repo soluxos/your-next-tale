@@ -56,6 +56,7 @@ export async function addBookToShelf(supabase, userId, bookId, shelfId) {
 
 /**
  * Remove a book from a shelf.
+ * If the user_book is no longer on any shelf, also delete the user_books row.
  */
 export async function removeBookFromShelf(supabase, userBookId, shelfId) {
   const { error } = await supabase
@@ -65,4 +66,63 @@ export async function removeBookFromShelf(supabase, userBookId, shelfId) {
     .eq("bookshelf_id", shelfId);
 
   if (error) throw error;
+
+  // Check if the user_book is still on any shelf
+  const { data: remaining } = await supabase
+    .from(TABLES.BOOKSHELF_BOOKS)
+    .select("id")
+    .eq("user_book_id", userBookId)
+    .limit(1);
+
+  if (!remaining || remaining.length === 0) {
+    await supabase.from(TABLES.USER_BOOKS).delete().eq("id", userBookId);
+  }
+}
+
+/**
+ * Get all books on a shelf, joined with book and user_book data.
+ */
+export async function getShelfBooks(supabase, shelfId) {
+  const { data, error } = await supabase
+    .from(TABLES.BOOKSHELF_BOOKS)
+    .select(
+      `
+      id,
+      bookshelf_id,
+      user_books (
+        id,
+        book_id,
+        rating,
+        review,
+        progress_pages,
+        progress_percent,
+        date_started,
+        date_finished,
+        books (*)
+      )
+    `
+    )
+    .eq("bookshelf_id", shelfId);
+
+  if (error) throw error;
+
+  return (data || [])
+    .map((sb) => {
+      const ub = sb.user_books;
+      if (!ub?.books) return null;
+      return {
+        ...ub.books,
+        bookshelf_id: sb.bookshelf_id,
+        userBook: {
+          id: ub.id,
+          rating: ub.rating,
+          review: ub.review,
+          progress_pages: ub.progress_pages,
+          progress_percent: ub.progress_percent,
+          date_started: ub.date_started,
+          date_finished: ub.date_finished
+        }
+      };
+    })
+    .filter(Boolean);
 }

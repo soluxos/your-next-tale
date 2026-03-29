@@ -184,13 +184,10 @@ export default function BookDiscover({ onBookSelect }) {
 
   const fetchISBNDB = useCallback(
     async (subject, pageNum = 1, append = false) => {
-      const apiKey = process.env.NEXT_PUBLIC_ISBNDB_API_KEY;
       append ? setLoadingMore(true) : setLoading(true);
       try {
-        const url = `https://api2.isbndb.com/books/${encodeURIComponent(subject.isbndb)}?page=${pageNum}&pageSize=${PAGE_SIZE}&shouldMatchAll=0`;
-        const res = await fetch(url, {
-          headers: { Authorization: apiKey, Accept: "application/json" }
-        });
+        const url = `/api/books/isbndb?q=${encodeURIComponent(subject.isbndb)}&page=${pageNum}&pageSize=${PAGE_SIZE}`;
+        const res = await fetch(url);
         if (!res.ok) throw new Error(`ISBNDB ${res.status}`);
         const data = await res.json();
         const works = (data.books || [])
@@ -327,7 +324,6 @@ export default function BookDiscover({ onBookSelect }) {
           authors: authorName ? [authorName] : [],
           description: description.trim(),
           cover_url: storagePath,
-          amazon_affiliate_link: "",
           source: "discover"
         }
       ]);

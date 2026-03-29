@@ -61,9 +61,6 @@ const BookSearch = ({ onBookSelect }) => {
   const [error, setError] = useState(null);
   const [selectedBook, setSelectedBook] = useState(null);
 
-  const apiKey = process.env.NEXT_PUBLIC_ISBNDB_API_KEY; // Access the API key from environment variables
-  const baseURL = "https://api2.isbndb.com"; // Default base URL for basic plan
-
   const handleSearch = async () => {
     if (!query.trim()) return;
 
@@ -71,15 +68,10 @@ const BookSearch = ({ onBookSelect }) => {
     setError(null);
 
     try {
-      // Construct the URL with query parameters
-      const url = `${baseURL}/books/${encodeURIComponent(query)}?page=1&pageSize=10&column=title&shouldMatchAll=0`;
+      // Route through server-side proxy to keep API key secret
+      const url = `/api/books/isbndb?q=${encodeURIComponent(query)}&page=1&pageSize=10`;
 
-      const response = await fetch(url, {
-        headers: {
-          Authorization: apiKey, // Pass the API key in the Authorization header
-          Accept: "application/json" // Ensure the response is JSON
-        }
-      });
+      const response = await fetch(url);
 
       if (!response.ok) {
         throw new Error(`Error: ${response.status} - ${response.statusText}`);

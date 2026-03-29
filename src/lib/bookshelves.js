@@ -37,7 +37,7 @@ export async function createShelf(supabase, userId, { name, description }) {
       slug,
       description: description || null,
       is_default: false,
-      is_exclusive: false,
+      is_exclusive: false
     })
     .select()
     .single();
@@ -50,15 +50,18 @@ export async function createShelf(supabase, userId, { name, description }) {
  * Delete a custom shelf (only if is_default is false).
  */
 export async function deleteShelf(supabase, shelfId) {
-  // Verify the shelf isn't a default shelf
   const { data: shelf, error: fetchError } = await supabase
     .from(TABLES.BOOKSHELVES)
-    .select("is_default")
+    .select("is_default, name")
     .eq("id", shelfId)
     .single();
 
   if (fetchError) throw fetchError;
-  if (shelf.is_default) throw new Error("Cannot delete a default shelf");
+  if (shelf.is_default) {
+    throw new Error(
+      `"${shelf.name}" is a default shelf and cannot be deleted.`
+    );
+  }
 
   const { error } = await supabase
     .from(TABLES.BOOKSHELVES)
@@ -74,12 +77,16 @@ export async function deleteShelf(supabase, shelfId) {
 export async function renameShelf(supabase, shelfId, newName) {
   const { data: shelf, error: fetchError } = await supabase
     .from(TABLES.BOOKSHELVES)
-    .select("is_default")
+    .select("is_default, name")
     .eq("id", shelfId)
     .single();
 
   if (fetchError) throw fetchError;
-  if (shelf.is_default) throw new Error("Cannot rename a default shelf");
+  if (shelf.is_default) {
+    throw new Error(
+      `"${shelf.name}" is a default shelf and cannot be renamed.`
+    );
+  }
 
   const { data, error } = await supabase
     .from(TABLES.BOOKSHELVES)
@@ -99,7 +106,7 @@ export async function renameShelf(supabase, shelfId, newName) {
 export async function updateShelfOrder(supabase, orderedShelfIds) {
   const updates = orderedShelfIds.map((id, index) => ({
     id,
-    display_order: index,
+    display_order: index
   }));
 
   // Supabase doesn't have a bulk-update-by-id in one call,

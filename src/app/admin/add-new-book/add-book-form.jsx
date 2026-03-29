@@ -12,7 +12,6 @@ const AddBookForm = () => {
   const [author, setAuthor] = useState("");
   const [description, setDescription] = useState("");
   const [coverUrl, setCoverUrl] = useState("");
-  const [amazonAffiliateLink, setAmazonAffiliateLink] = useState("");
   const [uploadKey, setUploadKey] = useState(Date.now());
   const [similarBooks, setSimilarBooks] = useState([]);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
@@ -126,12 +125,7 @@ const AddBookForm = () => {
     }
 
     // Try to find an Amazon link in the prices array
-    const amazonPrice = bookData.prices?.find(
-      (price) =>
-        price.merchant?.toLowerCase().includes("amazon") ||
-        price.link?.toLowerCase().includes("amazon")
-    );
-    setAmazonAffiliateLink(amazonPrice?.link || "");
+    // (no longer used in the UI but preserved in data)
 
     // Clear similar books when selecting from search
     setSimilarBooks([]);
@@ -144,25 +138,29 @@ const AddBookForm = () => {
     const trimmedAuthor = author.trim();
     const trimmedDescription = description.trim();
     const trimmedCoverUrl = coverUrl.trim();
-    const trimmedAmazonAffiliateLink = amazonAffiliateLink.trim();
 
     const insertPayload = {
       title: trimmedTitle,
       authors: [trimmedAuthor],
       description: trimmedDescription,
       cover_url: trimmedCoverUrl,
-      amazon_affiliate_link: trimmedAmazonAffiliateLink,
-      source: "manual",
+      source: "manual"
     };
 
     if (isbn13.trim()) insertPayload.isbn_13 = isbn13.trim();
-    if (genres.trim()) insertPayload.genres = genres.split(",").map((g) => g.trim()).filter(Boolean);
+    if (genres.trim())
+      insertPayload.genres = genres
+        .split(",")
+        .map((g) => g.trim())
+        .filter(Boolean);
     if (pageCount) insertPayload.page_count = parseInt(pageCount, 10);
     if (publishedDate) insertPayload.published_date = publishedDate;
     if (publisher.trim()) insertPayload.publisher = publisher.trim();
     if (language.trim()) insertPayload.language = language.trim();
 
-    const { data, error } = await supabase.from("books").insert([insertPayload]);
+    const { data, error } = await supabase
+      .from("books")
+      .insert([insertPayload]);
 
     if (error) {
       console.error("Error adding book:", error);
@@ -174,7 +172,6 @@ const AddBookForm = () => {
       setAuthor("");
       setDescription("");
       setCoverUrl("");
-      setAmazonAffiliateLink("");
       setUploadKey(Date.now());
       setSimilarBooks([]);
       setIsUploadingCover(false);
@@ -365,30 +362,6 @@ const AddBookForm = () => {
                 value={coverUrl}
                 onChange={(e) => setCoverUrl(e.target.value)}
                 onBlur={(e) => setCoverUrl(e.target.value.trim())}
-                required
-              />
-            </div>
-
-            {/* Amazon Affiliate Link Input */}
-            <div className="w-full">
-              <label
-                htmlFor="amazonAffiliateLink"
-                className="text-primary font-departureMono uppercase text-[12px] text-white mb-1"
-              >
-                Amazon Affiliate Link:
-              </label>
-              <input
-                className="w-full border border-solid border-white h-[32px] px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-transparent text-white font-departureMono text-[12px]"
-                type="text"
-                id="amazonAffiliateLink"
-                value={amazonAffiliateLink}
-                onChange={(e) => setAmazonAffiliateLink(e.target.value)}
-                onBlur={(e) => {
-                  const normalizedValue = normalizeEllipsis(
-                    e.target.value.trim()
-                  );
-                  setAmazonAffiliateLink(normalizedValue);
-                }}
                 required
               />
             </div>

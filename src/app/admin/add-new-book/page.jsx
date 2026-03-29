@@ -8,17 +8,10 @@ export default async function AddNewBook() {
     data: { session }
   } = await supabase.auth.getSession();
 
-  // Redirect to login if no session exists
   if (!session) {
-    redirect("/login"); // Replace "/login" with the path to your login page
+    redirect("/login");
     return null;
   }
 
-  return (
-    <>
-      <div className="flex flex-col min-h-full flex-grow">
-        <AddBookForm />
-      </div>
-    </>
-  );
+  return <AddBookForm />;
 }

@@ -1,28 +1,30 @@
+import { sanitiseDescription } from "@/lib/books/sanitiseDescription";
+import { normaliseLanguage } from "@/lib/books/normaliseLanguage";
+
 /**
- * Maps an ISBNdb book response to the internal book shape.
- * Expects the single-book object from the ISBNdb API (e.g. data.book).
+ * Maps an ISBNdb book response to the internal normalised shape.
+ * Expects the single-book object (e.g. data.book or an item from data.books[]).
+ * Returns null for any field it cannot find — never throws.
  */
 export function normaliseISBNdb(raw) {
-  const isbn13 = raw.isbn13 || null;
-  const isbn10 = raw.isbn || null;
+  if (!raw) return {};
 
-  const identifiers = [isbn13, isbn10].filter(Boolean);
-  const resolvedIsbn13 = identifiers.find((id) => id.length === 13) || null;
-  const resolvedIsbn10 = identifiers.find((id) => id.length === 10) || null;
+  const isbn13 = raw.isbn13 && raw.isbn13.length === 13 ? raw.isbn13 : null;
+  const isbn10 = raw.isbn && raw.isbn.length === 10 ? raw.isbn : null;
 
   return {
-    isbn_13: resolvedIsbn13,
-    isbn_10: resolvedIsbn10,
-    title: raw.title || "",
-    authors: Array.isArray(raw.authors) ? raw.authors : [],
-    genres: Array.isArray(raw.subjects) ? raw.subjects : [],
-    description: raw.synopsis || raw.overview || raw.excerpt || "",
-    cover_url: raw.image_original || raw.image || null,
-    page_count: raw.pages || null,
+    title: raw.title || null,
+    authors:
+      Array.isArray(raw.authors) && raw.authors.length > 0 ? raw.authors : null,
+    description: sanitiseDescription(raw.synopsis),
+    isbn_13: isbn13,
+    isbn_10: isbn10,
+    genres: Array.isArray(raw.subjects) ? raw.subjects.slice(0, 10) : null,
+    page_count: typeof raw.pages === "number" ? raw.pages : null,
     published_date: raw.date_published || null,
     publisher: raw.publisher || null,
-    language: raw.language || "en",
-    source: "isbndb",
-    last_synced_at: new Date().toISOString(),
+    language: normaliseLanguage(raw.language),
+    cover_remote: raw.image || null,
+    _source: "isbndb"
   };
 }

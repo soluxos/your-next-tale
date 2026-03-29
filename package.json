@@ -9,7 +9,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "backfill:shelves": "node -r dotenv/config src/scripts/backfillDefaultShelves.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",

@@ -5,7 +5,11 @@ import BookDetailPanel from "@/components/shelves/BookDetailPanel";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-export default function ShelfViewClient({ shelf, books: initialBooks, userId }) {
+export default function ShelfViewClient({
+  shelf,
+  books: initialBooks,
+  userId
+}) {
   const [books, setBooks] = useState(initialBooks);
   const [selectedBook, setSelectedBook] = useState(null);
 

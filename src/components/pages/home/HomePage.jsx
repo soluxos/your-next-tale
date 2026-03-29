@@ -4,7 +4,6 @@ import Book from "@/components/book/book";
 import LoadingEffect from "@/components/loadingEffect/LoadingEffect";
 import Hero from "@/components/pages/home/Hero";
 import { AnimatePresence } from "motion/react";
-import Navigation from "@/components/navigation/Navigation";
 import HeroNew from "@/components/hero/HeroNew";
 
 export default function HomePage(props) {
@@ -285,7 +284,6 @@ export default function HomePage(props) {
         </div>
       </div>
       <div className="book-case-bottom-gradient z-20"></div>
-      {/* {!initialLoading && <Navigation isLoggedIn={isLoggedIn} />} */}
     </>
   );
 }

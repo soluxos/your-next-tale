@@ -6,7 +6,7 @@ import ShelfViewClient from "./ShelfViewClient";
 export async function generateMetadata({ params }) {
   const { shelfSlug } = await params;
   return {
-    title: `${shelfSlug.replace(/-/g, " ")} | Your Next Tale`,
+    title: `${shelfSlug.replace(/-/g, " ")} | Your Next Tale`
   };
 }
 
@@ -15,7 +15,7 @@ export default async function ShelfPage({ params }) {
   const supabase = await createClient();
 
   const {
-    data: { user },
+    data: { user }
   } = await supabase.auth.getUser();
 
   if (!user) {
@@ -37,7 +37,8 @@ export default async function ShelfPage({ params }) {
   // Fetch books on this shelf
   const { data: shelfBooks } = await supabase
     .from(TABLES.BOOKSHELF_BOOKS)
-    .select(`
+    .select(
+      `
       id,
       user_book_id,
       user_books (
@@ -51,7 +52,8 @@ export default async function ShelfPage({ params }) {
         date_finished,
         books (id, title, authors, cover_url, page_count, description)
       )
-    `)
+    `
+    )
     .eq("bookshelf_id", shelf.id);
 
   const books = (shelfBooks || [])
@@ -64,12 +66,10 @@ export default async function ShelfPage({ params }) {
         progress_pages: sb.user_books?.progress_pages,
         progress_percent: sb.user_books?.progress_percent,
         date_started: sb.user_books?.date_started,
-        date_finished: sb.user_books?.date_finished,
-      },
+        date_finished: sb.user_books?.date_finished
+      }
     }))
     .filter((b) => b.id);
 
-  return (
-    <ShelfViewClient shelf={shelf} books={books} userId={user.id} />
-  );
+  return <ShelfViewClient shelf={shelf} books={books} userId={user.id} />;
 }

@@ -2,12 +2,13 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
+import BuyButton from "@/components/book/BuyButton";
 import Link from "next/link";
-import Navigation from "@/components/navigation/Navigation";
 
 export default function BookDetailPage({ book }) {
   const [coverUrl, setCoverUrl] = useState(null);
-  const { title, authors, description, amazon_affiliate_link, cover_url } = book;
+  const { title, authors, description, cover_url } =
+    book;
 
   useEffect(() => {
     if (!cover_url) return;
@@ -94,26 +95,12 @@ export default function BookDetailPage({ book }) {
                     : "No description available."}
                 </div>
 
-                {amazon_affiliate_link && (
-                  <Button
-                    asChild
-                    className="w-full md:w-auto text-sm items-center h-[48px] flex justify-center font-departureMono uppercase font-normal text-[13px] mt-4"
-                    variant="default"
-                  >
-                    <a
-                      href={amazon_affiliate_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Buy on Amazon{" "}
-                      <img
-                        src="/icons/trolley.svg"
-                        alt="cart"
-                        className="ml-2"
-                      />
-                    </a>
-                  </Button>
-                )}
+                <BuyButton
+                  isbn_13={book.isbn_13}
+                  title={book.title}
+                  authors={book.authors}
+                  className="w-full md:w-auto mt-4"
+                />
               </div>
             </div>
 
@@ -122,7 +109,6 @@ export default function BookDetailPage({ book }) {
           <div className="w-4 h-full border border-solid border-border"></div>
         </div>
       </div>
-      <Navigation isLoggedIn={false} />
     </>
   );
 }

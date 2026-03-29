@@ -1,13 +1,15 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
+import BuyButton from "@/components/book/BuyButton";
 
 const truncateDescription = (text, limit) => {
+  if (!text) return "";
   if (text.length <= limit) return text;
   return text.slice(0, text.lastIndexOf(" ", limit)) + "...";
 };
 
 const BookPopover = ({ book, onOpenDrawer }) => {
-  const { title, authors, description, amazon_affiliate_link } = book;
+  const { title, authors, description } = book;
 
   return (
     <div className="book-popover space-y-4 max-w-full">
@@ -36,20 +38,13 @@ const BookPopover = ({ book, onOpenDrawer }) => {
           View all details{" "}
           <img src="/icons/arrow-right.svg" alt="cart" className="ml-2" />
         </Button>
-        <Button
-          asChild
-          className="text-sm items-center w-full flex justify-between font-departureMono uppercase font-normal text-[13px]"
-          variant="default"
-        >
-          <a
-            href={amazon_affiliate_link}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Buy on Amazon{" "}
-            <img src="/icons/trolley.svg" alt="cart" className="ml-2" />
-          </a>
-        </Button>
+        <BuyButton
+          isbn_13={book.isbn_13}
+          title={book.title}
+          authors={book.authors}
+          size="sm"
+          className="w-full"
+        />
       </div>
     </div>
   );

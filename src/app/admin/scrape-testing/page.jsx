@@ -1,16 +1,16 @@
-"use client"
-import React, { useState } from "react"
+"use client";
+import React, { useState } from "react";
 
 const ScrapeBookPage = () => {
-  const [url, setUrl] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [bookDetails, setBookDetails] = useState(null)
+  const [url, setUrl] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [bookDetails, setBookDetails] = useState(null);
 
   const handleScrape = async () => {
-    setLoading(true)
-    setError(null)
-    setBookDetails(null)
+    setLoading(true);
+    setError(null);
+    setBookDetails(null);
 
     try {
       const response = await fetch("/api/scrape-book", {
@@ -19,26 +19,38 @@ const ScrapeBookPage = () => {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({ url })
-      })
+      });
 
       if (!response.ok) {
-        throw new Error((await response.json()).error || "Failed to scrape the book details.")
+        throw new Error(
+          (await response.json()).error || "Failed to scrape the book details."
+        );
       }
 
-      const details = await response.json()
-      setBookDetails(details)
+      const details = await response.json();
+      setBookDetails(details);
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Scrape Amazon Book</h1>
-      <div className="mb-4">
-        <label htmlFor="url" className="block text-sm font-medium text-gray-700">
+    <div className="space-y-6">
+      <div>
+        <p className="font-departureMono uppercase text-[10px] text-white/40">
+          Scraper
+        </p>
+        <p className="font-ppMondwest text-white text-[28px] mt-1">
+          Scrape Amazon Book
+        </p>
+      </div>
+      <div className="space-y-2">
+        <label
+          htmlFor="url"
+          className="font-departureMono uppercase text-[10px] text-white/40"
+        >
           Amazon Book URL
         </label>
         <input
@@ -46,34 +58,44 @@ const ScrapeBookPage = () => {
           id="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          className="block w-full p-2 border border-white/20 bg-white/5 rounded-[8px] text-white text-sm font-departureMono placeholder:text-white/30 focus:outline-none focus:border-white/40"
           placeholder="Enter Amazon book URL"
         />
       </div>
       <button
         onClick={handleScrape}
         disabled={loading}
-        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400"
+        className="bg-white text-[#0D00FF] font-departureMono uppercase text-[12px] min-h-[48px] px-8 rounded-[8px] disabled:opacity-40 hover:bg-white/90 transition-colors"
       >
         {loading ? "Scraping..." : "Scrape Book"}
       </button>
 
-      {error && <p className="text-red-500 mt-4">Error: {error}</p>}
+      {error && (
+        <p className="text-red-400 bg-red-900/20 border border-red-500/20 rounded-[8px] px-4 py-3 font-departureMono text-[11px]">
+          Error: {error}
+        </p>
+      )}
 
       {bookDetails && (
-        <div className="mt-6 p-4 border rounded bg-gray-50">
-          <h2 className="text-xl font-bold mb-2">{bookDetails.title}</h2>
-          <p className="text-sm text-gray-700 mb-2">
-            <strong>Author:</strong> {bookDetails.author}
+        <div className="border border-white/10 rounded-[8px] p-6 space-y-3">
+          <p className="font-ppMondwest text-white text-[22px]">
+            {bookDetails.title}
           </p>
-          <img src={bookDetails.imageUrl} alt={`${bookDetails.title} cover`} className="w-32 h-auto mb-4" />
-          <p className="text-sm text-gray-700">
-            <strong>Description:</strong> {bookDetails.description}
+          <p className="font-departureMono uppercase text-[10px] text-white/40">
+            {bookDetails.author}
           </p>
+          {bookDetails.imageUrl && (
+            <img
+              src={bookDetails.imageUrl}
+              alt={`${bookDetails.title} cover`}
+              className="w-32 h-auto rounded-sm"
+            />
+          )}
+          <p className="text-white/70 text-sm">{bookDetails.description}</p>
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default ScrapeBookPage
+export default ScrapeBookPage;

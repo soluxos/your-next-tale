@@ -4,7 +4,11 @@ import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import AboutPopover from "./AboutPopover";
 
-export default function Navigation({ isLoggedIn = false }) {
+export default function Navigation({
+  isLoggedIn = false,
+  username = "",
+  isAdmin = false
+}) {
   const [isPopoverVisible, setIsPopoverVisible] = useState(false);
 
   const handleMouseEnter = () => {
@@ -80,19 +84,21 @@ export default function Navigation({ isLoggedIn = false }) {
             }}
           >
             <a
-              href="/bookshelves"
+              href={
+                username ? `/u/${encodeURIComponent(username)}` : "/account"
+              }
               className="bg-white h-12 px-5 border-solid border-gray-300 border-[1px] rounded-[8px] flex items-center justify-center flex-col"
             >
               <p className="font-departureMono uppercase text-[10px] text-textSecondary whitespace-nowrap">
                 Your
               </p>
               <p className="font-departureMono uppercase text-[12px] whitespace-nowrap">
-                Bookshelves
+                Profile
               </p>
             </a>
           </motion.div>
         )}
-        {isLoggedIn && (
+        {isLoggedIn && isAdmin && (
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
@@ -105,14 +111,17 @@ export default function Navigation({ isLoggedIn = false }) {
             }}
             className=""
           >
-            <button className="bg-black h-12 px-5 rounded-[8px] flex items-center justify-center w-auto flex-col">
-              <p className="font-departureMono uppercase text-[10px] text-textSecondary whitespace-nowrap">
-                Super Secret
+            <a
+              href="/admin"
+              className="bg-black h-12 px-5 rounded-[8px] flex items-center justify-center w-auto flex-col"
+            >
+              <p className="font-departureMono uppercase text-[10px] text-white/60 whitespace-nowrap">
+                Admin
               </p>
               <p className="font-departureMono uppercase text-[12px] text-white whitespace-nowrap">
-                Admin Tools
+                Dashboard
               </p>
-            </button>
+            </a>
           </motion.div>
         )}
       </div>

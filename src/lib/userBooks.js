@@ -35,10 +35,7 @@ export async function updateUserBook(
   const update = { ...fields };
 
   if (pageCount && pageCount > 0) {
-    if (
-      update.progress_pages != null &&
-      update.progress_percent == null
-    ) {
+    if (update.progress_pages != null && update.progress_percent == null) {
       update.progress_percent = Math.round(
         (update.progress_pages / pageCount) * 100
       );
@@ -84,11 +81,13 @@ export async function getUserBookWithShelf(supabase, userId, bookId) {
   // Find the exclusive shelf this book is on
   const { data: shelfBooks } = await supabase
     .from(TABLES.BOOKSHELF_BOOKS)
-    .select(`
+    .select(
+      `
       id,
       bookshelf_id,
       bookshelves (id, name, slug, is_exclusive)
-    `)
+    `
+    )
     .eq("user_book_id", userBook.id);
 
   const exclusiveShelf =

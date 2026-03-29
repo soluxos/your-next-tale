@@ -1,27 +1,48 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetDescription,
+  SheetDescription
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { updateUserBook } from "@/lib/userBooks";
-import { getUserShelves } from "@/lib/bookshelves";
 import { addBookToShelf } from "@/lib/shelfBooks";
+import BuyButton from "@/components/book/BuyButton";
+
+function StarIcon({ filled, half }) {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill={filled ? "#F59E0B" : "none"}
+      stroke="#F59E0B"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  );
+}
 
 export default function BookDetailPanel({
   book,
   userBook,
   userId,
+  shelves = [],
+  currentShelfId = null,
   onClose,
   onUpdate,
-  readOnly = false,
+  onShelfMove,
+  onRemove,
+  readOnly = false
 }) {
   const supabase = createClient();
 
@@ -33,21 +54,13 @@ export default function BookDetailPanel({
   const [progressPercent, setProgressPercent] = useState(
     userBook?.progress_percent || ""
   );
-  const [dateStarted, setDateStarted] = useState(
-    userBook?.date_started || ""
-  );
+  const [dateStarted, setDateStarted] = useState(userBook?.date_started || "");
   const [dateFinished, setDateFinished] = useState(
     userBook?.date_finished || ""
   );
-  const [shelves, setShelves] = useState([]);
-  const [currentShelfId, setCurrentShelfId] = useState(null);
-
-  useEffect(() => {
-    if (readOnly || !userId) return;
-    getUserShelves(supabase, userId).then((data) => {
-      setShelves(data.filter((s) => s.is_exclusive));
-    });
-  }, [userId, readOnly]);
+  const [selectedShelfId, setSelectedShelfId] = useState(currentShelfId || "");
+  const [savedField, setSavedField] = useState(null);
+  const [confirmRemove, setConfirmRemove] = useState(false);
 
   const coverSrc = book.cover_url
     ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/books/${book.cover_url}`
@@ -57,13 +70,15 @@ export default function BookDetailPanel({
     async (fields) => {
       if (readOnly || !userBook?.id) return;
       try {
-        const updated = await updateUserBook(
+        await updateUserBook(
           supabase,
           userBook.id,
           fields,
           book.page_count || null
         );
-        onUpdate?.(userBook.id, updated);
+        const fieldName = Object.keys(fields)[0];
+        setSavedField(fieldName);
+        setTimeout(() => setSavedField(null), 2000);
       } catch (e) {
         console.error("Error saving:", e);
       }
@@ -71,45 +86,80 @@ export default function BookDetailPanel({
     [userBook?.id, book.page_count, readOnly]
   );
 
-  const handleRating = (value) => {
-    setRating(value);
-    save({ rating: value });
+  const handleRating = async (value) => {
+    const newRating = value === rating ? 0 : value;
+    setRating(newRating);
+    await save({ rating: newRating });
+    onUpdate?.(userBook.id, { rating: newRating });
   };
 
-  const handleReviewBlur = () => {
-    save({ review });
+  const handleReviewBlur = async () => {
+    await save({ review });
+    onUpdate?.(userBook.id, { review });
   };
 
-  const handlePagesChange = (value) => {
+  const handlePagesChange = async (value) => {
     const pages = parseInt(value, 10) || 0;
     setProgressPages(pages);
     const percent =
       book.page_count > 0
         ? Math.round((pages / book.page_count) * 100)
-        : progressPercent;
+        : parseInt(progressPercent, 10) || 0;
     setProgressPercent(percent);
-    save({ progress_pages: pages, progress_percent: percent });
+    await save({ progress_pages: pages, progress_percent: percent });
+    onUpdate?.(userBook.id, {
+      progress_pages: pages,
+      progress_percent: percent
+    });
   };
 
-  const handlePercentChange = (value) => {
+  const handlePercentChange = async (value) => {
     const percent = parseInt(value, 10) || 0;
     setProgressPercent(percent);
     const pages =
       book.page_count > 0
         ? Math.round((percent / 100) * book.page_count)
-        : progressPages;
+        : parseInt(progressPages, 10) || 0;
     setProgressPages(pages);
-    save({ progress_percent: percent, progress_pages: pages });
+    await save({ progress_percent: percent, progress_pages: pages });
+    onUpdate?.(userBook.id, {
+      progress_percent: percent,
+      progress_pages: pages
+    });
   };
 
-  const handleShelfChange = async (shelfId) => {
-    setCurrentShelfId(shelfId);
+  const handleShelfChange = async (newShelfId) => {
+    const newShelf = shelves.find((s) => s.id === newShelfId);
+    setSelectedShelfId(newShelfId);
     try {
-      await addBookToShelf(supabase, userId, book.id, shelfId);
+      await addBookToShelf(supabase, userId, book.id, newShelfId);
+      setSavedField("shelf");
+      setTimeout(() => setSavedField(null), 2000);
+      onShelfMove?.(userBook.id, newShelfId, newShelf?.name);
     } catch (e) {
       console.error("Error moving to shelf:", e);
     }
   };
+
+  const handleRemove = () => {
+    setConfirmRemove(false);
+    onRemove?.(userBook.id);
+    onClose();
+  };
+
+  const progressPct = parseInt(progressPercent, 10) || 0;
+
+  function SavedIndicator({ field }) {
+    return (
+      <span
+        className={`font-departureMono text-[9px] text-green-600 transition-opacity duration-300 ml-2 ${
+          savedField === field ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        Saved ✓
+      </span>
+    );
+  }
 
   return (
     <Sheet open onOpenChange={(open) => !open && onClose()}>
@@ -118,8 +168,8 @@ export default function BookDetailPanel({
           <SheetTitle className="font-ppMondwest text-xl">
             {book.title}
           </SheetTitle>
-          <SheetDescription className="font-ppMondwest text-textSecondary">
-            {book.authors?.[0]}
+          <SheetDescription className="font-departureMono uppercase text-[10px] text-textSecondary">
+            {book.authors?.join(", ")}
           </SheetDescription>
         </SheetHeader>
 
@@ -135,15 +185,40 @@ export default function BookDetailPanel({
             </div>
           )}
 
+          {/* Buy button */}
+          <BuyButton
+            isbn_13={book.isbn_13}
+            title={book.title}
+            authors={book.authors}
+            className="w-full"
+          />
+
+          {/* Genres */}
+          {Array.isArray(book.genres) && book.genres.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 justify-center">
+              {book.genres.map((genre, i) => (
+                <span
+                  key={i}
+                  className="font-departureMono uppercase text-[9px] px-2 py-1 rounded-full bg-[#f4f4f4] text-textSecondary"
+                >
+                  {genre}
+                </span>
+              ))}
+            </div>
+          )}
+
           {!readOnly && (
             <>
               {/* Shelf selector */}
               {shelves.length > 0 && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Shelf</label>
+                <div className="space-y-1">
+                  <label className="font-departureMono uppercase text-[10px] text-textSecondary">
+                    Shelf
+                    <SavedIndicator field="shelf" />
+                  </label>
                   <select
-                    className="w-full border rounded-md p-2 text-sm"
-                    value={currentShelfId || ""}
+                    className="w-full border border-border rounded-[8px] p-2 text-sm font-departureMono"
+                    value={selectedShelfId}
                     onChange={(e) => handleShelfChange(e.target.value)}
                   >
                     <option value="">Select a shelf...</option>
@@ -157,30 +232,32 @@ export default function BookDetailPanel({
               )}
 
               {/* Rating */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Rating</label>
+              <div className="space-y-1">
+                <label className="font-departureMono uppercase text-[10px] text-textSecondary">
+                  Rating
+                  <SavedIndicator field="rating" />
+                </label>
                 <div className="flex gap-1">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
                       onClick={() => handleRating(star)}
-                      className={`text-2xl transition-colors ${
-                        star <= rating
-                          ? "text-yellow-500"
-                          : "text-gray-300 hover:text-yellow-300"
-                      }`}
+                      className="transition-opacity hover:opacity-75"
                     >
-                      ★
+                      <StarIcon filled={star <= rating} />
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Review */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Review</label>
+              <div className="space-y-1">
+                <label className="font-departureMono uppercase text-[10px] text-textSecondary">
+                  Review
+                  <SavedIndicator field="review" />
+                </label>
                 <textarea
-                  className="w-full border rounded-md p-2 text-sm min-h-[80px]"
+                  className="w-full border border-border rounded-[8px] p-2 text-sm font-departureMono min-h-[80px]"
                   value={review}
                   onChange={(e) => setReview(e.target.value)}
                   onBlur={handleReviewBlur}
@@ -189,8 +266,12 @@ export default function BookDetailPanel({
               </div>
 
               {/* Reading progress */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Reading Progress</label>
+              <div className="space-y-1">
+                <label className="font-departureMono uppercase text-[10px] text-textSecondary">
+                  Reading Progress
+                  <SavedIndicator field="progress_pages" />
+                  <SavedIndicator field="progress_percent" />
+                </label>
                 <div className="flex gap-2 items-center">
                   <Input
                     type="number"
@@ -199,9 +280,9 @@ export default function BookDetailPanel({
                     value={progressPages}
                     onChange={(e) => handlePagesChange(e.target.value)}
                     placeholder="Pages"
-                    className="w-24"
+                    className="w-24 font-departureMono text-[12px]"
                   />
-                  <span className="text-sm text-muted-foreground">
+                  <span className="font-departureMono uppercase text-[10px] text-textSecondary">
                     / {book.page_count || "?"} pages
                   </span>
                   <Input
@@ -211,65 +292,136 @@ export default function BookDetailPanel({
                     value={progressPercent}
                     onChange={(e) => handlePercentChange(e.target.value)}
                     placeholder="%"
-                    className="w-20"
+                    className="w-20 font-departureMono text-[12px]"
                   />
-                  <span className="text-sm text-muted-foreground">%</span>
+                  <span className="font-departureMono uppercase text-[10px] text-textSecondary">
+                    %
+                  </span>
                 </div>
               </div>
 
               {/* Dates */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Date Started</label>
+                <div className="space-y-1">
+                  <label className="font-departureMono uppercase text-[10px] text-textSecondary">
+                    Date Started
+                    <SavedIndicator field="date_started" />
+                  </label>
                   <Input
                     type="date"
                     value={dateStarted}
                     onChange={(e) => {
                       setDateStarted(e.target.value);
                       save({ date_started: e.target.value || null });
+                      onUpdate?.(userBook.id, {
+                        date_started: e.target.value || null
+                      });
                     }}
+                    className="font-departureMono text-[12px]"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Date Finished</label>
+                <div className="space-y-1">
+                  <label className="font-departureMono uppercase text-[10px] text-textSecondary">
+                    Date Finished
+                    <SavedIndicator field="date_finished" />
+                  </label>
                   <Input
                     type="date"
                     value={dateFinished}
                     onChange={(e) => {
                       setDateFinished(e.target.value);
                       save({ date_finished: e.target.value || null });
+                      onUpdate?.(userBook.id, {
+                        date_finished: e.target.value || null
+                      });
                     }}
+                    className="font-departureMono text-[12px]"
                   />
                 </div>
               </div>
+
+              {/* Remove from shelf */}
+              {onRemove && (
+                <div className="pt-2 border-t border-border">
+                  {confirmRemove ? (
+                    <div className="flex items-center gap-2">
+                      <p className="font-departureMono uppercase text-[10px] text-red-600 flex-1">
+                        Remove this book?
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={handleRemove}
+                        className="font-departureMono uppercase text-[10px] rounded-[8px]"
+                      >
+                        Confirm
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setConfirmRemove(false)}
+                        className="font-departureMono uppercase text-[10px] rounded-[8px]"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setConfirmRemove(true)}
+                      className="font-departureMono uppercase text-[10px] text-red-500 hover:text-red-600 hover:bg-red-50 rounded-[8px] w-full"
+                    >
+                      Remove from shelf
+                    </Button>
+                  )}
+                </div>
+              )}
             </>
           )}
 
           {/* Read-only display */}
           {readOnly && userBook && (
-            <div className="space-y-3 text-sm">
+            <div className="space-y-4">
               {userBook.rating > 0 && (
-                <div>
-                  <span className="font-medium">Rating: </span>
-                  {"★".repeat(userBook.rating)}
-                  {"☆".repeat(5 - userBook.rating)}
+                <div className="space-y-1">
+                  <label className="font-departureMono uppercase text-[10px] text-textSecondary">
+                    Rating
+                  </label>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <StarIcon key={star} filled={star <= userBook.rating} />
+                    ))}
+                  </div>
                 </div>
               )}
               {userBook.review && (
-                <div>
-                  <span className="font-medium">Review: </span>
-                  <p className="text-muted-foreground mt-1">
-                    {userBook.review}
-                  </p>
+                <div className="space-y-1">
+                  <label className="font-departureMono uppercase text-[10px] text-textSecondary">
+                    Review
+                  </label>
+                  <p className="text-sm text-textPrimary">{userBook.review}</p>
                 </div>
               )}
               {(userBook.progress_percent > 0 ||
                 userBook.progress_pages > 0) && (
-                <div>
-                  <span className="font-medium">Progress: </span>
-                  {userBook.progress_percent}%
-                  {userBook.progress_pages > 0 &&
-                    ` (${userBook.progress_pages} pages)`}
+                <div className="space-y-1">
+                  <label className="font-departureMono uppercase text-[10px] text-textSecondary">
+                    Progress
+                  </label>
+                  <div className="w-full h-2 bg-[#e0e0e0] rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-textPrimary rounded-full transition-all"
+                      style={{
+                        width: `${Math.min(userBook.progress_percent || 0, 100)}%`
+                      }}
+                    />
+                  </div>
+                  <p className="font-departureMono uppercase text-[10px] text-textSecondary">
+                    {userBook.progress_percent}%
+                    {userBook.progress_pages > 0 &&
+                      ` · ${userBook.progress_pages} pages`}
+                  </p>
                 </div>
               )}
             </div>

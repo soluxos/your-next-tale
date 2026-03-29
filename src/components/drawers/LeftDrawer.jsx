@@ -2,9 +2,10 @@
 import React, { forwardRef, useImperativeHandle, useRef } from "react"
 import { Drawer } from "vaul"
 import { Button } from "@/components/ui/button"
+import BuyButton from "@/components/book/BuyButton"
 
 const VaulDrawer = forwardRef(({ book, coverUrl }, ref) => {
-  const { title, author, description, amazon_affiliate_link } = book
+  const { title, author, description } = book
   const triggerRef = useRef()
 
   useImperativeHandle(ref, () => ({
@@ -73,17 +74,12 @@ const VaulDrawer = forwardRef(({ book, coverUrl }, ref) => {
                           : "No description available."}
                       </div>
                     </div>
-                    {amazon_affiliate_link && (
-                      <Button
-                        asChild
-                        className="text-sm items-center w-full flex justify-between font-departureMono uppercase font-normal text-[13px]"
-                        variant="default"
-                      >
-                        <a href={amazon_affiliate_link} target="_blank" rel="noopener noreferrer">
-                          Buy on Amazon <img src="/icons/trolley.svg" alt="cart" className="ml-2" />
-                        </a>
-                      </Button>
-                    )}
+                    <BuyButton
+                      isbn_13={book.isbn_13}
+                      title={book.title}
+                      authors={book.authors || (author ? [author] : [])}
+                      className="w-full"
+                    />
                   </div>
                 </div>
               </div>

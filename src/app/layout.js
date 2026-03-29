@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import Script from "next/script";
-import Navigation from "../components/navigation/Navigation"; // Import the Navigation component
 import { createClient } from "@/utils/supabase/server";
 import TopNavigation from "@/components/navigation/TopNavigation";
 

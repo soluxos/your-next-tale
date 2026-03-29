@@ -1,93 +1,93 @@
-"use client"
-import React, { useEffect, useState, useRef } from "react"
-import Book from "@/components/book/book"
+"use client";
+import React, { useEffect, useState, useRef } from "react";
+import Book from "@/components/book/book";
 
 export default function BooksPage() {
-  const pageSize = 45
-  const [books, setBooks] = useState([])
-  const [page, setPage] = useState(0)
-  const [loading, setLoading] = useState(false)
-  const [hasMore, setHasMore] = useState(true)
-  const [itemsPerRow, setItemsPerRow] = useState(9)
-  const [tallestBookHeight, setTallestBookHeight] = useState() // Default min-height
-  const bookRefs = useRef([]) // Store refs for each book
+  const pageSize = 45;
+  const [books, setBooks] = useState([]);
+  const [page, setPage] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [itemsPerRow, setItemsPerRow] = useState(9);
+  const [tallestBookHeight, setTallestBookHeight] = useState(); // Default min-height
+  const bookRefs = useRef([]); // Store refs for each book
 
   useEffect(() => {
     const handleResize = () => {
-      const width = window.innerWidth
+      const width = window.innerWidth;
       if (width >= 1024) {
-        setItemsPerRow(9)
+        setItemsPerRow(9);
       } else if (width >= 768) {
-        setItemsPerRow(6)
+        setItemsPerRow(6);
       } else if (width >= 480) {
-        setItemsPerRow(4)
+        setItemsPerRow(4);
       } else {
-        setItemsPerRow(2)
+        setItemsPerRow(2);
       }
-      updateTallestBookHeight() // Update tallest book height on resize
-    }
+      updateTallestBookHeight(); // Update tallest book height on resize
+    };
 
-    handleResize()
-    window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
-  }, [])
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
-    fetchMoreBooks()
-    updateTallestBookHeight()
-  }, [])
+    fetchMoreBooks();
+    updateTallestBookHeight();
+  }, []);
 
   useEffect(() => {
     // Call after books or itemsPerRow change
-    updateTallestBookHeight()
-  }, [books, itemsPerRow])
+    updateTallestBookHeight();
+  }, [books, itemsPerRow]);
 
   const fetchMoreBooks = async () => {
-    setLoading(true)
-    const start = page * pageSize
-    const end = start + pageSize - 1
+    setLoading(true);
+    const start = page * pageSize;
+    const end = start + pageSize - 1;
 
     try {
-      const res = await fetch(`/api/books?start=${start}&end=${end}`)
-      if (!res.ok) throw new Error("Failed to fetch books")
+      const res = await fetch(`/api/books?start=${start}&end=${end}`);
+      if (!res.ok) throw new Error("Failed to fetch books");
 
-      const data = await res.json()
+      const data = await res.json();
       if (data.books && Array.isArray(data.books)) {
-        setBooks((prevBooks) => [...prevBooks, ...data.books])
-        setPage((prevPage) => prevPage + 1)
-        if (data.books.length < pageSize) setHasMore(false)
+        setBooks((prevBooks) => [...prevBooks, ...data.books]);
+        setPage((prevPage) => prevPage + 1);
+        if (data.books.length < pageSize) setHasMore(false);
       } else {
-        console.error("Fetched data is not an array:", data)
+        console.error("Fetched data is not an array:", data);
       }
     } catch (err) {
-      console.error("Error fetching more books:", err)
+      console.error("Error fetching more books:", err);
     }
 
-    setLoading(false)
-  }
+    setLoading(false);
+  };
 
   const updateTallestBookHeight = () => {
     // Ensure refs are populated
     const heights = bookRefs.current.map((ref) => {
       if (ref) {
-        return ref.offsetHeight + 16
+        return ref.offsetHeight + 16;
       }
-      return 0
-    })
+      return 0;
+    });
 
-    const tallest = Math.max(...heights, 160) // Default to 260 if no books
-    setTallestBookHeight(tallest)
-  }
+    const tallest = Math.max(...heights, 160); // Default to 260 if no books
+    setTallestBookHeight(tallest);
+  };
 
   const chunkBooks = (books, itemsPerRow) => {
-    const rows = []
+    const rows = [];
     for (let i = 0; i < books.length; i += itemsPerRow) {
-      rows.push(books.slice(i, i + itemsPerRow))
+      rows.push(books.slice(i, i + itemsPerRow));
     }
-    return rows
-  }
+    return rows;
+  };
 
-  const rows = chunkBooks(books, itemsPerRow)
+  const rows = chunkBooks(books, itemsPerRow);
 
   return (
     <div className="grid grid-cols-[16px_auto_16px]">
@@ -107,7 +107,7 @@ export default function BooksPage() {
                     key={book.id}
                     className="w-full"
                     ref={(el) => {
-                      bookRefs.current[rowIndex * itemsPerRow + bookIndex] = el
+                      bookRefs.current[rowIndex * itemsPerRow + bookIndex] = el;
                     }}
                   >
                     <Book {...book} />
@@ -129,5 +129,5 @@ export default function BooksPage() {
       </div>
       <div className="left-border w-4 h-full border border-solid border-border"></div>
     </div>
-  )
+  );
 }
