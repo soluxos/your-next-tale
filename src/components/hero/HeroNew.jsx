@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 export default function HeroNew() {
   return (
-    <div className="relative w-full min-h-[520px] overflow-hidden bg-[#f9f9fb] flex flex-col items-center justify-center pt-32 pb-16 px-6">
+    <div className="relative w-full min-h-[520px] overflow-hidden bg-white flex flex-col items-center justify-center pt-32 pb-16 px-6">
       {/* Main content */}
       <div className="relative z-10 flex flex-col items-center justify-center gap-6 text-center max-w-[800px]">
         {/* Badge */}
