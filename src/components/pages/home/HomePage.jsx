@@ -137,7 +137,7 @@ export default function HomePage(props) {
       <AnimatePresence>{initialLoading && <LoadingEffect />}</AnimatePresence>
       {/* <Hero /> */}
       <HeroNew />
-      <div className="flex">
+      <div className="flex px-5">
         {/* <div className="sticky left-0 h-screen top-0 w-12 min-w-12 z-10 flex items-start justify-center py-5">
           <div>
             <img src="/icons/logo.svg" alt="logo" className="w-6" />
