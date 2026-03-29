@@ -32,8 +32,8 @@ export default function ProfileLayout({ profile, shelves, isOwner, children }) {
   return (
     <div className="min-h-screen bg-white">
       {/* Profile header */}
-      <div className="px-5 pt-6 pb-4">
-        <div className="max-w-4xl mx-auto flex items-start gap-4">
+      <div className="px-5 py-[120px]">
+        <div className="max-w-4xl mx-auto flex flex-col items-center gap-4">
           <Avatar className="h-16 w-16 border border-border shrink-0">
             <AvatarImage src={profile.avatarUrl} alt={profile.full_name} />
             <AvatarFallback className="text-lg font-departureMono bg-[#f4f4f4] text-textPrimary">
@@ -41,7 +41,7 @@ export default function ProfileLayout({ profile, shelves, isOwner, children }) {
             </AvatarFallback>
           </Avatar>
 
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 text-center">
             <h1 className="font-ppMondwest text-xl text-textPrimary truncate">
               {profile.full_name || profile.username}
             </h1>
@@ -67,7 +67,7 @@ export default function ProfileLayout({ profile, shelves, isOwner, children }) {
       </div>
 
       {/* Shelf tab navigation */}
-      <div className="px-5 border-b border-border">
+      <div className="px-5">
         <div className="max-w-4xl mx-auto">
           <nav className="flex gap-1 overflow-x-auto no-scrollbar -mb-px">
             {tabs.map((tab) => (

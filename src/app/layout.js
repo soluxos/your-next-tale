@@ -76,9 +76,10 @@ export default async function RootLayout({ children }) {
       className={`${inter.variable} ${ppMondwest.variable} ${departureMono.variable}`}
     >
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased text-foreground relative`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased text-foreground relative bg-white`}
       >
         <div aria-hidden="true" className="noise-overlay" />
+        <div aria-hidden="true" className="scanlines-overlay" />
         <TopNavigation user={user} />
         {children}
         <Script src="https://scripts.simpleanalyticscdn.com/latest.js" />

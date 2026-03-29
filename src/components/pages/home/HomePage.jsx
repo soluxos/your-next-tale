@@ -131,7 +131,6 @@ export default function HomePage(props) {
 
   return (
     <>
-      <div aria-hidden="true" className="scanlines-overlay" />
       <div aria-hidden="true" className="vignette-overlay" />
       <AnimatePresence>{initialLoading && <LoadingEffect />}</AnimatePresence>
       {/* <Hero /> */}
