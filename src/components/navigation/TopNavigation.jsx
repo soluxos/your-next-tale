@@ -105,7 +105,7 @@ export default function TopNavigation({ user }) {
         damping: 25,
         duration: 0.6
       }}
-      className="z-50 px-6 py-4"
+      className="z-50 px-6 py-4 bg-white"
     >
       <div className="max-w-full w-full px-5 mx-auto flex items-center justify-between md:grid md:grid-cols-3">
         {/* Logo */}
