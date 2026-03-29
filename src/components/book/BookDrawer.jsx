@@ -11,12 +11,12 @@ import Link from "next/link";
 import { generateBookSlug } from "@/lib/slugify";
 
 const VaulDrawer = forwardRef(({ book, coverUrl }, ref) => {
-  const { id, title, author, description, amazon_affiliate_link } = book;
+  const { id, title, authors, description, amazon_affiliate_link } = book;
   const triggerRef = useRef();
   const [copied, setCopied] = useState(false);
 
   // Generate book page URL based on slug
-  const bookPageUrl = `/books/${generateBookSlug(title, author)}`;
+  const bookPageUrl = `/books/${generateBookSlug(title, authors?.[0])}`;
 
   useImperativeHandle(ref, () => ({
     open: () => {
@@ -79,7 +79,7 @@ const VaulDrawer = forwardRef(({ book, coverUrl }, ref) => {
                         {title}
                       </Drawer.Title>
                       <Drawer.Description className="text-[24px] font-ppMondwest text-textSecondary">
-                        By <span className="text-textPrimary">{author}</span>
+                        By <span className="text-textPrimary">{authors?.[0]}</span>
                       </Drawer.Description>
                       <div className="text-[16px] leading-[1.4] font-ppMondwest text-textSecondary mt-2">
                         {description

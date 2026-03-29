@@ -5,9 +5,9 @@ export async function GET(request, { params }) {
   const { id } = await params;
   const supabase = await createClient();
 
-  // Fetch a single book by ID
+  // Fetch a single book by ID (id is now a uuid string)
   const { data: book, error } = await supabase
-    .from("Books")
+    .from("books")
     .select("*")
     .eq("id", id)
     .single();

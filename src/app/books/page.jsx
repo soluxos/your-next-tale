@@ -52,10 +52,10 @@ export default function BooksPage() {
       if (!res.ok) throw new Error("Failed to fetch books")
 
       const data = await res.json()
-      if (data.Books && Array.isArray(data.Books)) {
-        setBooks((prevBooks) => [...prevBooks, ...data.Books])
+      if (data.books && Array.isArray(data.books)) {
+        setBooks((prevBooks) => [...prevBooks, ...data.books])
         setPage((prevPage) => prevPage + 1)
-        if (data.Books.length < pageSize) setHasMore(false)
+        if (data.books.length < pageSize) setHasMore(false)
       } else {
         console.error("Fetched data is not an array:", data)
       }

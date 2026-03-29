@@ -7,7 +7,7 @@ export default async function BooksPage() {
 
   // Fetch initial books server-side (first 45 books)
   const { data: initialBooks, error } = await supabase
-    .from("Books")
+    .from("books")
     .select("*")
     .order("created_at", { ascending: false })
     .range(0, 44); // Get first 45 books (0-44)

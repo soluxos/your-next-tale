@@ -7,7 +7,7 @@ import Navigation from "@/components/navigation/Navigation";
 
 export default function BookDetailPage({ book }) {
   const [coverUrl, setCoverUrl] = useState(null);
-  const { title, author, description, amazon_affiliate_link, cover_url } = book;
+  const { title, authors, description, amazon_affiliate_link, cover_url } = book;
 
   useEffect(() => {
     if (!cover_url) return;
@@ -78,7 +78,7 @@ export default function BookDetailPage({ book }) {
                     {title}
                   </h1>
                   <p className="text-xl md:text-2xl font-ppMondwest text-textSecondary">
-                    By <span className="text-textPrimary">{author}</span>
+                    By <span className="text-textPrimary">{authors?.[0]}</span>
                   </p>
                 </div>
 

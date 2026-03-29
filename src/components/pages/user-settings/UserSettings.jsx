@@ -32,6 +32,7 @@ export default function UserSettings({ user }) {
   const [website, setWebsite] = useState("");
   const [avatarPath, setAvatarPath] = useState(null); // storage path
   const [avatarUrl, setAvatarUrl] = useState(null); // displayable URL
+  const [isPrivate, setIsPrivate] = useState(false);
 
   // Password states
   const [currentPassword, setCurrentPassword] = useState("");
@@ -52,7 +53,7 @@ export default function UserSettings({ user }) {
 
       const { data, error, status } = await supabase
         .from("profiles")
-        .select(`full_name, username, website, avatar_url`)
+        .select(`full_name, username, website, avatar_url, is_private`)
         .eq("id", user?.id)
         .single();
 
@@ -65,6 +66,7 @@ export default function UserSettings({ user }) {
         setUsername(data.username || "");
         setWebsite(data.website || "");
         setAvatarPath(data.avatar_url);
+        setIsPrivate(data.is_private ?? false);
       }
     } catch (error) {
       console.error("Error loading user data:", error);
@@ -106,6 +108,7 @@ export default function UserSettings({ user }) {
         username,
         website,
         avatar_url: avatarPath,
+        is_private: isPrivate,
         updated_at: new Date().toISOString()
       });
       if (error) throw error;
@@ -315,6 +318,26 @@ export default function UserSettings({ user }) {
                     value={website}
                     onChange={(e) => setWebsite(e.target.value)}
                     placeholder="https://yourwebsite.com"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between py-2">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <Lock className="h-3 w-3 text-muted-foreground" />
+                      <span className="font-departureMono uppercase text-[10px] text-muted-foreground">
+                        Private Profile
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {isPrivate
+                        ? "🔒 Your shelves are hidden from other users"
+                        : "Your shelves are visible to everyone"}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={isPrivate}
+                    onCheckedChange={(checked) => setIsPrivate(checked)}
                   />
                 </div>
 

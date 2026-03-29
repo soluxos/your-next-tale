@@ -170,7 +170,7 @@ export default function BookDiscover({ onBookSelect }) {
 
   useEffect(() => {
     async function loadExisting() {
-      const { data } = await supabase.from("Books").select("title");
+      const { data } = await supabase.from("books").select("title");
       if (data) {
         setExistingTitles(
           new Set(data.map((b) => b.title.toLowerCase().trim()))
@@ -321,13 +321,14 @@ export default function BookDiscover({ onBookSelect }) {
       }
 
       setStatusMsg((prev) => ({ ...prev, [workKey]: "Saving..." }));
-      const { error } = await supabase.from("Books").insert([
+      const { error } = await supabase.from("books").insert([
         {
           title: book.title.trim(),
-          author: authorName,
+          authors: authorName ? [authorName] : [],
           description: description.trim(),
           cover_url: storagePath,
-          amazon_affiliate_link: ""
+          amazon_affiliate_link: "",
+          source: "discover"
         }
       ]);
       if (error) {

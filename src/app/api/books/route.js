@@ -10,17 +10,17 @@ export async function GET(request) {
   const end = parseInt(searchParams.get("end")) || 20
 
   // Fetch books from Supabase in descending order (newest first)
-  let { data: Books, error } = await supabase
-    .from("Books")
+  let { data: books, error } = await supabase
+    .from("books")
     .select("*")
-    .order("created_at", { ascending: false }) // Change "created_at" to the appropriate column
+    .order("created_at", { ascending: false })
     .range(start, end)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  const response = NextResponse.json({ Books })
+  const response = NextResponse.json({ books })
   response.headers.set("Cache-Control", "no-store") // Disable caching
   return response
 }

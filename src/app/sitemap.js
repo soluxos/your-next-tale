@@ -6,15 +6,15 @@ export default async function sitemap() {
 
   // Fetch all books
   const { data: books } = await supabase
-    .from("Books")
-    .select("id, title, author, created_at")
+    .from("books")
+    .select("id, title, authors, created_at")
     .order("created_at", { ascending: false });
 
   const bookUrls =
     books?.map((book) => ({
       url: `https://yournexttale.com/books/${generateBookSlug(
         book.title,
-        book.author
+        book.authors?.[0]
       )}`,
       lastModified: book.created_at,
       changeFrequency: "monthly",

@@ -76,10 +76,10 @@ export default function HomePage(props) {
       if (!res.ok) throw new Error("Failed to fetch books");
 
       const data = await res.json();
-      if (data.Books && Array.isArray(data.Books)) {
-        setBooks((prevBooks) => [...prevBooks, ...data.Books]);
+      if (data.books && Array.isArray(data.books)) {
+        setBooks((prevBooks) => [...prevBooks, ...data.books]);
         setPage((prevPage) => prevPage + 1);
-        if (data.Books.length < pageSize) setHasMore(false);
+        if (data.books.length < pageSize) setHasMore(false);
         // Reset imagesLoaded and loadedImages when new books are fetched
         setImagesLoaded(0);
         loadedImages.current.clear();

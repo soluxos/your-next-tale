@@ -1,3 +1,4 @@
+// NOTE: This component is unused. Nav items are rendered in TopNavigation.jsx.
 import { AnimatePresence, motion } from "motion/react";
 import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";

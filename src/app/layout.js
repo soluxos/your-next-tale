@@ -72,7 +72,10 @@ export default async function RootLayout({ children }) {
   } = await supabase.auth.getUser(); // Use getUser() for secure authentication
 
   return (
-    <html lang="en" className={`${inter.variable} ${ppMondwest.variable} ${departureMono.variable}`}>
+    <html
+      lang="en"
+      className={`${inter.variable} ${ppMondwest.variable} ${departureMono.variable}`}
+    >
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased text-foreground relative`}
       >

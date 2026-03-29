@@ -29,6 +29,9 @@ export default function TopNavigation({ user }) {
 
   useEffect(() => {
     setMounted(true);
+    const path = window.location.pathname;
+    const match = navItems.find(item => item.href === path);
+    if (match) setActiveItem(match.id);
   }, []);
 
   useEffect(() => {
@@ -89,7 +92,7 @@ export default function TopNavigation({ user }) {
       }}
       className="z-50 px-6 py-4"
     >
-      <div className="max-w-full w-full px-5 mx-auto flex items-center justify-between md:grid md:grid-cols-2">
+      <div className="max-w-full w-full px-5 mx-auto flex items-center justify-between md:grid md:grid-cols-3">
         {/* Logo */}
         <a href="/" className="flex items-center gap-3">
           <span className="font-ppMondwest text-[18px] text-textPrimary">
@@ -98,6 +101,26 @@ export default function TopNavigation({ user }) {
         </a>
 
         {/* Center Navigation */}
+        <nav className="hidden md:flex items-center justify-center gap-1">
+          {navItems
+            .filter(item => isLoggedIn || item.id === "discover")
+            .map(item => (
+              <a
+                key={item.id}
+                href={item.href}
+                onClick={() => setActiveItem(item.id)}
+                className={cn(
+                  "px-4 py-2 font-departureMono uppercase text-[11px] rounded-[8px] transition-colors",
+                  activeItem === item.id
+                    ? "bg-[#f4f4f4] text-textPrimary"
+                    : "text-textSecondary hover:bg-[#f4f4f4] hover:text-textPrimary"
+                )}
+              >
+                {item.label}
+              </a>
+            ))
+          }
+        </nav>
 
         {/* Right Actions */}
         <div className="flex items-center justify-end gap-3">
@@ -206,12 +229,13 @@ export default function TopNavigation({ user }) {
             className="md:hidden absolute top-full left-0 right-0 mt-2 mx-6"
           >
             <div className="bg-white border border-border rounded-[8px] shadow-lg p-2 flex flex-col gap-1">
-              {navItems.map((item) => (
+              {navItems
+                .filter(item => isLoggedIn || item.id === "discover")
+                .map((item) => (
                 <a
                   key={item.id}
                   href={item.href}
-                  onClick={(e) => {
-                    e.preventDefault();
+                  onClick={() => {
                     setActiveItem(item.id);
                     setMobileMenuOpen(false);
                   }}

@@ -12,8 +12,8 @@ export async function generateStaticParams() {
   const supabase = createStaticClient();
 
   const { data: books, error } = await supabase
-    .from("Books")
-    .select("id, title, author")
+    .from("books")
+    .select("id, title, authors")
     .order("created_at", { ascending: false });
 
   if (error || !books) {
@@ -22,7 +22,7 @@ export async function generateStaticParams() {
   }
 
   return books.map((book) => ({
-    slug: generateBookSlug(book.title, book.author)
+    slug: generateBookSlug(book.title, book.authors?.[0])
   }));
 }
 
@@ -40,15 +40,15 @@ export async function generateMetadata({ params }) {
   }
 
   return {
-    title: `${book.title} by ${book.author} | Your Next Tale`,
-    description: book.description || `Discover ${book.title} by ${book.author}`,
+    title: `${book.title} by ${book.authors?.[0]} | Your Next Tale`,
+    description: book.description || `Discover ${book.title} by ${book.authors?.[0]}`,
     openGraph: {
-      title: `${book.title} by ${book.author}`,
+      title: `${book.title} by ${book.authors?.[0]}`,
       description:
-        book.description || `Discover ${book.title} by ${book.author}`,
+        book.description || `Discover ${book.title} by ${book.authors?.[0]}`,
       type: "book",
       book: {
-        author: book.author
+        author: book.authors?.[0]
       }
     }
   };

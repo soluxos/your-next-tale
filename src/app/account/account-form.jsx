@@ -10,6 +10,7 @@ export default function AccountForm({ user }) {
   const [username, setUsername] = useState(null)
   const [website, setWebsite] = useState(null)
   const [avatar_url, setAvatarUrl] = useState(null)
+  const [isPrivate, setIsPrivate] = useState(false)
 
   const getProfile = useCallback(async () => {
     try {
@@ -17,7 +18,7 @@ export default function AccountForm({ user }) {
 
       const { data, error, status } = await supabase
         .from("profiles")
-        .select(`full_name, username, website, avatar_url`)
+        .select(`full_name, username, website, avatar_url, is_private`)
         .eq("id", user?.id)
         .single()
 
@@ -30,6 +31,7 @@ export default function AccountForm({ user }) {
         setUsername(data.username)
         setWebsite(data.website)
         setAvatarUrl(data.avatar_url)
+        setIsPrivate(data.is_private ?? false)
       }
     } catch (error) {
       alert("Error loading user data!")
@@ -52,6 +54,7 @@ export default function AccountForm({ user }) {
         username,
         website,
         avatar_url,
+        is_private: isPrivate,
         updated_at: new Date().toISOString()
       })
       if (error) throw error
@@ -89,6 +92,19 @@ export default function AccountForm({ user }) {
       <div>
         <label htmlFor="website">Website</label>
         <input id="website" type="url" value={website || ""} onChange={(e) => setWebsite(e.target.value)} />
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <input
+          id="isPrivate"
+          type="checkbox"
+          checked={isPrivate}
+          onChange={(e) => setIsPrivate(e.target.checked)}
+          style={{ width: "auto" }}
+        />
+        <label htmlFor="isPrivate" style={{ display: "inline" }}>
+          {isPrivate ? "🔒 " : ""}Private profile
+        </label>
       </div>
 
       <div>

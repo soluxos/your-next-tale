@@ -7,7 +7,7 @@ const truncateDescription = (text, limit) => {
 };
 
 const BookPopover = ({ book, onOpenDrawer }) => {
-  const { title, author, description, amazon_affiliate_link } = book;
+  const { title, authors, description, amazon_affiliate_link } = book;
 
   return (
     <div className="book-popover space-y-4 max-w-full">
@@ -17,7 +17,7 @@ const BookPopover = ({ book, onOpenDrawer }) => {
           {title}
         </h4>
         <p className="text-[20px] font-ppMondwest text-textSecondary">
-          By <span className="text-textPrimary">{author}</span>
+          By <span className="text-textPrimary">{authors?.[0]}</span>
         </p>
       </div>
 

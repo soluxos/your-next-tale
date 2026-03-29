@@ -18,6 +18,14 @@ const AddBookForm = () => {
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [discoverTab, setDiscoverTab] = useState("discover"); // "discover" | "search"
 
+  // New optional fields
+  const [isbn13, setIsbn13] = useState("");
+  const [genres, setGenres] = useState("");
+  const [pageCount, setPageCount] = useState("");
+  const [publishedDate, setPublishedDate] = useState("");
+  const [publisher, setPublisher] = useState("");
+  const [language, setLanguage] = useState("en");
+
   const checkSimilarTitles = async (title) => {
     if (title.trim().length <= 2) {
       setSimilarBooks([]);
@@ -25,7 +33,7 @@ const AddBookForm = () => {
     }
 
     const { data, error } = await supabase
-      .from("Books")
+      .from("books")
       .select("*")
       .ilike("title", `%${title}%`);
 
@@ -138,15 +146,23 @@ const AddBookForm = () => {
     const trimmedCoverUrl = coverUrl.trim();
     const trimmedAmazonAffiliateLink = amazonAffiliateLink.trim();
 
-    const { data, error } = await supabase.from("Books").insert([
-      {
-        title: trimmedTitle,
-        author: trimmedAuthor,
-        description: trimmedDescription,
-        cover_url: trimmedCoverUrl,
-        amazon_affiliate_link: trimmedAmazonAffiliateLink
-      }
-    ]);
+    const insertPayload = {
+      title: trimmedTitle,
+      authors: [trimmedAuthor],
+      description: trimmedDescription,
+      cover_url: trimmedCoverUrl,
+      amazon_affiliate_link: trimmedAmazonAffiliateLink,
+      source: "manual",
+    };
+
+    if (isbn13.trim()) insertPayload.isbn_13 = isbn13.trim();
+    if (genres.trim()) insertPayload.genres = genres.split(",").map((g) => g.trim()).filter(Boolean);
+    if (pageCount) insertPayload.page_count = parseInt(pageCount, 10);
+    if (publishedDate) insertPayload.published_date = publishedDate;
+    if (publisher.trim()) insertPayload.publisher = publisher.trim();
+    if (language.trim()) insertPayload.language = language.trim();
+
+    const { data, error } = await supabase.from("books").insert([insertPayload]);
 
     if (error) {
       console.error("Error adding book:", error);
@@ -162,6 +178,12 @@ const AddBookForm = () => {
       setUploadKey(Date.now());
       setSimilarBooks([]);
       setIsUploadingCover(false);
+      setIsbn13("");
+      setGenres("");
+      setPageCount("");
+      setPublishedDate("");
+      setPublisher("");
+      setLanguage("en");
     }
   };
 
@@ -368,6 +390,109 @@ const AddBookForm = () => {
                   setAmazonAffiliateLink(normalizedValue);
                 }}
                 required
+              />
+            </div>
+
+            {/* ISBN-13 Input */}
+            <div className="w-full">
+              <label
+                htmlFor="isbn13"
+                className="text-primary font-departureMono uppercase text-[12px] text-white mb-1"
+              >
+                ISBN-13 (optional):
+              </label>
+              <input
+                className="w-full border border-solid border-white h-[32px] px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-transparent text-white font-departureMono text-[12px]"
+                type="text"
+                id="isbn13"
+                value={isbn13}
+                onChange={(e) => setIsbn13(e.target.value)}
+              />
+            </div>
+
+            {/* Genres Input */}
+            <div className="w-full">
+              <label
+                htmlFor="genres"
+                className="text-primary font-departureMono uppercase text-[12px] text-white mb-1"
+              >
+                Genres (comma-separated, optional):
+              </label>
+              <input
+                className="w-full border border-solid border-white h-[32px] px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-transparent text-white font-departureMono text-[12px]"
+                type="text"
+                id="genres"
+                value={genres}
+                onChange={(e) => setGenres(e.target.value)}
+                placeholder="fantasy, science fiction"
+              />
+            </div>
+
+            {/* Page Count Input */}
+            <div className="w-full">
+              <label
+                htmlFor="pageCount"
+                className="text-primary font-departureMono uppercase text-[12px] text-white mb-1"
+              >
+                Page Count (optional):
+              </label>
+              <input
+                className="w-full border border-solid border-white h-[32px] px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-transparent text-white font-departureMono text-[12px]"
+                type="number"
+                id="pageCount"
+                value={pageCount}
+                onChange={(e) => setPageCount(e.target.value)}
+              />
+            </div>
+
+            {/* Published Date Input */}
+            <div className="w-full">
+              <label
+                htmlFor="publishedDate"
+                className="text-primary font-departureMono uppercase text-[12px] text-white mb-1"
+              >
+                Published Date (optional):
+              </label>
+              <input
+                className="w-full border border-solid border-white h-[32px] px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-transparent text-white font-departureMono text-[12px]"
+                type="date"
+                id="publishedDate"
+                value={publishedDate}
+                onChange={(e) => setPublishedDate(e.target.value)}
+              />
+            </div>
+
+            {/* Publisher Input */}
+            <div className="w-full">
+              <label
+                htmlFor="publisher"
+                className="text-primary font-departureMono uppercase text-[12px] text-white mb-1"
+              >
+                Publisher (optional):
+              </label>
+              <input
+                className="w-full border border-solid border-white h-[32px] px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-transparent text-white font-departureMono text-[12px]"
+                type="text"
+                id="publisher"
+                value={publisher}
+                onChange={(e) => setPublisher(e.target.value)}
+              />
+            </div>
+
+            {/* Language Input */}
+            <div className="w-full">
+              <label
+                htmlFor="language"
+                className="text-primary font-departureMono uppercase text-[12px] text-white mb-1"
+              >
+                Language:
+              </label>
+              <input
+                className="w-full border border-solid border-white h-[32px] px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-transparent text-white font-departureMono text-[12px]"
+                type="text"
+                id="language"
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
               />
             </div>
           </div>

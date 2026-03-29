@@ -21,13 +21,13 @@ export async function getBookFromSlug(slug, supabase) {
   // Otherwise, we'll need to search by reconstructing title and author
 
   // For now, we'll fetch all books and find the matching one
-  const { data: books } = await supabase.from("Books").select("*");
+  const { data: books } = await supabase.from("books").select("*");
 
   if (!books) return null;
 
   // Find book where slug matches
   const book = books.find((b) => {
-    const bookSlug = generateBookSlug(b.title, b.author);
+    const bookSlug = generateBookSlug(b.title, b.authors?.[0]);
     return bookSlug === slug;
   });
 

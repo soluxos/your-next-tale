@@ -78,6 +78,31 @@ export default function Navigation({ isLoggedIn = false }) {
               bounce: 0.5,
               duration: 0.8
             }}
+          >
+            <a
+              href="/bookshelves"
+              className="bg-white h-12 px-5 border-solid border-gray-300 border-[1px] rounded-[8px] flex items-center justify-center flex-col"
+            >
+              <p className="font-departureMono uppercase text-[10px] text-textSecondary whitespace-nowrap">
+                Your
+              </p>
+              <p className="font-departureMono uppercase text-[12px] whitespace-nowrap">
+                Bookshelves
+              </p>
+            </a>
+          </motion.div>
+        )}
+        {isLoggedIn && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              type: "spring",
+              stiffness: 300,
+              damping: 20,
+              bounce: 0.5,
+              duration: 0.8
+            }}
             className=""
           >
             <button className="bg-black h-12 px-5 rounded-[8px] flex items-center justify-center w-auto flex-col">
