@@ -2,7 +2,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import Book from "@/components/book/book";
 import LoadingEffect from "@/components/loadingEffect/LoadingEffect";
-import Hero from "@/components/pages/home/Hero";
 import { AnimatePresence } from "motion/react";
 import HeroNew from "@/components/hero/HeroNew";
 

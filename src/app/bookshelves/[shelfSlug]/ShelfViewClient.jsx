@@ -67,7 +67,7 @@ export default function ShelfViewClient({
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground text-center py-12">
+          <p className="text-textPrimary text-center py-12">
             No books on this shelf yet.
           </p>
         )}

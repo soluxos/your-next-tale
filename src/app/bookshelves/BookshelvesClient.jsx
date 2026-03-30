@@ -217,7 +217,7 @@ export default function BookshelvesClient({ shelves: initialShelves, userId }) {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-textPrimary">
                     No books on this shelf yet.
                   </p>
                 )}

@@ -37,7 +37,8 @@ export async function createShelf(supabase, userId, { name, description }) {
       slug,
       description: description || null,
       is_default: false,
-      is_exclusive: false
+      is_exclusive: false,
+      display_order: 999
     })
     .select()
     .single();

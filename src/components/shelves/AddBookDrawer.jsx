@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { addBookToShelf } from "@/lib/shelfBooks";
 import { getUserShelves } from "@/lib/bookshelves";
 import { fetchAndNormaliseBook } from "@/lib/books/fetchAndNormaliseBook";
+import { TABLES } from "@/lib/supabase/types";
 
 export default function AddBookDrawer({
   userId,
@@ -110,13 +111,21 @@ export default function AddBookDrawer({
       setAddingStatus("Adding to shelf...");
       await addBookToShelf(supabase, userId, book.id, selectedShelfId);
 
+      // Fetch the user_books record that was just created
+      const { data: userBook } = await supabase
+        .from(TABLES.USER_BOOKS)
+        .select("*")
+        .eq("user_id", userId)
+        .eq("book_id", book.id)
+        .single();
+
       if (book.is_incomplete) {
         setWarning(
           "Some book details are missing but it has been added to your shelf."
         );
       }
 
-      onBookAdded?.(book);
+      onBookAdded?.({ book, userBook });
       router.refresh();
 
       if (!book.is_incomplete) {

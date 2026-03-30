@@ -14,7 +14,7 @@ export default function PublicShelvesClient({ username, shelves }) {
         </h1>
 
         {shelves.length === 0 && (
-          <p className="text-muted-foreground text-center py-12">
+          <p className="text-textPrimary text-center py-12">
             No bookshelves to show.
           </p>
         )}
@@ -39,14 +39,14 @@ export default function PublicShelvesClient({ username, shelves }) {
                     ) : (
                       <div className="w-full aspect-[2/3] bg-muted rounded-sm" />
                     )}
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                    <p className="text-xs text-textPrimary mt-1 line-clamp-2">
                       {book.title}
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-textPrimary">
                 No books on this shelf.
               </p>
             )}

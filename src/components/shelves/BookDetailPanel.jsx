@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import {
   Sheet,
@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { updateUserBook } from "@/lib/userBooks";
 import { addBookToShelf } from "@/lib/shelfBooks";
 import BuyButton from "@/components/book/BuyButton";
+import { TABLES } from "@/lib/supabase/types";
 
 function StarIcon({ filled, half }) {
   return (
@@ -45,6 +46,25 @@ export default function BookDetailPanel({
   readOnly = false
 }) {
   const supabase = createClient();
+  const [fullBook, setFullBook] = useState(book);
+
+  // Safety net: if book is missing description but has isbn, re-fetch from DB
+  useEffect(() => {
+    if (!book.description && (book.isbn_13 || book.id)) {
+      const col = book.isbn_13 ? "isbn_13" : "id";
+      const val = book.isbn_13 || book.id;
+      supabase
+        .from(TABLES.BOOKS)
+        .select("*")
+        .eq(col, val)
+        .single()
+        .then(({ data }) => {
+          if (data) setFullBook(data);
+        });
+    } else {
+      setFullBook(book);
+    }
+  }, [book.id, book.isbn_13]);
 
   const [rating, setRating] = useState(userBook?.rating || 0);
   const [review, setReview] = useState(userBook?.review || "");
@@ -62,8 +82,8 @@ export default function BookDetailPanel({
   const [savedField, setSavedField] = useState(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
 
-  const coverSrc = book.cover_url
-    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/books/${book.cover_url}`
+  const coverSrc = fullBook.cover_url
+    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/books/${fullBook.cover_url}`
     : null;
 
   const save = useCallback(
@@ -74,7 +94,7 @@ export default function BookDetailPanel({
           supabase,
           userBook.id,
           fields,
-          book.page_count || null
+          fullBook.page_count || null
         );
         const fieldName = Object.keys(fields)[0];
         setSavedField(fieldName);
@@ -83,7 +103,7 @@ export default function BookDetailPanel({
         console.error("Error saving:", e);
       }
     },
-    [userBook?.id, book.page_count, readOnly]
+    [userBook?.id, fullBook.page_count, readOnly]
   );
 
   const handleRating = async (value) => {
@@ -102,8 +122,8 @@ export default function BookDetailPanel({
     const pages = parseInt(value, 10) || 0;
     setProgressPages(pages);
     const percent =
-      book.page_count > 0
-        ? Math.round((pages / book.page_count) * 100)
+      fullBook.page_count > 0
+        ? Math.round((pages / fullBook.page_count) * 100)
         : parseInt(progressPercent, 10) || 0;
     setProgressPercent(percent);
     await save({ progress_pages: pages, progress_percent: percent });
@@ -117,8 +137,8 @@ export default function BookDetailPanel({
     const percent = parseInt(value, 10) || 0;
     setProgressPercent(percent);
     const pages =
-      book.page_count > 0
-        ? Math.round((percent / 100) * book.page_count)
+      fullBook.page_count > 0
+        ? Math.round((percent / 100) * fullBook.page_count)
         : parseInt(progressPages, 10) || 0;
     setProgressPages(pages);
     await save({ progress_percent: percent, progress_pages: pages });
@@ -132,7 +152,7 @@ export default function BookDetailPanel({
     const newShelf = shelves.find((s) => s.id === newShelfId);
     setSelectedShelfId(newShelfId);
     try {
-      await addBookToShelf(supabase, userId, book.id, newShelfId);
+      await addBookToShelf(supabase, userId, fullBook.id, newShelfId);
       setSavedField("shelf");
       setTimeout(() => setSavedField(null), 2000);
       onShelfMove?.(userBook.id, newShelfId, newShelf?.name);
@@ -166,10 +186,10 @@ export default function BookDetailPanel({
       <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="font-ppMondwest text-xl">
-            {book.title}
+            {fullBook.title}
           </SheetTitle>
           <SheetDescription className="font-departureMono uppercase text-[10px] text-textSecondary">
-            {book.authors?.join(", ")}
+            {fullBook.authors?.join(", ")}
           </SheetDescription>
         </SheetHeader>
 
@@ -179,7 +199,7 @@ export default function BookDetailPanel({
             <div className="flex justify-center">
               <img
                 src={coverSrc}
-                alt={book.title}
+                alt={fullBook.title}
                 className="w-32 h-auto rounded-sm shadow-md"
               />
             </div>
@@ -187,16 +207,16 @@ export default function BookDetailPanel({
 
           {/* Buy button */}
           <BuyButton
-            isbn_13={book.isbn_13}
-            title={book.title}
-            authors={book.authors}
+            isbn_13={fullBook.isbn_13}
+            title={fullBook.title}
+            authors={fullBook.authors}
             className="w-full"
           />
 
           {/* Genres */}
-          {Array.isArray(book.genres) && book.genres.length > 0 && (
+          {Array.isArray(fullBook.genres) && fullBook.genres.length > 0 && (
             <div className="flex flex-wrap gap-1.5 justify-center">
-              {book.genres.map((genre, i) => (
+              {fullBook.genres.map((genre, i) => (
                 <span
                   key={i}
                   className="font-departureMono uppercase text-[9px] px-2 py-1 rounded-full bg-[#f4f4f4] text-textSecondary"
@@ -276,14 +296,14 @@ export default function BookDetailPanel({
                   <Input
                     type="number"
                     min={0}
-                    max={book.page_count || undefined}
+                    max={fullBook.page_count || undefined}
                     value={progressPages}
                     onChange={(e) => handlePagesChange(e.target.value)}
                     placeholder="Pages"
                     className="w-24 font-departureMono text-[12px]"
                   />
                   <span className="font-departureMono uppercase text-[10px] text-textSecondary">
-                    / {book.page_count || "?"} pages
+                    / {fullBook.page_count || "?"} pages
                   </span>
                   <Input
                     type="number"

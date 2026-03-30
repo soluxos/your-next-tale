@@ -49,7 +49,7 @@ export default function LoginPage({ message }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#f9f9fb] flex flex-col items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4 py-12">
       {/* Brand */}
       <div className="mb-8 text-center">
         <p
