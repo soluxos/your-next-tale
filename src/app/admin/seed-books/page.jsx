@@ -47,7 +47,11 @@ export default function SeedBooksPage() {
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
       addCustomTerm(inputValue);
-    } else if (e.key === "Backspace" && inputValue === "" && customTerms.length > 0) {
+    } else if (
+      e.key === "Backspace" &&
+      inputValue === "" &&
+      customTerms.length > 0
+    ) {
       removeCustomTerm(customTerms[customTerms.length - 1]);
     }
   };
@@ -126,7 +130,9 @@ export default function SeedBooksPage() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => setSelectedTerms([...DEFAULT_SUBJECT_TERMS, ...customTerms])}
+            onClick={() =>
+              setSelectedTerms([...DEFAULT_SUBJECT_TERMS, ...customTerms])
+            }
             disabled={running}
             className="font-departureMono uppercase text-[10px] text-white/50 hover:text-white transition-colors"
           >
@@ -159,7 +165,10 @@ export default function SeedBooksPage() {
               {term}
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); removeCustomTerm(term); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeCustomTerm(term);
+                }}
                 disabled={running}
                 className="text-white/40 hover:text-white transition-colors leading-none"
                 aria-label={`Remove ${term}`}
@@ -174,9 +183,13 @@ export default function SeedBooksPage() {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleInputKeyDown}
-            onBlur={() => { if (inputValue.trim()) addCustomTerm(inputValue); }}
+            onBlur={() => {
+              if (inputValue.trim()) addCustomTerm(inputValue);
+            }}
             disabled={running}
-            placeholder={customTerms.length === 0 ? "Type a genre and press Enter…" : ""}
+            placeholder={
+              customTerms.length === 0 ? "Type a genre and press Enter…" : ""
+            }
             className="flex-1 min-w-[180px] bg-transparent outline-none font-departureMono uppercase text-[11px] text-white placeholder-white/30 disabled:opacity-40"
           />
         </div>
@@ -188,8 +201,8 @@ export default function SeedBooksPage() {
       {/* Selected summary */}
       {selectedTerms.length > 0 && (
         <p className="font-departureMono text-[10px] text-white/40">
-          {selectedTerms.length} term{selectedTerms.length !== 1 ? "s" : ""} selected:{" "}
-          {selectedTerms.join(", ")}
+          {selectedTerms.length} term{selectedTerms.length !== 1 ? "s" : ""}{" "}
+          selected: {selectedTerms.join(", ")}
         </p>
       )}
 
@@ -238,7 +251,9 @@ export default function SeedBooksPage() {
               ["Inserted", summary.inserted],
               ["Cover Failures", summary.coverFailures],
               ["Incomplete", summary.incompleteBooks],
-              ...(summary.failed > 0 ? [["Failed (skipped)", summary.failed]] : [])
+              ...(summary.failed > 0
+                ? [["Failed (skipped)", summary.failed]]
+                : [])
             ].map(([label, value]) => (
               <div key={label}>
                 <p className="font-departureMono uppercase text-[10px] text-white/40">
@@ -255,4 +270,3 @@ export default function SeedBooksPage() {
     </div>
   );
 }
-
