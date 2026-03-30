@@ -197,7 +197,7 @@ export default function UserSettings({ user }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="p-6 pt-40 max-w-3xl mx-auto">
+      <div className="p-6 pt-20 max-w-3xl mx-auto">
         {/* Page Title */}
         <div className="mb-8">
           <h1 className="font-ppMondwest text-[24px] text-textPrimary">

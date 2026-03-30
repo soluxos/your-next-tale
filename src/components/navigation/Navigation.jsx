@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
+import Link from "next/link";
 import AboutPopover from "./AboutPopover";
 
 export default function Navigation({
@@ -34,14 +35,14 @@ export default function Navigation({
           }}
           className="bg-white h-12 px-5 border-solid border-border border-[1px] rounded-[8px] flex items-center gap-4 w-auto relative max-w-[calc(100vw - 48px)]"
         >
-          <a href="/" className="flex flex-col items-start">
+          <Link href="/" className="flex flex-col items-start">
             <p className="font-departureMono uppercase text-[12px]">
               Your Next Tale
             </p>
             <p className="font-departureMono uppercase text-textSecondary text-[10px] whitespace-nowrap">
-              Curated fantasy & sci-fi books
+              Curated fantasy &amp; sci-fi books
             </p>
-          </a>
+          </Link>
           {/* <nav className="flex items-center"> */}
           {/* <div className="separator w-[1px] h-6 bg-[#ECECEC]" />
             <div
@@ -83,7 +84,7 @@ export default function Navigation({
               duration: 0.8
             }}
           >
-            <a
+            <Link
               href={
                 username ? `/u/${encodeURIComponent(username)}` : "/account"
               }
@@ -95,7 +96,7 @@ export default function Navigation({
               <p className="font-departureMono uppercase text-[12px] whitespace-nowrap">
                 Profile
               </p>
-            </a>
+            </Link>
           </motion.div>
         )}
         {isLoggedIn && isAdmin && (
@@ -111,7 +112,7 @@ export default function Navigation({
             }}
             className=""
           >
-            <a
+            <Link
               href="/admin"
               className="bg-black h-12 px-5 rounded-[8px] flex items-center justify-center w-auto flex-col"
             >
@@ -121,7 +122,7 @@ export default function Navigation({
               <p className="font-departureMono uppercase text-[12px] text-white whitespace-nowrap">
                 Dashboard
               </p>
-            </a>
+            </Link>
           </motion.div>
         )}
       </div>

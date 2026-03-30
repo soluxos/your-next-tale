@@ -7,11 +7,14 @@ export default function SeedBooksPage() {
   const [selectedTerms, setSelectedTerms] = useState([
     ...DEFAULT_SUBJECT_TERMS
   ]);
+  const [customTerms, setCustomTerms] = useState([]);
+  const [inputValue, setInputValue] = useState("");
   const [running, setRunning] = useState(false);
   const [log, setLog] = useState([]);
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState(null);
   const logEndRef = useRef(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -21,6 +24,32 @@ export default function SeedBooksPage() {
     setSelectedTerms((prev) =>
       prev.includes(term) ? prev.filter((t) => t !== term) : [...prev, term]
     );
+  };
+
+  const addCustomTerm = (raw) => {
+    const term = raw.trim().toLowerCase().replace(/,+$/, "");
+    if (!term) return;
+    if (!customTerms.includes(term)) {
+      setCustomTerms((prev) => [...prev, term]);
+    }
+    if (!selectedTerms.includes(term)) {
+      setSelectedTerms((prev) => [...prev, term]);
+    }
+    setInputValue("");
+  };
+
+  const removeCustomTerm = (term) => {
+    setCustomTerms((prev) => prev.filter((t) => t !== term));
+    setSelectedTerms((prev) => prev.filter((t) => t !== term));
+  };
+
+  const handleInputKeyDown = (e) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addCustomTerm(inputValue);
+    } else if (e.key === "Backspace" && inputValue === "" && customTerms.length > 0) {
+      removeCustomTerm(customTerms[customTerms.length - 1]);
+    }
   };
 
   const handleRun = () => {
@@ -71,10 +100,10 @@ export default function SeedBooksPage() {
         </p>
       </div>
 
-      {/* Term pills */}
+      {/* Preset term pills */}
       <div className="space-y-3">
         <p className="font-departureMono uppercase text-[10px] text-white/40">
-          Subject Terms
+          Preset Genres
         </p>
         <div className="flex flex-wrap gap-2">
           {DEFAULT_SUBJECT_TERMS.map((term) => {
@@ -97,7 +126,7 @@ export default function SeedBooksPage() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => setSelectedTerms([...DEFAULT_SUBJECT_TERMS])}
+            onClick={() => setSelectedTerms([...DEFAULT_SUBJECT_TERMS, ...customTerms])}
             disabled={running}
             className="font-departureMono uppercase text-[10px] text-white/50 hover:text-white transition-colors"
           >
@@ -112,6 +141,57 @@ export default function SeedBooksPage() {
           </button>
         </div>
       </div>
+
+      {/* Custom genre tag input */}
+      <div className="space-y-3">
+        <p className="font-departureMono uppercase text-[10px] text-white/40">
+          Custom Genres
+        </p>
+        <div
+          onClick={() => inputRef.current?.focus()}
+          className="min-h-[48px] flex flex-wrap gap-2 items-center border border-white/20 rounded-[8px] px-3 py-2 cursor-text bg-white/5 focus-within:border-white/50 transition-colors"
+        >
+          {customTerms.map((term) => (
+            <span
+              key={term}
+              className="flex items-center gap-1.5 bg-white/10 border border-white/20 text-white font-departureMono uppercase text-[11px] rounded-[6px] px-2.5 py-1"
+            >
+              {term}
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); removeCustomTerm(term); }}
+                disabled={running}
+                className="text-white/40 hover:text-white transition-colors leading-none"
+                aria-label={`Remove ${term}`}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+          <input
+            ref={inputRef}
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleInputKeyDown}
+            onBlur={() => { if (inputValue.trim()) addCustomTerm(inputValue); }}
+            disabled={running}
+            placeholder={customTerms.length === 0 ? "Type a genre and press Enter…" : ""}
+            className="flex-1 min-w-[180px] bg-transparent outline-none font-departureMono uppercase text-[11px] text-white placeholder-white/30 disabled:opacity-40"
+          />
+        </div>
+        <p className="font-departureMono text-[10px] text-white/30">
+          Press Enter or comma to add. Backspace to remove the last tag.
+        </p>
+      </div>
+
+      {/* Selected summary */}
+      {selectedTerms.length > 0 && (
+        <p className="font-departureMono text-[10px] text-white/40">
+          {selectedTerms.length} term{selectedTerms.length !== 1 ? "s" : ""} selected:{" "}
+          {selectedTerms.join(", ")}
+        </p>
+      )}
 
       {/* Run button */}
       <button
@@ -157,7 +237,8 @@ export default function SeedBooksPage() {
               ["Already in DB", summary.alreadyInDb],
               ["Inserted", summary.inserted],
               ["Cover Failures", summary.coverFailures],
-              ["Incomplete", summary.incompleteBooks]
+              ["Incomplete", summary.incompleteBooks],
+              ...(summary.failed > 0 ? [["Failed (skipped)", summary.failed]] : [])
             ].map(([label, value]) => (
               <div key={label}>
                 <p className="font-departureMono uppercase text-[10px] text-white/40">
@@ -174,3 +255,4 @@ export default function SeedBooksPage() {
     </div>
   );
 }
+

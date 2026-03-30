@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
@@ -17,7 +18,7 @@ export default function AdminNav() {
   return (
     <nav className="flex flex-col gap-1">
       {navLinks.map((link) => (
-        <a
+        <Link
           key={link.href}
           href={link.href}
           className={cn(
@@ -28,7 +29,7 @@ export default function AdminNav() {
           )}
         >
           {link.label}
-        </a>
+        </Link>
       ))}
     </nav>
   );

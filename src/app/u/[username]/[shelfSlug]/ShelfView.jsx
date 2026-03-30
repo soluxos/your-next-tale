@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import Book from "@/components/book/book";
 import AddBookDrawer from "@/components/shelves/AddBookDrawer";
 import BookDetailPanel from "@/components/shelves/BookDetailPanel";
 import { removeBookFromShelf } from "@/lib/shelfBooks";
 import { createClient } from "@/utils/supabase/client";
+import { TABLES } from "@/lib/supabase/types";
 
 export default function ShelfView({
-  books: initialBooks,
   shelfName,
   shelfId,
   shelfSlug,
@@ -16,11 +16,89 @@ export default function ShelfView({
   userId,
   shelves = []
 }) {
-  const [books, setBooks] = useState(initialBooks);
+  const [books, setBooks] = useState([]);
+  const [booksLoading, setBooksLoading] = useState(true);
   const [itemsPerRow, setItemsPerRow] = useState(9);
   const [addDrawerOpen, setAddDrawerOpen] = useState(false);
   const [selectedBook, setSelectedBook] = useState(null);
   const supabase = createClient();
+
+  // Fetch books client-side whenever the shelf changes.
+  // This keeps the shelf chrome rendered on every tab navigation
+  // and only the book tiles briefly show loading placeholders.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchBooks() {
+      setBooksLoading(true);
+      setBooks([]);
+      setSelectedBook(null);
+
+      let result = [];
+
+      if (shelfSlug === "all") {
+        const { data: userBooks } = await supabase
+          .from(TABLES.USER_BOOKS)
+          .select(
+            `id, book_id, rating, review, progress_pages, progress_percent,
+             date_started, date_finished, books (*)`
+          )
+          .eq("user_id", userId);
+
+        result = (userBooks || []).map((ub) => ({
+          ...ub.books,
+          userBook: {
+            id: ub.id,
+            rating: ub.rating,
+            review: ub.review,
+            progress_pages: ub.progress_pages,
+            progress_percent: ub.progress_percent,
+            date_started: ub.date_started,
+            date_finished: ub.date_finished
+          }
+        }));
+      } else if (shelfId) {
+        const { data: shelfBooks } = await supabase
+          .from(TABLES.BOOKSHELF_BOOKS)
+          .select(
+            `id, bookshelf_id,
+             user_books (id, book_id, rating, review, progress_pages,
+               progress_percent, date_started, date_finished, books (*))`
+          )
+          .eq("bookshelf_id", shelfId);
+
+        result = (shelfBooks || [])
+          .map((sb) => {
+            const ub = sb.user_books;
+            if (!ub?.books) return null;
+            return {
+              ...ub.books,
+              bookshelf_id: sb.bookshelf_id,
+              userBook: {
+                id: ub.id,
+                rating: ub.rating,
+                review: ub.review,
+                progress_pages: ub.progress_pages,
+                progress_percent: ub.progress_percent,
+                date_started: ub.date_started,
+                date_finished: ub.date_finished
+              }
+            };
+          })
+          .filter(Boolean);
+      }
+
+      if (!cancelled) {
+        setBooks(result);
+        setBooksLoading(false);
+      }
+    }
+
+    fetchBooks();
+    return () => {
+      cancelled = true;
+    };
+  }, [shelfSlug, shelfId, userId]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -179,7 +257,64 @@ export default function ShelfView({
           <div className="flex-1 flex-col w-full h-full">
             <div className="left-border w-full h-4 border-1 border-border border flex border-r-0 border-l-0" />
             <div id="grid-container" className="grid">
-              {!isOwner && isEmpty ? (
+              {booksLoading ? (
+                /* Shelf chrome with pulsing placeholder tiles while books load */
+                <React.Fragment>
+                  <div className="row flex flex-row items-stretch bg-[#F4F4F4] overflow-hidden">
+                    <div className="flex flex-col shrink-0 w-[40px]">
+                      <div className="flex-1 bg-[#E6E6E6]" />
+                      <svg
+                        width="40"
+                        height="40"
+                        viewBox="0 0 40 40"
+                        aria-hidden="true"
+                        style={{ display: "block", flexShrink: 0 }}
+                      >
+                        <polygon
+                          points="0,0 40,0 0,40"
+                          style={{ fill: "#E6E6E6" }}
+                        />
+                        <polygon
+                          points="40,0 40,40 0,40"
+                          style={{ fill: "transparent" }}
+                        />
+                      </svg>
+                    </div>
+                    <div className="flex-1 flex flex-col overflow-hidden relative">
+                      <div className="flex-1 grid grid-cols-2 xs:grid-cols-4 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-2 p-2 pb-2 pt-4 items-end overflow-hidden bg-[#d5d5d5]">
+                        {Array.from({ length: itemsPerRow }).map((_, i) => (
+                          <div
+                            key={i}
+                            className="w-full animate-pulse bg-[#bbb] rounded-sm"
+                            style={{ aspectRatio: "2 / 3" }}
+                          />
+                        ))}
+                      </div>
+                      <div className="h-[40px] w-full bg-[#f5f5f5] shrink-0 absolute bottom-0 left-0 z-[1]" />
+                    </div>
+                    <div className="flex flex-col shrink-0 w-[40px]">
+                      <div className="flex-1 bg-[#E0E0E0]" />
+                      <svg
+                        width="40"
+                        height="40"
+                        viewBox="0 0 40 40"
+                        aria-hidden="true"
+                        style={{ display: "block", flexShrink: 0 }}
+                      >
+                        <polygon
+                          points="0,0 40,0 40,40"
+                          style={{ fill: "#E0E0E0" }}
+                        />
+                        <polygon
+                          points="0,0 0,40 40,40"
+                          style={{ fill: "transparent" }}
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="h-4 flex w-full border-t border-b border-[#ddd] bg-[#F4F4F4]" />
+                </React.Fragment>
+              ) : !isOwner && isEmpty ? (
                 <React.Fragment>
                   <div className="flex flex-row items-stretch bg-[#F4F4F4] overflow-hidden">
                     {/* Left inner shelf panel */}

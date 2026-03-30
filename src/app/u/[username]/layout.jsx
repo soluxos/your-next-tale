@@ -77,15 +77,10 @@ export default async function UserLayout({ children, params }) {
   }
 
   // Resolve avatar URL
+  // Resolve avatar URL — use public storage URL (no authenticated download needed)
   let avatarUrl = null;
   if (profile.avatar_url) {
-    const { data: blob } = await supabase.storage
-      .from("avatars")
-      .download(profile.avatar_url);
-    if (blob) {
-      const buffer = Buffer.from(await blob.arrayBuffer());
-      avatarUrl = `data:image/jpeg;base64,${buffer.toString("base64")}`;
-    }
+    avatarUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${profile.avatar_url}`;
   }
 
   return (

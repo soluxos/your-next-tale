@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { signup } from "@/app/login/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,12 +76,12 @@ export default function SignupPage() {
                 We&apos;ve sent a confirmation link to your email address.
                 Please click it to activate your account before signing in.
               </p>
-              <a href="/login">
+              <Link href="/login">
                 <Button className="w-full h-[44px] bg-[#1f1f1f] text-white hover:bg-[#353535] font-departureMono uppercase text-[11px] rounded-[8px] transition-colors mt-2">
                   Go to sign in
                 </Button>
-              </a>
-            </CardContent>
+              </Link>{" "}
+            </CardContent>{" "}
           </>
         ) : (
           <>
@@ -178,12 +179,12 @@ export default function SignupPage() {
               <div className="mt-4 text-center">
                 <p className="font-departureMono uppercase text-[11px] text-textSecondary">
                   Already have an account?
-                  <a
+                  <Link
                     href="/login"
                     className="text-textPrimary underline underline-offset-2 hover:opacity-70 transition-opacity"
                   >
                     Sign in
-                  </a>
+                  </Link>
                 </p>
               </div>
             </CardContent>

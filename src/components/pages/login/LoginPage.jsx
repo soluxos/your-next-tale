@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { login } from "@/app/login/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -144,12 +145,12 @@ export default function LoginPage({ message }) {
           <div className="mt-4 text-center">
             <p className="font-departureMono uppercase text-[11px] text-textSecondary">
               Don&apos;t have an account?{" "}
-              <a
+              <Link
                 href="/get-started"
                 className="text-textPrimary underline underline-offset-2 hover:opacity-70 transition-opacity"
               >
                 Get started
-              </a>
+              </Link>
             </p>
           </div>
         </CardContent>

@@ -1,10 +1,12 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/utils/supabase/client";
+import { useAuth } from "@/components/providers/AuthProvider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -14,24 +16,25 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 
-export default function TopNavigation({ user }) {
+export default function TopNavigation() {
+  const { user, profile, loading } = useAuth();
   const isLoggedIn = !!user;
-  const [activeItem, setActiveItem] = useState("discover");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState(null);
-  const [fullName, setFullName] = useState("");
-  const [username, setUsername] = useState("");
-  const [role, setRole] = useState("");
-  const [mounted, setMounted] = useState(false);
-  const searchInputRef = useRef(null);
-  const searchContainerRef = useRef(null);
+  const isAdmin = profile?.role === "admin";
+  const fullName = profile?.full_name || "";
+  const username = profile?.username || "";
+  const avatarUrl = profile?.avatar_url
+    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${profile.avatar_url}`
+    : null;
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
   const supabase = createClient();
 
-  const isAdmin = role === "admin";
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const navItems = [
     { id: "discover", label: "Discover", href: "/" },
@@ -43,42 +46,13 @@ export default function TopNavigation({ user }) {
     { id: "admin", label: "Admin", href: "/admin", adminOnly: true }
   ];
 
-  useEffect(() => {
-    setMounted(true);
-    const path = window.location.pathname;
-    const match = navItems.find((item) => item.href === path);
-    if (match) setActiveItem(match.id);
-    if (path.startsWith("/u/")) setActiveItem("profile");
-    if (path.startsWith("/admin")) setActiveItem("admin");
-  }, [username]);
-
-  useEffect(() => {
-    if (!user?.id) return;
-
-    async function loadProfile() {
-      const { data } = await supabase
-        .from("profiles")
-        .select("full_name, username, avatar_url, role")
-        .eq("id", user.id)
-        .single();
-
-      if (data) {
-        setFullName(data.full_name || "");
-        setUsername(data.username || "");
-        setRole(data.role || "");
-        if (data.avatar_url) {
-          const { data: blob, error } = await supabase.storage
-            .from("avatars")
-            .download(data.avatar_url);
-          if (!error) {
-            setAvatarUrl(URL.createObjectURL(blob));
-          }
-        }
-      }
-    }
-
-    loadProfile();
-  }, [user?.id]);
+  function getActiveItem() {
+    if (pathname.startsWith("/admin")) return "admin";
+    if (pathname.startsWith("/u/")) return "profile";
+    if (pathname === "/") return "discover";
+    return "";
+  }
+  const activeItem = getActiveItem();
 
   const getInitials = (name) => {
     if (!name) return user?.email?.[0]?.toUpperCase() ?? "?";
@@ -91,8 +65,14 @@ export default function TopNavigation({ user }) {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    window.location.href = "/";
+    router.push("/");
+    router.refresh();
   };
+
+  const visibleNavItems = navItems.filter((item) => {
+    if (item.adminOnly) return isLoggedIn && isAdmin;
+    return isLoggedIn || item.id === "discover";
+  });
 
   return (
     <motion.header
@@ -108,40 +88,29 @@ export default function TopNavigation({ user }) {
     >
       <div className="max-w-full w-full px-5 mx-auto flex items-center justify-between md:grid md:grid-cols-3">
         {/* Logo */}
-        <a href="/" className="flex items-center gap-3">
+        <Link href="/" className="flex items-center gap-3">
           <span className="font-ppMondwest text-[18px] text-textPrimary">
             Your next tale
           </span>
-        </a>
+        </Link>
 
         {/* Center Navigation */}
         <nav className="hidden md:flex items-center justify-center gap-1">
-          {navItems
-            .filter((item) => {
-              if (item.adminOnly) return isLoggedIn && isAdmin;
-              return isLoggedIn || item.id === "discover";
-            })
-            .map((item) => (
-              <a
-                key={item.id}
-                href={item.href}
-                onClick={(e) => {
-                  if (item.id === "profile") {
-                    e.preventDefault();
-                    router.push(item.href);
-                  }
-                  setActiveItem(item.id);
-                }}
-                className={cn(
-                  "px-4 py-2 font-departureMono uppercase text-[11px] rounded-[8px] transition-colors",
-                  activeItem === item.id
-                    ? "bg-[#f4f4f4] text-textPrimary"
-                    : "text-textSecondary hover:bg-[#f4f4f4] hover:text-textPrimary"
-                )}
-              >
-                {item.label}
-              </a>
-            ))}
+          {visibleNavItems.map((item) => (
+            <Link
+              key={item.id}
+              href={item.href}
+              onClick={() => setMobileMenuOpen(false)}
+              className={cn(
+                "px-4 py-2 font-departureMono uppercase text-[11px] rounded-[8px] transition-colors",
+                activeItem === item.id
+                  ? "bg-[#f4f4f4] text-textPrimary"
+                  : "text-textSecondary hover:bg-[#f4f4f4] hover:text-textPrimary"
+              )}
+            >
+              {item.label}
+            </Link>
+          ))}
         </nav>
 
         {/* Right Actions */}
@@ -176,87 +145,85 @@ export default function TopNavigation({ user }) {
             </svg>
           </button>
 
-          {mounted &&
-            (isLoggedIn ? (
-              /* Logged-in: avatar dropdown */
-              <DropdownMenu>
-                <DropdownMenuTrigger className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-border">
-                  <Avatar className="h-9 w-9 border border-border">
-                    <AvatarImage src={avatarUrl} alt={fullName} />
-                    <AvatarFallback className="text-[11px] font-departureMono bg-[#f4f4f4] text-textPrimary">
-                      {getInitials(fullName)}
-                    </AvatarFallback>
-                  </Avatar>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <div className="px-2 py-1.5">
-                    <p className="font-departureMono uppercase text-[10px] text-textSecondary truncate">
-                      {fullName || user?.email}
-                    </p>
-                  </div>
-                  <DropdownMenuSeparator />
-                  {username && (
-                    <DropdownMenuItem
-                      className="font-departureMono uppercase text-[11px] cursor-pointer"
-                      onClick={() => {
-                        window.location.href = `/u/${encodeURIComponent(username)}`;
-                      }}
-                    >
-                      My Profile
-                    </DropdownMenuItem>
-                  )}
-                  {isAdmin && (
-                    <DropdownMenuItem
-                      className="font-departureMono uppercase text-[11px] cursor-pointer"
-                      onClick={() => {
-                        window.location.href = "/admin";
-                      }}
-                    >
-                      Admin Dashboard
-                    </DropdownMenuItem>
-                  )}
+          {/* Avatar / sign-in buttons */}
+          {loading ? (
+            <div className="w-9 h-9 rounded-full bg-[#f4f4f4] animate-pulse" />
+          ) : mounted && isLoggedIn ? (
+            /* Logged-in: avatar dropdown */
+            <DropdownMenu>
+              <DropdownMenuTrigger className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-border">
+                <Avatar className="h-9 w-9 border border-border">
+                  <AvatarImage src={avatarUrl} alt={fullName} />
+                  <AvatarFallback className="text-[11px] font-departureMono bg-[#f4f4f4] text-textPrimary">
+                    {getInitials(fullName)}
+                  </AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <div className="px-2 py-1.5">
+                  <p className="font-departureMono uppercase text-[10px] text-textSecondary truncate">
+                    {fullName || user?.email}
+                  </p>
+                </div>
+                <DropdownMenuSeparator />
+                {username && (
                   <DropdownMenuItem
                     className="font-departureMono uppercase text-[11px] cursor-pointer"
-                    onClick={() => {
-                      window.location.href = "/account";
-                    }}
+                    onClick={() =>
+                      router.push(`/u/${encodeURIComponent(username)}`)
+                    }
                   >
-                    Account Settings
+                    My Profile
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
+                )}
+                {isAdmin && (
                   <DropdownMenuItem
-                    onClick={handleSignOut}
-                    className="font-departureMono uppercase text-[11px] text-red-500 focus:text-red-500 cursor-pointer"
+                    className="font-departureMono uppercase text-[11px] cursor-pointer"
+                    onClick={() => router.push("/admin")}
                   >
-                    Sign Out
+                    Admin Dashboard
                   </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              /* Logged-out: sign in + get started */
-              <>
-                <a
-                  href="/login"
-                  className="hidden md:flex h-9 px-4 items-center justify-center font-departureMono uppercase text-[11px] text-textSecondary rounded-[8px] bg-white border border-border hover:bg-[#f4f4f4] transition-colors"
+                )}
+                <DropdownMenuItem
+                  className="font-departureMono uppercase text-[11px] cursor-pointer"
+                  onClick={() => router.push("/account")}
                 >
-                  Sign In
-                </a>
-                <a
-                  href="/get-started"
-                  className="hidden md:flex h-9 px-4 items-center justify-center gap-2 font-departureMono uppercase text-[11px] text-white rounded-[8px] bg-[#1f1f1f] hover:bg-[#353535] transition-colors"
+                  Account Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleSignOut}
+                  className="font-departureMono uppercase text-[11px] text-red-500 focus:text-red-500 cursor-pointer"
                 >
-                  Get Started
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M13.172 12l-4.95-4.95 1.414-1.414L16 12l-6.364 6.364-1.414-1.414z" />
-                  </svg>
-                </a>
-              </>
-            ))}
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : mounted ? (
+            /* Logged-out: sign in + get started */
+            <>
+              <Link
+                href="/login"
+                className="hidden md:flex h-9 px-4 items-center justify-center font-departureMono uppercase text-[11px] text-textSecondary rounded-[8px] bg-white border border-border hover:bg-[#f4f4f4] transition-colors"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/get-started"
+                className="hidden md:flex h-9 px-4 items-center justify-center gap-2 font-departureMono uppercase text-[11px] text-white rounded-[8px] bg-[#1f1f1f] hover:bg-[#353535] transition-colors"
+              >
+                Get Started
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M13.172 12l-4.95-4.95 1.414-1.414L16 12l-6.364 6.364-1.414-1.414z" />
+                </svg>
+              </Link>
+            </>
+          ) : null}
         </div>
       </div>
 
@@ -271,36 +238,25 @@ export default function TopNavigation({ user }) {
             className="md:hidden absolute top-full left-0 right-0 mt-2 mx-6"
           >
             <div className="bg-white border border-border rounded-[8px] shadow-lg p-2 flex flex-col gap-1">
-              {navItems
-                .filter((item) => {
-                  if (item.adminOnly) return isLoggedIn && isAdmin;
-                  return isLoggedIn || item.id === "discover";
-                })
-                .map((item) => (
-                  <a
-                    key={item.id}
-                    href={item.href}
-                    onClick={(e) => {
-                      if (item.id === "profile") {
-                        e.preventDefault();
-                        router.push(item.href);
-                      }
-                      setActiveItem(item.id);
-                      setMobileMenuOpen(false);
-                    }}
-                    className={cn(
-                      "px-4 py-3 font-departureMono uppercase text-[11px] rounded-[6px] transition-colors",
-                      activeItem === item.id
-                        ? "bg-[#f4f4f4] text-textPrimary"
-                        : "text-textSecondary hover:bg-[#f4f4f4] hover:text-textPrimary"
-                    )}
-                  >
-                    {item.label}
-                  </a>
-                ))}
+              {visibleNavItems.map((item) => (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    "px-4 py-3 font-departureMono uppercase text-[11px] rounded-[6px] transition-colors",
+                    activeItem === item.id
+                      ? "bg-[#f4f4f4] text-textPrimary"
+                      : "text-textSecondary hover:bg-[#f4f4f4] hover:text-textPrimary"
+                  )}
+                >
+                  {item.label}
+                </Link>
+              ))}
               <div className="h-px bg-border my-1" />
-              <a
+              <Link
                 href="/search"
+                onClick={() => setMobileMenuOpen(false)}
                 className="px-4 py-3 font-departureMono uppercase text-[11px] text-textSecondary rounded-[6px] hover:bg-[#f4f4f4] hover:text-textPrimary transition-colors flex items-center gap-2"
               >
                 <svg
@@ -317,7 +273,7 @@ export default function TopNavigation({ user }) {
                   <path d="m21 21-4.35-4.35" />
                 </svg>
                 Search
-              </a>
+              </Link>
               {mounted && (
                 <>
                   <div className="h-px bg-border my-1" />
@@ -329,30 +285,30 @@ export default function TopNavigation({ user }) {
                         </p>
                       </div>
                       {username && (
-                        <a
+                        <Link
                           href={`/u/${encodeURIComponent(username)}`}
-                          className="px-4 py-3 font-departureMono uppercase text-[11px] text-textSecondary rounded-[6px] hover:bg-[#f4f4f4] hover:text-textPrimary transition-colors"
                           onClick={() => setMobileMenuOpen(false)}
+                          className="px-4 py-3 font-departureMono uppercase text-[11px] text-textSecondary rounded-[6px] hover:bg-[#f4f4f4] hover:text-textPrimary transition-colors"
                         >
                           My Profile
-                        </a>
+                        </Link>
                       )}
                       {isAdmin && (
-                        <a
+                        <Link
                           href="/admin"
-                          className="px-4 py-3 font-departureMono uppercase text-[11px] text-textSecondary rounded-[6px] hover:bg-[#f4f4f4] hover:text-textPrimary transition-colors"
                           onClick={() => setMobileMenuOpen(false)}
+                          className="px-4 py-3 font-departureMono uppercase text-[11px] text-textSecondary rounded-[6px] hover:bg-[#f4f4f4] hover:text-textPrimary transition-colors"
                         >
                           Admin Dashboard
-                        </a>
+                        </Link>
                       )}
-                      <a
+                      <Link
                         href="/account"
-                        className="px-4 py-3 font-departureMono uppercase text-[11px] text-textSecondary rounded-[6px] hover:bg-[#f4f4f4] hover:text-textPrimary transition-colors"
                         onClick={() => setMobileMenuOpen(false)}
+                        className="px-4 py-3 font-departureMono uppercase text-[11px] text-textSecondary rounded-[6px] hover:bg-[#f4f4f4] hover:text-textPrimary transition-colors"
                       >
                         Account Settings
-                      </a>
+                      </Link>
                       <button
                         onClick={() => {
                           setMobileMenuOpen(false);
@@ -365,17 +321,17 @@ export default function TopNavigation({ user }) {
                     </>
                   ) : (
                     <div className="flex flex-col gap-2 p-2 pt-1">
-                      <a
+                      <Link
                         href="/login"
-                        className="w-full h-10 flex items-center justify-center font-departureMono uppercase text-[11px] text-textPrimary rounded-[8px] bg-[#f4f4f4] hover:bg-[#eaeaea] transition-colors"
                         onClick={() => setMobileMenuOpen(false)}
+                        className="w-full h-10 flex items-center justify-center font-departureMono uppercase text-[11px] text-textPrimary rounded-[8px] bg-[#f4f4f4] hover:bg-[#eaeaea] transition-colors"
                       >
                         Sign In
-                      </a>
-                      <a
+                      </Link>
+                      <Link
                         href="/get-started"
-                        className="w-full h-10 flex items-center justify-center gap-2 font-departureMono uppercase text-[11px] text-white rounded-[8px] bg-[#1f1f1f] hover:bg-[#353535] transition-colors"
                         onClick={() => setMobileMenuOpen(false)}
+                        className="w-full h-10 flex items-center justify-center gap-2 font-departureMono uppercase text-[11px] text-white rounded-[8px] bg-[#1f1f1f] hover:bg-[#353535] transition-colors"
                       >
                         Get Started
                         <svg
@@ -386,7 +342,7 @@ export default function TopNavigation({ user }) {
                         >
                           <path d="M13.172 12l-4.95-4.95 1.414-1.414L16 12l-6.364 6.364-1.414-1.414z" />
                         </svg>
-                      </a>
+                      </Link>
                     </div>
                   )}
                 </>

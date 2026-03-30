@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import TopNavigation from "@/components/navigation/TopNavigation";
@@ -70,12 +71,12 @@ export default function ProfileLayout({ profile, shelves, isOwner, children }) {
 
           {isOwner && (
             <div className="flex gap-2 items-center">
-              <a
+              <Link
                 href="/account"
                 className="shrink-0 h-8 px-3 flex items-center font-departureMono uppercase text-[10px] text-textSecondary rounded-[8px] border border-border hover:bg-[#f4f4f4] transition-colors"
               >
                 Edit Profile
-              </a>
+              </Link>
               <button
                 onClick={() => setManageShelvesOpen(true)}
                 className="flex items-center gap-1.5 px-3 h-8
@@ -112,9 +113,10 @@ export default function ProfileLayout({ profile, shelves, isOwner, children }) {
         <div className="max-w-4xl mx-auto">
           <nav className="flex gap-1 overflow-x-auto no-scrollbar -mb-px items-center">
             {tabs.map((tab) => (
-              <a
+              <Link
                 key={tab.slug}
                 href={`/u/${encodeURIComponent(profile.username)}/${tab.slug}`}
+                prefetch={true}
                 className={cn(
                   "px-3 py-2 font-departureMono uppercase text-[11px] whitespace-nowrap border-b-2 transition-colors",
                   activeSlug === tab.slug
@@ -123,7 +125,7 @@ export default function ProfileLayout({ profile, shelves, isOwner, children }) {
                 )}
               >
                 {tab.name}
-              </a>
+              </Link>
             ))}
           </nav>
         </div>

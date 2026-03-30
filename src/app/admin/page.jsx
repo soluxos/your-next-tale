@@ -1,4 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
+import Link from "next/link";
 
 export default async function AdminDashboard() {
   const supabase = await createClient();
@@ -47,18 +48,18 @@ export default async function AdminDashboard() {
       </div>
 
       <div className="flex gap-3">
-        <a
+        <Link
           href="/admin/seed-books"
           className="border border-white/30 text-white font-departureMono uppercase text-[11px] rounded-[8px] px-6 py-3 hover:bg-white/5 transition-colors"
         >
           Seed Books
-        </a>
-        <a
+        </Link>
+        <Link
           href="/admin/add-new-book"
           className="border border-white/30 text-white font-departureMono uppercase text-[11px] rounded-[8px] px-6 py-3 hover:bg-white/5 transition-colors"
         >
           Add Book
-        </a>
+        </Link>
       </div>
     </div>
   );

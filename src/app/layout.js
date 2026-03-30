@@ -3,8 +3,9 @@ import { Inter } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import Script from "next/script";
-import { createClient } from "@/utils/supabase/server";
 import TopNavigation from "@/components/navigation/TopNavigation";
+import Footer from "@/components/navigation/Footer";
+import { AuthProvider } from "@/components/providers/AuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -64,12 +65,7 @@ export const metadata = {
   }
 };
 
-export default async function RootLayout({ children }) {
-  const supabase = await createClient();
-  const {
-    data: { user }
-  } = await supabase.auth.getUser(); // Use getUser() for secure authentication
-
+export default function RootLayout({ children }) {
   return (
     <html
       lang="en"
@@ -80,8 +76,11 @@ export default async function RootLayout({ children }) {
       >
         <div aria-hidden="true" className="noise-overlay" />
         <div aria-hidden="true" className="scanlines-overlay" />
-        <TopNavigation user={user} />
+        <AuthProvider>
+          <TopNavigation />
+        </AuthProvider>
         {children}
+        <Footer />
         <Script src="https://scripts.simpleanalyticscdn.com/latest.js" />
       </body>
     </html>
