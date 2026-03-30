@@ -219,7 +219,7 @@ export default function BookDetailPanel({
               {fullBook.genres.map((genre, i) => (
                 <span
                   key={i}
-                  className="font-departureMono uppercase text-[9px] px-2 py-1 rounded-full bg-[#f4f4f4] text-textSecondary"
+                  className="font-departureMono uppercase text-[9px] px-2 py-1 rounded-[6px] bg-[#f4f4f4] text-textSecondary"
                 >
                   {genre}
                 </span>
@@ -237,7 +237,7 @@ export default function BookDetailPanel({
                     <SavedIndicator field="shelf" />
                   </label>
                   <select
-                    className="w-full border border-border rounded-[8px] p-2 text-sm font-departureMono"
+                    className="w-full border border-border rounded-[8px] px-3 h-9 font-departureMono text-[12px] bg-transparent focus:outline-none focus:ring-1 focus:ring-textPrimary"
                     value={selectedShelfId}
                     onChange={(e) => handleShelfChange(e.target.value)}
                   >
@@ -277,7 +277,7 @@ export default function BookDetailPanel({
                   <SavedIndicator field="review" />
                 </label>
                 <textarea
-                  className="w-full border border-border rounded-[8px] p-2 text-sm font-departureMono min-h-[80px]"
+                  className="w-full border border-border rounded-[8px] px-3 py-2 font-departureMono text-[12px] min-h-[80px] bg-transparent focus:outline-none focus:ring-1 focus:ring-textPrimary placeholder:text-textSecondary"
                   value={review}
                   onChange={(e) => setReview(e.target.value)}
                   onBlur={handleReviewBlur}

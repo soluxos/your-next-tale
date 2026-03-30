@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 
 export default function HeroNew() {
   return (
-    <div className="relative w-full min-h-[520px] overflow-hidden bg-white flex flex-col items-center justify-center pt-32 pb-16 px-6">
+    <div className="relative w-full min-h-[520px] overflow-hidden bg-white flex flex-col items-center justify-center pt-32 pb-24 px-6">
       {/* Main content */}
       <div className="relative z-10 flex flex-col items-center justify-center gap-6 text-center max-w-[800px]">
         {/* Badge */}
-        <motion.div
+        {/* <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ type: "spring", stiffness: 300, damping: 25 }}
@@ -19,7 +19,7 @@ export default function HeroNew() {
           <span className="font-departureMono uppercase text-[10px] text-textSecondary">
             Signups open now
           </span>
-        </motion.div>
+        </motion.div> */}
 
         {/* Headline */}
         <motion.h1
@@ -76,13 +76,10 @@ export default function HeroNew() {
               <path d="M13.172 12l-4.95-4.95 1.414-1.414L16 12l-6.364 6.364-1.414-1.414z" />
             </svg>
           </Button>
-          <Button variant="outline" className="h-12 px-6 text-[13px]">
-            Explore Shelves
-          </Button>
         </motion.div>
 
         {/* Stats */}
-        <motion.div
+        {/* <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
@@ -114,7 +111,7 @@ export default function HeroNew() {
               Book Lovers
             </span>
           </div>
-        </motion.div>
+        </motion.div> */}
       </div>
     </div>
   );

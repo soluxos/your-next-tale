@@ -189,7 +189,7 @@ const AddBookForm = () => {
       {/* Left panel — Browse & Discover */}
       <div className="flex-1 p-8 overflow-y-auto flex flex-col gap-6">
         <div className="flex flex-col gap-2">
-          <h1 className="text-primary font-departureMono uppercase text-[20px] text-white">
+          <h1 className="font-ppMondwest text-[20px] text-white">
             Add New Book
           </h1>
           <p className="font-departureMono uppercase text-[12px] text-white/60">
@@ -234,7 +234,7 @@ const AddBookForm = () => {
       {/* Right panel — Book Form */}
       <div className="w-full lg:w-[440px] border-t lg:border-t-0 lg:border-l border-white/10 p-8 overflow-y-auto flex flex-col gap-6">
         <div className="flex flex-col gap-2">
-          <h2 className="text-primary font-departureMono uppercase text-[16px] text-white">
+          <h2 className="font-ppMondwest text-[16px] text-white">
             Book Details
           </h2>
           <p className="font-departureMono uppercase text-[11px] text-white/60">
@@ -250,12 +250,12 @@ const AddBookForm = () => {
             <div className="w-full">
               <label
                 htmlFor="title"
-                className="text-primary font-departureMono uppercase text-[12px] text-white mb-1"
+                className="font-departureMono uppercase text-[12px] text-white mb-1 block"
               >
                 Title:
               </label>
               <input
-                className="w-full border border-solid border-white h-[32px] px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-transparent text-white font-departureMono text-[12px]"
+                className="w-full border border-white/40 rounded-[8px] h-9 px-3 focus:outline-none focus:ring-1 focus:ring-white/50 bg-transparent text-white font-departureMono text-[12px] placeholder:text-white/30"
                 type="text"
                 id="title"
                 value={title}
@@ -275,7 +275,7 @@ const AddBookForm = () => {
 
             {similarBooks.length > 0 && (
               <div className="mt-2 text-sm text-white">
-                <p className="text-primary font-departureMono uppercase text-[12px] text-white mb-1">
+                <p className="font-departureMono uppercase text-[12px] text-white mb-1 block">
                   Similar titles found:
                 </p>
                 <div className="grid grid-cols-3 gap-4 mt-2">
@@ -292,12 +292,12 @@ const AddBookForm = () => {
             <div className="w-full">
               <label
                 htmlFor="author"
-                className="text-primary font-departureMono uppercase text-[12px] text-white mb-1"
+                className="font-departureMono uppercase text-[12px] text-white mb-1 block"
               >
                 Author:
               </label>
               <input
-                className="w-full border border-solid border-white h-[32px] px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-transparent text-white font-departureMono text-[12px]"
+                className="w-full border border-white/40 rounded-[8px] h-9 px-3 focus:outline-none focus:ring-1 focus:ring-white/50 bg-transparent text-white font-departureMono text-[12px] placeholder:text-white/30"
                 type="text"
                 id="author"
                 value={author}
@@ -316,12 +316,12 @@ const AddBookForm = () => {
             <div className="w-full">
               <label
                 htmlFor="description"
-                className="text-primary font-departureMono uppercase text-[12px] text-white mb-1"
+                className="font-departureMono uppercase text-[12px] text-white mb-1 block"
               >
                 Description:
               </label>
               <textarea
-                className="w-full border border-solid border-white px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-transparent text-white font-departureMono text-[12px]"
+                className="w-full border border-white/40 rounded-[8px] px-3 py-2 focus:outline-none focus:ring-1 focus:ring-white/50 bg-transparent text-white font-departureMono text-[12px] placeholder:text-white/30"
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -340,7 +340,7 @@ const AddBookForm = () => {
             <div className="w-full">
               <label
                 htmlFor="coverUrl"
-                className="text-primary font-departureMono uppercase text-[12px] text-white mb-1"
+                className="font-departureMono uppercase text-[12px] text-white mb-1 block"
               >
                 Cover Image:{" "}
                 {isUploadingCover && (
@@ -370,12 +370,12 @@ const AddBookForm = () => {
             <div className="w-full">
               <label
                 htmlFor="isbn13"
-                className="text-primary font-departureMono uppercase text-[12px] text-white mb-1"
+                className="font-departureMono uppercase text-[12px] text-white mb-1 block"
               >
                 ISBN-13 (optional):
               </label>
               <input
-                className="w-full border border-solid border-white h-[32px] px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-transparent text-white font-departureMono text-[12px]"
+                className="w-full border border-white/40 rounded-[8px] h-9 px-3 focus:outline-none focus:ring-1 focus:ring-white/50 bg-transparent text-white font-departureMono text-[12px] placeholder:text-white/30"
                 type="text"
                 id="isbn13"
                 value={isbn13}
@@ -387,12 +387,12 @@ const AddBookForm = () => {
             <div className="w-full">
               <label
                 htmlFor="genres"
-                className="text-primary font-departureMono uppercase text-[12px] text-white mb-1"
+                className="font-departureMono uppercase text-[12px] text-white mb-1 block"
               >
                 Genres (comma-separated, optional):
               </label>
               <input
-                className="w-full border border-solid border-white h-[32px] px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-transparent text-white font-departureMono text-[12px]"
+                className="w-full border border-white/40 rounded-[8px] h-9 px-3 focus:outline-none focus:ring-1 focus:ring-white/50 bg-transparent text-white font-departureMono text-[12px] placeholder:text-white/30"
                 type="text"
                 id="genres"
                 value={genres}
@@ -405,12 +405,12 @@ const AddBookForm = () => {
             <div className="w-full">
               <label
                 htmlFor="pageCount"
-                className="text-primary font-departureMono uppercase text-[12px] text-white mb-1"
+                className="font-departureMono uppercase text-[12px] text-white mb-1 block"
               >
                 Page Count (optional):
               </label>
               <input
-                className="w-full border border-solid border-white h-[32px] px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-transparent text-white font-departureMono text-[12px]"
+                className="w-full border border-white/40 rounded-[8px] h-9 px-3 focus:outline-none focus:ring-1 focus:ring-white/50 bg-transparent text-white font-departureMono text-[12px] placeholder:text-white/30"
                 type="number"
                 id="pageCount"
                 value={pageCount}
@@ -422,12 +422,12 @@ const AddBookForm = () => {
             <div className="w-full">
               <label
                 htmlFor="publishedDate"
-                className="text-primary font-departureMono uppercase text-[12px] text-white mb-1"
+                className="font-departureMono uppercase text-[12px] text-white mb-1 block"
               >
                 Published Date (optional):
               </label>
               <input
-                className="w-full border border-solid border-white h-[32px] px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-transparent text-white font-departureMono text-[12px]"
+                className="w-full border border-white/40 rounded-[8px] h-9 px-3 focus:outline-none focus:ring-1 focus:ring-white/50 bg-transparent text-white font-departureMono text-[12px] placeholder:text-white/30"
                 type="date"
                 id="publishedDate"
                 value={publishedDate}
@@ -439,12 +439,12 @@ const AddBookForm = () => {
             <div className="w-full">
               <label
                 htmlFor="publisher"
-                className="text-primary font-departureMono uppercase text-[12px] text-white mb-1"
+                className="font-departureMono uppercase text-[12px] text-white mb-1 block"
               >
                 Publisher (optional):
               </label>
               <input
-                className="w-full border border-solid border-white h-[32px] px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-transparent text-white font-departureMono text-[12px]"
+                className="w-full border border-white/40 rounded-[8px] h-9 px-3 focus:outline-none focus:ring-1 focus:ring-white/50 bg-transparent text-white font-departureMono text-[12px] placeholder:text-white/30"
                 type="text"
                 id="publisher"
                 value={publisher}
@@ -456,12 +456,12 @@ const AddBookForm = () => {
             <div className="w-full">
               <label
                 htmlFor="language"
-                className="text-primary font-departureMono uppercase text-[12px] text-white mb-1"
+                className="font-departureMono uppercase text-[12px] text-white mb-1 block"
               >
                 Language:
               </label>
               <input
-                className="w-full border border-solid border-white h-[32px] px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-transparent text-white font-departureMono text-[12px]"
+                className="w-full border border-white/40 rounded-[8px] h-9 px-3 focus:outline-none focus:ring-1 focus:ring-white/50 bg-transparent text-white font-departureMono text-[12px] placeholder:text-white/30"
                 type="text"
                 id="language"
                 value={language}
@@ -472,7 +472,7 @@ const AddBookForm = () => {
 
           {/* Submit Button */}
           <button
-            className="bg-white text-[#0D00FF] font-departureMono uppercase text-[12px] min-h-[48px] px-6 transition duration-200 hover:bg-gray-200 mt-2"
+            className="bg-white text-[#0D00FF] font-departureMono uppercase text-[11px] min-h-[48px] px-6 rounded-[8px] transition duration-200 hover:bg-[#e8e8e8] mt-2"
             type="submit"
           >
             Add the book pls

@@ -55,7 +55,7 @@ export default function BookDetailPage({ book }) {
             <div className="flex flex-col lg:flex-row gap-8 p-4 md:p-8 pb-24">
               {/* Book cover */}
               <div className="flex-shrink-0 lg:w-1/3 flex justify-center lg:justify-start">
-                <div className="bg-[#F4F3FF] p-8 rounded-lg w-full max-w-md">
+                <div className="bg-[#F4F3FF] p-8 rounded-[8px] w-full max-w-md">
                   {coverUrl ? (
                     <img
                       src={coverUrl}
@@ -66,7 +66,7 @@ export default function BookDetailPage({ book }) {
                       fetchPriority="high"
                     />
                   ) : (
-                    <div className="w-full aspect-[2/3] bg-gray-200 animate-pulse rounded-sm"></div>
+                    <div className="w-full aspect-[2/3] bg-[#e0e0e0] animate-pulse rounded-sm"></div>
                   )}
                 </div>
               </div>

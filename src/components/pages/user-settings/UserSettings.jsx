@@ -200,10 +200,10 @@ export default function UserSettings({ user }) {
       <div className="p-6 pt-40 max-w-3xl mx-auto">
         {/* Page Title */}
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1 className="font-ppMondwest text-[24px] text-textPrimary">
             Account Settings
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="font-departureMono uppercase text-[10px] text-textSecondary mt-1">
             Manage your account information and preferences.
           </p>
         </div>
@@ -220,31 +220,34 @@ export default function UserSettings({ user }) {
             {/* Profile Information */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Profile Information</CardTitle>
-                <CardDescription>
+                <CardTitle className="font-ppMondwest text-[18px] text-textPrimary">
+                  Profile Information
+                </CardTitle>
+                <CardDescription className="font-departureMono uppercase text-[10px] text-textSecondary mt-1">
                   Update your personal details here.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Profile Photo */}
-                <div className="space-y-2">
-                  <label className="font-departureMono uppercase text-[10px] text-muted-foreground flex items-center gap-2">
+                <div className="font-departureMono uppercase text-[10px] text-textSecondary flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
                     <Camera className="h-3 w-3" />
-                    Profile Photo
-                  </label>
+                    <span>Profile Photo</span>
+                  </div>
                   <div className="flex items-center gap-2">
                     <Avatar className="h-9 w-9">
                       <AvatarImage src={avatarUrl} alt={fullName} />
-                      <AvatarFallback>{getInitials(fullName)}</AvatarFallback>
+                      <AvatarFallback className="font-departureMono text-[11px] bg-[#f4f4f4] text-textPrimary">
+                        {getInitials(fullName)}
+                      </AvatarFallback>
                     </Avatar>
-                    <Button
-                      variant="outline"
-                      size="sm"
+                    <button
                       disabled={uploading}
                       onClick={() => fileInputRef.current?.click()}
+                      className="h-[36px] px-3 font-departureMono uppercase text-[10px] text-textPrimary border border-border rounded-[8px] hover:bg-[#f4f4f4] transition-colors disabled:opacity-40"
                     >
                       {uploading ? "Uploading..." : "Upload Photo"}
-                    </Button>
+                    </button>
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -259,7 +262,7 @@ export default function UserSettings({ user }) {
                   <div className="space-y-2">
                     <label
                       htmlFor="fullName"
-                      className="font-departureMono uppercase text-[10px] text-muted-foreground flex items-center gap-2"
+                      className="font-departureMono uppercase text-[10px] text-textSecondary flex items-center gap-2"
                     >
                       <User className="h-3 w-3" />
                       Full Name
@@ -274,7 +277,7 @@ export default function UserSettings({ user }) {
                   <div className="space-y-2">
                     <label
                       htmlFor="username"
-                      className="font-departureMono uppercase text-[10px] text-muted-foreground"
+                      className="font-departureMono uppercase text-[10px] text-textSecondary"
                     >
                       Username
                     </label>
@@ -324,12 +327,12 @@ export default function UserSettings({ user }) {
                 <div className="flex items-center justify-between py-2">
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
-                      <Lock className="h-3 w-3 text-muted-foreground" />
-                      <span className="font-departureMono uppercase text-[10px] text-muted-foreground">
+                      <Lock className="h-3 w-3 text-textSecondary" />
+                      <span className="font-departureMono uppercase text-[10px] text-textSecondary">
                         Private Profile
                       </span>
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="font-departureMono uppercase text-[10px] text-textSecondary">
                       {isPrivate
                         ? "🔒 Your shelves are hidden from other users"
                         : "Your shelves are visible to everyone"}
@@ -342,11 +345,17 @@ export default function UserSettings({ user }) {
                 </div>
 
                 <div className="flex items-center justify-between pt-4">
-                  <p className="text-sm text-muted-foreground">{user?.email}</p>
-                  <Button onClick={handleSaveProfile} disabled={isSaving}>
+                  <p className="font-departureMono text-[11px] text-textSecondary">
+                    {user?.email}
+                  </p>
+                  <button
+                    onClick={handleSaveProfile}
+                    disabled={isSaving}
+                    className="h-[36px] px-4 flex items-center gap-2 bg-[#1f1f1f] text-white hover:bg-[#353535] font-departureMono uppercase text-[11px] rounded-[8px] transition-colors disabled:opacity-40"
+                  >
                     {showSaved ? (
                       <>
-                        <Check className="mr-2 h-4 w-4" />
+                        <Check className="h-3.5 w-3.5" />
                         Saved
                       </>
                     ) : isSaving ? (
@@ -354,7 +363,7 @@ export default function UserSettings({ user }) {
                     ) : (
                       "Save Changes"
                     )}
-                  </Button>
+                  </button>
                 </div>
               </CardContent>
             </Card>
@@ -364,8 +373,10 @@ export default function UserSettings({ user }) {
           <TabsContent value="password" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Change Password</CardTitle>
-                <CardDescription>
+                <CardTitle className="font-ppMondwest text-[18px] text-textPrimary">
+                  Change Password
+                </CardTitle>
+                <CardDescription className="font-departureMono uppercase text-[10px] text-textSecondary mt-1">
                   Update your password to keep your account secure.
                 </CardDescription>
               </CardHeader>
@@ -373,7 +384,7 @@ export default function UserSettings({ user }) {
                 <div className="space-y-2">
                   <label
                     htmlFor="currentPassword"
-                    className="font-departureMono uppercase text-[10px] text-muted-foreground flex items-center gap-2"
+                    className="font-departureMono uppercase text-[10px] text-textSecondary flex items-center gap-2"
                   >
                     <Lock className="h-3 w-3" />
                     Current Password
@@ -392,7 +403,7 @@ export default function UserSettings({ user }) {
                 <div className="space-y-2">
                   <label
                     htmlFor="newPassword"
-                    className="font-departureMono uppercase text-[10px] text-muted-foreground"
+                    className="font-departureMono uppercase text-[10px] text-textSecondary"
                   >
                     New Password
                   </label>
@@ -408,7 +419,7 @@ export default function UserSettings({ user }) {
                 <div className="space-y-2">
                   <label
                     htmlFor="confirmPassword"
-                    className="font-departureMono uppercase text-[10px] text-muted-foreground"
+                    className="font-departureMono uppercase text-[10px] text-textSecondary"
                   >
                     Confirm New Password
                   </label>
@@ -422,7 +433,7 @@ export default function UserSettings({ user }) {
                 </div>
 
                 <div className="flex justify-end pt-4">
-                  <Button
+                  <button
                     onClick={handleUpdatePassword}
                     disabled={
                       isSaving ||
@@ -430,10 +441,11 @@ export default function UserSettings({ user }) {
                       !newPassword ||
                       !confirmPassword
                     }
+                    className="h-[36px] px-4 flex items-center gap-2 bg-[#1f1f1f] text-white hover:bg-[#353535] font-departureMono uppercase text-[11px] rounded-[8px] transition-colors disabled:opacity-40"
                   >
                     {showSaved ? (
                       <>
-                        <Check className="mr-2 h-4 w-4" />
+                        <Check className="h-3.5 w-3.5" />
                         Updated
                       </>
                     ) : isSaving ? (
@@ -441,7 +453,7 @@ export default function UserSettings({ user }) {
                     ) : (
                       "Update Password"
                     )}
-                  </Button>
+                  </button>
                 </div>
               </CardContent>
             </Card>
@@ -451,8 +463,10 @@ export default function UserSettings({ user }) {
           <TabsContent value="notifications" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Email Notifications</CardTitle>
-                <CardDescription>
+                <CardTitle className="font-ppMondwest text-[18px] text-textPrimary">
+                  Email Notifications
+                </CardTitle>
+                <CardDescription className="font-departureMono uppercase text-[10px] text-textSecondary mt-1">
                   Choose what updates you want to receive via email.
                 </CardDescription>
               </CardHeader>
@@ -460,10 +474,12 @@ export default function UserSettings({ user }) {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
-                      <Bell className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">Account Updates</span>
+                      <Bell className="h-3 w-3 text-textSecondary" />
+                      <span className="font-departureMono uppercase text-[11px] text-textPrimary">
+                        Account Updates
+                      </span>
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="font-departureMono uppercase text-[10px] text-textSecondary">
                       Important notifications about your account activity.
                     </p>
                   </div>
@@ -479,8 +495,10 @@ export default function UserSettings({ user }) {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <span className="font-medium">New Book Releases</span>
-                    <p className="text-sm text-muted-foreground">
+                    <span className="font-departureMono uppercase text-[11px] text-textPrimary">
+                      New Book Releases
+                    </span>
+                    <p className="font-departureMono uppercase text-[10px] text-textSecondary">
                       Get notified when new books are added to the library.
                     </p>
                   </div>
@@ -496,10 +514,10 @@ export default function UserSettings({ user }) {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <span className="font-medium">
+                    <span className="font-departureMono uppercase text-[11px] text-textPrimary">
                       Personalized Recommendations
                     </span>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="font-departureMono uppercase text-[10px] text-textSecondary">
                       Book recommendations based on your reading history.
                     </p>
                   </div>
@@ -515,8 +533,10 @@ export default function UserSettings({ user }) {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <span className="font-medium">Newsletter</span>
-                    <p className="text-sm text-muted-foreground">
+                    <span className="font-departureMono uppercase text-[11px] text-textPrimary">
+                      Newsletter
+                    </span>
+                    <p className="font-departureMono uppercase text-[10px] text-textSecondary">
                       Weekly digest of trending books and reading tips.
                     </p>
                   </div>

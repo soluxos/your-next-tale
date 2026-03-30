@@ -164,7 +164,7 @@ export default function AddBookDrawer({
                 Add to shelf
               </label>
               <select
-                className="w-full border border-border rounded-[8px] p-2 text-sm font-departureMono"
+                className="w-full border border-border rounded-[8px] px-3 h-9 font-departureMono text-[12px] bg-transparent focus:outline-none focus:ring-1 focus:ring-textPrimary"
                 value={selectedShelfId}
                 onChange={(e) => setSelectedShelfId(e.target.value)}
               >
@@ -197,12 +197,12 @@ export default function AddBookDrawer({
 
           {/* Error / Warning messages */}
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-[8px] px-3 py-2">
+            <p className="font-departureMono uppercase text-[10px] text-red-500 bg-red-50 border border-red-200 rounded-[8px] px-3 py-2">
               {error}
             </p>
           )}
           {warning && (
-            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-[8px] px-3 py-2">
+            <p className="font-departureMono uppercase text-[10px] text-amber-600 bg-amber-50 border border-amber-200 rounded-[8px] px-3 py-2">
               {warning}
             </p>
           )}
@@ -239,12 +239,12 @@ export default function AddBookDrawer({
                           {preview.title}
                         </p>
                         {result.source !== "local" && (
-                          <span className="shrink-0 font-departureMono uppercase text-[9px] px-1.5 py-0.5 rounded bg-[#f0f0f0] text-textSecondary">
+                          <span className="shrink-0 font-departureMono uppercase text-[9px] px-1.5 py-0.5 rounded-[6px] bg-[#f0f0f0] text-textSecondary">
                             New
                           </span>
                         )}
                         {result.is_incomplete && (
-                          <span className="shrink-0 font-departureMono uppercase text-[9px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-600">
+                          <span className="shrink-0 font-departureMono uppercase text-[9px] px-1.5 py-0.5 rounded-[6px] bg-amber-50 text-amber-600">
                             Incomplete
                           </span>
                         )}
@@ -299,7 +299,7 @@ export default function AddBookDrawer({
           </div>
 
           {!loading && results.length === 0 && query && !error && (
-            <p className="text-center text-sm text-textSecondary py-4">
+            <p className="text-center font-departureMono uppercase text-[10px] text-textSecondary py-4">
               No results found
             </p>
           )}

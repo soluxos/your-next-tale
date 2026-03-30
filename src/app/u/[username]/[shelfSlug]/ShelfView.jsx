@@ -266,26 +266,29 @@ export default function ShelfView({
                             book.isAddTile ? (
                               <div
                                 key="__add__"
-                                className="w-full cursor-pointer"
+                                className="w-full relative z-10 cursor-pointer"
                                 onClick={() => setAddDrawerOpen(true)}
                               >
                                 <div
-                                  className="w-full bg-[#e0e0e0] border-2 border-dashed border-[#bbb] rounded-sm flex items-center justify-center hover:border-textPrimary hover:bg-[#d8d8d8] transition-colors"
+                                  className="w-full z-10 bg-[#e0e0e0] border-2 border-dashed border-[#bbb] rounded-sm flex flex-col items-center justify-center gap-1 hover:border-textPrimary hover:bg-[#d8d8d8] transition-colors"
                                   style={{ aspectRatio: "2 / 3" }}
                                 >
+                                  <p className="font-departureMono uppercase text-textPrimary text-xs">
+                                    Add book
+                                  </p>
                                   <svg
-                                    width="24"
-                                    height="24"
-                                    viewBox="0 0 24 24"
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 16 16"
                                     fill="none"
                                     stroke="currentColor"
                                     strokeWidth="2"
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
-                                    className="text-[#999]"
+                                    className="text-textPrimary"
                                   >
-                                    <line x1="12" y1="5" x2="12" y2="19" />
-                                    <line x1="5" y1="12" x2="19" y2="12" />
+                                    <line x1="8" y1="2" x2="8" y2="14" />
+                                    <line x1="2" y1="8" x2="14" y2="8" />
                                   </svg>
                                 </div>
                               </div>

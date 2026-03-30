@@ -32,7 +32,7 @@ const BookPopover = ({ book, onOpenDrawer }) => {
       <div className="flex flex-col xs:flex-row xs:justify-between items-center gap-2">
         <Button
           variant="outline"
-          className="text-sm w-full flex justify-between font-departureMono uppercase font-normal text-[13px]"
+          className="w-full flex justify-between font-departureMono uppercase text-[11px]"
           onClick={onOpenDrawer}
         >
           View all details{" "}

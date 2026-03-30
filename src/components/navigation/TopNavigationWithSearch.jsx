@@ -189,7 +189,7 @@ export default function TopNavigation() {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search books, authors, shelves..."
-                      className="w-full bg-transparent border-none outline-none font-ppMondwest text-[14px] text-textPrimary placeholder:text-textSecondary"
+                      className="w-full bg-transparent border-none outline-none font-departureMono text-[12px] text-textPrimary placeholder:text-textSecondary"
                       onKeyDown={(e) => {
                         if (e.key === "Escape") {
                           setSearchOpen(false);
@@ -200,7 +200,7 @@ export default function TopNavigation() {
                     {searchQuery && (
                       <button
                         onClick={() => setSearchQuery("")}
-                        className="shrink-0 w-5 h-5 flex items-center justify-center rounded hover:bg-white transition-colors"
+                        className="shrink-0 w-5 h-5 flex items-center justify-center rounded-[6px] hover:bg-white transition-colors"
                       >
                         <svg
                           width="12"

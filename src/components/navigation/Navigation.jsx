@@ -32,7 +32,7 @@ export default function Navigation({
             bounce: 0.5,
             duration: 0.8
           }}
-          className="bg-white h-12 px-5 border-solid border-gray-300 border-[1px] rounded-[8px] flex items-center gap-4 w-auto relative max-w-[calc(100vw - 48px)]"
+          className="bg-white h-12 px-5 border-solid border-border border-[1px] rounded-[8px] flex items-center gap-4 w-auto relative max-w-[calc(100vw - 48px)]"
         >
           <a href="/" className="flex flex-col items-start">
             <p className="font-departureMono uppercase text-[12px]">
@@ -87,7 +87,7 @@ export default function Navigation({
               href={
                 username ? `/u/${encodeURIComponent(username)}` : "/account"
               }
-              className="bg-white h-12 px-5 border-solid border-gray-300 border-[1px] rounded-[8px] flex items-center justify-center flex-col"
+              className="bg-white h-12 px-5 border-solid border-border border-[1px] rounded-[8px] flex items-center justify-center flex-col"
             >
               <p className="font-departureMono uppercase text-[10px] text-textSecondary whitespace-nowrap">
                 Your

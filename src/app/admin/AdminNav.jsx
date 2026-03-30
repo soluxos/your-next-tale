@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 
 const navLinks = [
   { label: "Dashboard", href: "/admin" },
+  { label: "Components", href: "/admin/components" },
   { label: "Seed Books", href: "/admin/seed-books" },
   { label: "Add Book", href: "/admin/add-new-book" },
   { label: "Scrape Test", href: "/admin/scrape-testing" }

@@ -58,7 +58,7 @@ const ScrapeBookPage = () => {
           id="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          className="block w-full p-2 border border-white/20 bg-white/5 rounded-[8px] text-white text-sm font-departureMono placeholder:text-white/30 focus:outline-none focus:border-white/40"
+          className="block w-full p-2 border border-white/20 bg-white/5 rounded-[8px] text-white font-departureMono text-[12px] placeholder:text-white/30 focus:outline-none focus:border-white/40"
           placeholder="Enter Amazon book URL"
         />
       </div>
@@ -91,7 +91,9 @@ const ScrapeBookPage = () => {
               className="w-32 h-auto rounded-sm"
             />
           )}
-          <p className="text-white/70 text-sm">{bookDetails.description}</p>
+          <p className="font-departureMono text-[11px] text-white/60 whitespace-pre-wrap">
+            {bookDetails.description}
+          </p>
         </div>
       )}
     </div>

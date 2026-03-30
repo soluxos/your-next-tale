@@ -41,7 +41,7 @@ const VaulDrawer = forwardRef(({ book, coverUrl }, ref) => {
             <div className="drawer-center w-full h-full flex flex-col">
               <div className="drawer-top w-full h-4 border-1 border-border border flex border-r-0 border-l-0 relative">
                 <Drawer.Close
-                  className="absolute left-4 top-11 transform -translate-y-1/2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-100 cursor-pointer"
+                  className="absolute left-4 top-11 transform -translate-y-1/2 w-8 h-8 bg-white rounded-[6px] flex items-center justify-center shadow-md hover:bg-[#f4f4f4] cursor-pointer"
                   aria-label="Close"
                 >
                   <svg
@@ -103,7 +103,7 @@ const VaulDrawer = forwardRef(({ book, coverUrl }, ref) => {
                     />
                     <a
                       href={bookPageUrl}
-                      className="rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground text-sm items-center h-[48px] flex justify-center font-departureMono uppercase font-normal text-[13px] w-full gap-2"
+                      className="rounded-[8px] border border-border bg-white shadow-sm hover:bg-[#f4f4f4] text-textPrimary items-center h-[44px] flex justify-center font-departureMono uppercase text-[11px] w-full gap-2 transition-colors"
                       variant="outline"
                     >
                       View page

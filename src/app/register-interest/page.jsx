@@ -166,7 +166,7 @@ export default function Preview() {
               </h1>
 
               {/* Tagline with color accents */}
-              <p className="text-[#757190] text-[15px] leading-[1.6] font-sans mb-8 flex items-center gap-2 flex-wrap justify-center">
+              <p className="text-[#757190] text-[15px] leading-[1.6] font-inter mb-8 flex items-center gap-2 flex-wrap justify-center">
                 <span className="text-[#FFC700]">✦</span>
                 Hand-curated fantasy & sci-fi
                 <span className="text-[#FD4873]">♥</span>
@@ -184,12 +184,12 @@ export default function Preview() {
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-14 px-5 text-[15px] bg-[#1a1a1a] border-[#2a2a2a] text-white placeholder:text-[#555] focus:border-[#FFC700] focus:ring-[#FFC700] rounded-lg"
+                  className="h-[52px] px-5 font-departureMono text-[12px] bg-[#1a1a1a] border-[#2a2a2a] text-white placeholder:text-[#555] focus:border-white/30 focus:ring-1 focus:ring-white/30 focus:outline-none rounded-[8px]"
                   required
                 />
                 <Button
                   type="submit"
-                  className="h-14 w-full text-[13px] rounded-lg bg-white text-black hover:bg-[#f0f0f0]"
+                  className="h-[48px] w-full font-departureMono uppercase text-[11px] rounded-[8px] bg-white text-black hover:bg-[#f0f0f0] transition-colors"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -252,14 +252,14 @@ export default function Preview() {
                 <span className="text-[#FFC700]"> ✦</span>
               </h1>
 
-              <p className="text-[#757190] text-[15px] leading-[1.6] font-sans max-w-[360px]">
+              <p className="text-[#757190] text-[15px] leading-[1.6] font-inter max-w-[360px]">
                 We'll send updates to{" "}
                 <span className="text-[#15E3FF]">{email}</span> when we're ready
                 to launch.
               </p>
 
               <motion.div
-                className="mt-8 px-5 py-3 bg-[#1a1a1a] rounded-lg border border-[#2a2a2a]"
+                className="mt-8 px-5 py-3 bg-[#1a1a1a] rounded-[8px] border border-[#2a2a2a]"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}

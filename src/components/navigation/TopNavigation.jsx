@@ -40,7 +40,6 @@ export default function TopNavigation({ user }) {
       label: "My Profile",
       href: username ? `/u/${encodeURIComponent(username)}` : "/account"
     },
-    { id: "community", label: "Community", href: "/community" },
     { id: "admin", label: "Admin", href: "/admin", adminOnly: true }
   ];
 

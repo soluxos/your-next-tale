@@ -49,7 +49,7 @@ export default function ProfileLayout({ profile, shelves, isOwner, children }) {
         <div className="max-w-4xl mx-auto flex flex-col items-center gap-4">
           <Avatar className="h-16 w-16 border border-border shrink-0">
             <AvatarImage src={profile.avatarUrl} alt={profile.full_name} />
-            <AvatarFallback className="text-lg font-departureMono bg-[#f4f4f4] text-textPrimary">
+            <AvatarFallback className="text-[14px] font-departureMono bg-[#f4f4f4] text-textPrimary">
               {getInitials(profile.full_name)}
             </AvatarFallback>
           </Avatar>
@@ -62,45 +62,23 @@ export default function ProfileLayout({ profile, shelves, isOwner, children }) {
               @{profile.username}
             </p>
             {profile.bio && (
-              <p className="mt-1 text-sm text-textSecondary line-clamp-2">
+              <p className="mt-1 font-inter text-[14px] text-textSecondary line-clamp-2">
                 {profile.bio}
               </p>
             )}
           </div>
 
           {isOwner && (
-            <a
-              href="/account"
-              className="shrink-0 h-8 px-3 flex items-center font-departureMono uppercase text-[10px] text-textSecondary rounded-[8px] border border-border hover:bg-[#f4f4f4] transition-colors"
-            >
-              Edit Profile
-            </a>
-          )}
-        </div>
-      </div>
-
-      {/* Shelf tab navigation */}
-      <div className="px-5">
-        <div className="max-w-4xl mx-auto">
-          <nav className="flex gap-1 overflow-x-auto no-scrollbar -mb-px items-center">
-            {tabs.map((tab) => (
+            <div className="flex gap-2 items-center">
               <a
-                key={tab.slug}
-                href={`/u/${encodeURIComponent(profile.username)}/${tab.slug}`}
-                className={cn(
-                  "px-3 py-2 font-departureMono uppercase text-[11px] whitespace-nowrap border-b-2 transition-colors",
-                  activeSlug === tab.slug
-                    ? "border-textPrimary text-textPrimary"
-                    : "border-transparent text-textSecondary hover:text-textPrimary hover:border-[#ddd]"
-                )}
+                href="/account"
+                className="shrink-0 h-8 px-3 flex items-center font-departureMono uppercase text-[10px] text-textSecondary rounded-[8px] border border-border hover:bg-[#f4f4f4] transition-colors"
               >
-                {tab.name}
+                Edit Profile
               </a>
-            ))}
-            {isOwner && (
               <button
                 onClick={() => setManageShelvesOpen(true)}
-                className="ml-auto shrink-0 flex items-center gap-1.5 px-3 h-8
+                className="flex items-center gap-1.5 px-3 h-8
                            font-departureMono uppercase text-[10px] text-textSecondary
                            border border-border rounded-[8px] hover:bg-[#f4f4f4]
                            hover:text-textPrimary transition-colors"
@@ -124,7 +102,29 @@ export default function ProfileLayout({ profile, shelves, isOwner, children }) {
                 </svg>
                 Manage Shelves
               </button>
-            )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Shelf tab navigation */}
+      <div className="px-5">
+        <div className="max-w-4xl mx-auto">
+          <nav className="flex gap-1 overflow-x-auto no-scrollbar -mb-px items-center">
+            {tabs.map((tab) => (
+              <a
+                key={tab.slug}
+                href={`/u/${encodeURIComponent(profile.username)}/${tab.slug}`}
+                className={cn(
+                  "px-3 py-2 font-departureMono uppercase text-[11px] whitespace-nowrap border-b-2 transition-colors",
+                  activeSlug === tab.slug
+                    ? "border-textPrimary text-textPrimary"
+                    : "border-transparent text-textSecondary hover:text-textPrimary hover:border-[#ddd]"
+                )}
+              >
+                {tab.name}
+              </a>
+            ))}
           </nav>
         </div>
       </div>

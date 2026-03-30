@@ -52,10 +52,7 @@ export default function LoginPage({ message }) {
     <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4 py-12">
       {/* Brand */}
       <div className="mb-8 text-center">
-        <p
-          className="text-[#0c0c0c] text-[24px] leading-none mb-2"
-          style={{ fontFamily: "ppmondwest, serif" }}
-        >
+        <p className="font-ppMondwest text-[#0c0c0c] text-[24px] leading-none mb-2">
           Your next tale
         </p>
         <p className="font-departureMono uppercase text-textSecondary text-[11px]">
@@ -63,7 +60,7 @@ export default function LoginPage({ message }) {
         </p>
       </div>
 
-      <Card className="w-full max-w-[380px] shadow-sm border-gray-200">
+      <Card className="w-full max-w-[380px] shadow-sm border-border">
         <CardHeader className="p-6 pb-0">
           <CardTitle className="text-xl font-ppMondwest text-textPrimary">
             Welcome back
@@ -88,7 +85,7 @@ export default function LoginPage({ message }) {
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-10 bg-white border-gray-200 focus:border-gray-400"
+                className="h-9 bg-transparent border-border rounded-[8px] font-departureMono text-[12px] focus:outline-none focus:ring-1 focus:ring-textPrimary placeholder:text-textSecondary"
                 required
                 autoComplete="email"
               />
@@ -98,7 +95,7 @@ export default function LoginPage({ message }) {
               <div className="flex items-center justify-between">
                 <Label
                   htmlFor="password"
-                  className="font-departureMono uppercase text-[11px] text-textPrimary"
+                  className="font-departureMono uppercase text-[10px] text-textSecondary"
                 >
                   Password
                 </Label>
@@ -116,7 +113,7 @@ export default function LoginPage({ message }) {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="h-10 bg-white border-gray-200 focus:border-gray-400"
+                className="h-9 bg-transparent border-border rounded-[8px] font-departureMono text-[12px] focus:outline-none focus:ring-1 focus:ring-textPrimary placeholder:text-textSecondary"
                 required
                 autoComplete="current-password"
               />
@@ -136,7 +133,7 @@ export default function LoginPage({ message }) {
             <div className="pt-2">
               <Button
                 type="submit"
-                className="w-full h-10"
+                className="w-full h-[44px] bg-[#1f1f1f] text-white hover:bg-[#353535] font-departureMono uppercase text-[11px] rounded-[8px] transition-colors"
                 disabled={isLoading}
               >
                 {isLoading ? "Signing in..." : "Sign in"}

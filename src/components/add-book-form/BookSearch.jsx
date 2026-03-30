@@ -224,7 +224,7 @@ const BookSearch = ({ onBookSelect }) => {
               {selectedBook.synopsis ||
               selectedBook.overview ||
               selectedBook.excerpt ? (
-                <p className="text-white/60 font-departureMono text-[10px] leading-relaxed line-clamp-6 overflow-y-auto max-h-32">
+                <p className="text-white/60 font-departureMono text-[10px] leading-relaxed overflow-y-auto max-h-32 whitespace-pre-wrap">
                   {selectedBook.synopsis ||
                     selectedBook.overview ||
                     selectedBook.excerpt}

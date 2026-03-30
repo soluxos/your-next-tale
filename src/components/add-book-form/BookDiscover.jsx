@@ -570,7 +570,7 @@ export default function BookDiscover({ onBookSelect }) {
                       Loading details...
                     </p>
                   ) : selectedBookDetails?.description ? (
-                    <p className="text-white/60 font-departureMono text-[10px] leading-relaxed overflow-y-auto max-h-32">
+                    <p className="text-white/60 font-departureMono text-[10px] leading-relaxed overflow-y-auto max-h-32 whitespace-pre-wrap">
                       {selectedBookDetails.description}
                     </p>
                   ) : (
