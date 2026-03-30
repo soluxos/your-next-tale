@@ -1,33 +1,28 @@
-import { normaliseISBNdb } from "@/lib/books/adapters/isbndb";
-import { sanitiseDescription } from "@/lib/books/sanitiseDescription";
-import { isEnglish } from "@/lib/books/normaliseLanguage";
-import { getBookshopLink } from "@/lib/bookshop";
+import { discoverBySubject } from "./sources/openLibraryDiscover";
+import { discoverBySubjectGoogle } from "./sources/googleBooksDiscover";
+import { normaliseISBNdb } from "./adapters/isbndb";
+import { normaliseOpenLibrary } from "./adapters/openlibrary";
+import { sanitiseDescription } from "./sanitiseDescription";
+import { normaliseLanguage } from "./normaliseLanguage";
+import { getBookshopLink } from "../bookshop";
 
-export const DEFAULT_SUBJECT_TERMS = [
-  "epic fantasy",
-  "fantasy fiction",
-  "high fantasy",
-  "sword and sorcery",
-  "dark fantasy",
-  "urban fantasy",
-  "science fiction",
-  "space opera",
-  "hard science fiction",
-  "dystopian fiction",
-  "cyberpunk",
-  "military science fiction"
+export const SEED_SUBJECTS = [
+  { subject: "fantasy", label: "Fantasy", minEditions: 8 },
+  { subject: "epic fantasy", label: "Epic Fantasy", minEditions: 5 },
+  { subject: "science fiction", label: "Sci-Fi", minEditions: 8 },
+  { subject: "space opera", label: "Space Opera", minEditions: 5 },
+  { subject: "dystopian fiction", label: "Dystopian", minEditions: 5 },
+  { subject: "urban fantasy", label: "Urban Fantasy", minEditions: 5 },
+  { subject: "dark fantasy", label: "Dark Fantasy", minEditions: 5 },
+  { subject: "romantasy", label: "Romantasy", minEditions: 3 }
 ];
 
-const ISBNDB_DELAY_MS = 500;
-const BATCH_SIZE = 50;
-
-function delay(ms) {
+function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
  * Normalise a raw date string to YYYY-MM-DD.
- * Handles: "2019", "2019-06", "2019-06-15", ISO datetimes, etc.
  */
 function normaliseDate(raw) {
   if (!raw) return null;
@@ -45,328 +40,334 @@ function normaliseDate(raw) {
 }
 
 /**
- * Try to fill in missing description and/or cover_remote using
- * Open Library and Google Books as fallback sources.
- * Mutates and returns the normalised object.
+ * Multi-source seeder: discovers popular books via Open Library edition count
+ * and Google Books relevance, then enriches each with ISBNdb metadata.
  */
-async function enrichFromFallbacks(normalised) {
-  const isbn = normalised.isbn_13 || normalised.isbn_10;
-  if (!isbn) return normalised;
-
-  const needsDesc = !normalised.description;
-  const needsCover = !normalised.cover_remote;
-  if (!needsDesc && !needsCover) return normalised;
-
-  // --- Open Library ---
-  try {
-    const olRes = await fetch(
-      `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&jscmd=data&format=json`,
-      { signal: AbortSignal.timeout(8000) }
-    );
-    if (olRes.ok) {
-      const olData = await olRes.json();
-      const olBook = olData[`ISBN:${isbn}`];
-      if (olBook) {
-        if (needsDesc && olBook.description) {
-          const raw =
-            typeof olBook.description === "string"
-              ? olBook.description
-              : olBook.description?.value || null;
-          if (raw) normalised.description = sanitiseDescription(raw);
-        }
-        if (needsCover && olBook.cover?.large) {
-          normalised.cover_remote = olBook.cover.large;
-        }
-      }
-    }
-  } catch {
-    // OL unavailable — continue
-  }
-
-  // --- Google Books (only if still missing something) ---
-  if (!normalised.description || !normalised.cover_remote) {
-    try {
-      const gbRes = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&maxResults=1`,
-        { signal: AbortSignal.timeout(8000) }
-      );
-      if (gbRes.ok) {
-        const gbData = await gbRes.json();
-        const vol = gbData.items?.[0]?.volumeInfo;
-        if (vol) {
-          if (!normalised.description && vol.description) {
-            normalised.description = sanitiseDescription(vol.description);
-          }
-          if (!normalised.cover_remote && vol.imageLinks?.thumbnail) {
-            normalised.cover_remote = vol.imageLinks.thumbnail
-              .replace("zoom=1", "zoom=3")
-              .replace("http://", "https://");
-          }
-        }
-      }
-    } catch {
-      // GB unavailable — continue
-    }
-  }
-
-  return normalised;
-}
-
-/**
- * Run the book seeder against ISBNdb subjects.
- *
- * @param {{ terms: string[], send: (payload: object) => void, supabase: import("@supabase/supabase-js").SupabaseClient }} opts
- */
-export async function runSeeder({ terms, send, supabase }) {
+export async function runSeeder({ subjects = SEED_SUBJECTS, send, supabase }) {
   const apiKey = process.env.ISBNDB_API_KEY;
-  if (!apiKey)
-    throw new Error("ISBNDB_API_KEY is not set in environment variables");
+  if (!apiKey) throw new Error("ISBNDB_API_KEY is not set");
 
-  // 1. Fetch from ISBNdb for each term
-  const allRaw = [];
-  for (let i = 0; i < terms.length; i++) {
-    const term = terms[i];
-    if (i > 0) await delay(ISBNDB_DELAY_MS);
+  send({
+    type: "progress",
+    message: `Starting discovery for ${subjects.length} subjects...`
+  });
+
+  // 1. Fetch all existing isbn_13s — skip already-complete books
+  const { data: existing } = await supabase
+    .from("books")
+    .select("isbn_13, is_incomplete");
+
+  const existingComplete = new Set(
+    (existing || []).filter((b) => !b.is_incomplete).map((b) => b.isbn_13)
+  );
+
+  send({
+    type: "progress",
+    message: `${existingComplete.size} complete books already in DB.`
+  });
+
+  // 2. Discover ISBNs from all subjects
+  const discovered = new Map();
+
+  for (const { subject, label, minEditions } of subjects) {
+    // Open Library
+    send({
+      type: "progress",
+      message: `Discovering "${label}" from Open Library...`
+    });
 
     try {
-      const res = await fetch(
-        `https://api2.isbndb.com/books/${encodeURIComponent(term)}?page=1&pageSize=50&column=&language=en`,
-        { headers: { Authorization: apiKey, Accept: "application/json" } }
-      );
-
-      if (!res.ok) {
-        send({
-          type: "progress",
-          message: `[${i + 1}/${terms.length}] Failed to fetch "${term}" — HTTP ${res.status}`
-        });
-        continue;
+      const olResults = await discoverBySubject(subject, { minEditions });
+      let added = 0;
+      for (const r of olResults) {
+        const isbn = r.isbn_13 || r.isbn_10;
+        if (!isbn || existingComplete.has(r.isbn_13)) continue;
+        if (!discovered.has(isbn)) {
+          discovered.set(isbn, { ...r, category: label.toLowerCase() });
+          added++;
+        } else if (
+          r.edition_count > (discovered.get(isbn).edition_count || 0)
+        ) {
+          discovered.set(isbn, { ...r, category: label.toLowerCase() });
+        }
       }
-
-      const data = await res.json();
-      const books = data.books || [];
-      allRaw.push(...books);
       send({
         type: "progress",
-        message: `[${i + 1}/${terms.length}] Fetched "${term}" — ${books.length} results`
+        message: `  → ${olResults.length} found, ${added} new ISBNs`
       });
     } catch (e) {
       send({
         type: "progress",
-        message: `[${i + 1}/${terms.length}] Error fetching "${term}": ${e.message}`
-      });
-    }
-  }
-
-  const totalFetched = allRaw.length;
-  send({ type: "progress", message: `Total fetched: ${totalFetched}` });
-
-  // 2. Deduplicate by isbn_13
-  const seen = new Map();
-  for (const raw of allRaw) {
-    const isbn = raw.isbn13 && raw.isbn13.length === 13 ? raw.isbn13 : null;
-    if (!isbn) continue;
-    if (!seen.has(isbn)) seen.set(isbn, raw);
-  }
-
-  const allUnique = Array.from(seen.values());
-  const uniqueAfterDedup = allUnique.length;
-
-  // Filter to English-language books only
-  const uniqueRaw = allUnique.filter(
-    (raw) => !raw.language || isEnglish(raw.language)
-  );
-
-  // 3. Check which ISBNs already exist in the DB
-  const isbnList = uniqueRaw
-    .map((r) => (r.isbn13 && r.isbn13.length === 13 ? r.isbn13 : null))
-    .filter(Boolean);
-
-  const existingIsbns = new Set();
-  for (let i = 0; i < isbnList.length; i += 200) {
-    const batch = isbnList.slice(i, i + 200);
-    const { data: existing } = await supabase
-      .from("books")
-      .select("isbn_13")
-      .in("isbn_13", batch);
-    if (existing) {
-      for (const row of existing) existingIsbns.add(row.isbn_13);
-    }
-  }
-
-  const newRaw = uniqueRaw.filter((r) => {
-    const isbn = r.isbn13 && r.isbn13.length === 13 ? r.isbn13 : null;
-    return isbn && !existingIsbns.has(isbn);
-  });
-
-  const skippedLang = uniqueAfterDedup - uniqueRaw.length;
-  const alreadyInDb = uniqueRaw.length - newRaw.length;
-  send({
-    type: "progress",
-    message: `${uniqueAfterDedup} unique after dedup. ${skippedLang} skipped (non-English). ${alreadyInDb} already in DB. ${newRaw.length} to process.`
-  });
-
-  // 4. Normalise and process each new book
-  let coverFailures = 0;
-  let incompleteBooks = 0;
-  let failed = 0;
-  const rows = [];
-
-  for (let i = 0; i < newRaw.length; i++) {
-    const raw = newRaw[i];
-    let normalised = normaliseISBNdb(raw);
-
-    // Enrich from Open Library / Google Books if description or cover is missing
-    if (!normalised.description || !normalised.cover_remote) {
-      normalised = await enrichFromFallbacks(normalised);
-    }
-
-    // Download and upload cover
-    let coverFilename = null;
-    if (normalised.cover_remote) {
-      try {
-        const coverRes = await fetch(normalised.cover_remote, {
-          signal: AbortSignal.timeout(10000)
-        });
-        if (coverRes.ok) {
-          const contentType = coverRes.headers.get("content-type") || "";
-          const ext = contentType.includes("png") ? ".png" : ".jpg";
-          const filename =
-            (normalised.isbn_13 || normalised.isbn_10 || crypto.randomUUID()) +
-            ext;
-          const buffer = Buffer.from(await coverRes.arrayBuffer());
-
-          if (buffer.length >= 1000) {
-            const { error: uploadErr } = await supabase.storage
-              .from("books")
-              .upload(filename, buffer, {
-                contentType: contentType || "image/jpeg",
-                upsert: true
-              });
-
-            if (!uploadErr) {
-              coverFilename = filename;
-            } else {
-              send({
-                type: "progress",
-                message: `[COVER UPLOAD FAIL] ${normalised.title}: ${uploadErr.message}`
-              });
-            }
-          }
-        }
-      } catch {
-        // Cover fetch failed — continue without cover
-      }
-    }
-
-    if (!coverFilename) {
-      coverFailures++;
-      send({
-        type: "progress",
-        message: `[COVER FAIL] ${normalised.title || raw.title || "Unknown"}`
+        message: `  → Open Library error: ${e.message}`
       });
     }
 
-    const isIncomplete =
-      !normalised.title ||
-      !normalised.authors ||
-      normalised.authors.length === 0 ||
-      !normalised.description ||
-      (!normalised.isbn_13 && !normalised.isbn_10) ||
-      !coverFilename;
+    await sleep(1000);
 
-    if (isIncomplete) incompleteBooks++;
-
-    rows.push({
-      title: normalised.title,
-      authors: normalised.authors,
-      description: normalised.description,
-      isbn_13: normalised.isbn_13,
-      isbn_10: normalised.isbn_10,
-      genres: normalised.genres?.length > 0 ? normalised.genres : null,
-      page_count: normalised.page_count,
-      published_date: normaliseDate(normalised.published_date),
-      publisher: normalised.publisher,
-      language: normalised.language,
-      cover_url: coverFilename,
-      bookshop_affiliate_link: getBookshopLink(normalised.isbn_13) || null,
-      is_incomplete: isIncomplete,
-      source: "isbndb",
-      last_synced_at: new Date().toISOString()
-    });
-
-    if ((i + 1) % 10 === 0) {
-      send({
-        type: "progress",
-        message: `Processed ${i + 1}/${newRaw.length} books...`
-      });
-    }
-  }
-
-  // 5. Batch upsert with per-book fallback on batch failure
-  let inserted = 0;
-  const totalBatches = Math.ceil(rows.length / BATCH_SIZE);
-
-  for (let i = 0; i < rows.length; i += BATCH_SIZE) {
-    const batch = rows.slice(i, i + BATCH_SIZE);
-    const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+    // Google Books
     send({
       type: "progress",
-      message: `Inserting batch ${batchNum}/${totalBatches}...`
+      message: `  Discovering "${label}" from Google Books...`
     });
-
-    const { data, error } = await supabase
-      .from("books")
-      .upsert(batch, { onConflict: "isbn_13" })
-      .select("id");
-
-    if (error) {
-      // Batch failed — fall back to per-book inserts so one bad row doesn't drop the whole batch
-      send({
-        type: "progress",
-        message: `Batch ${batchNum} failed (${error.message}) — retrying per-book...`
-      });
-      for (const row of batch) {
-        try {
-          const conflictCol = row.isbn_13 ? "isbn_13" : "isbn_10";
-          const { error: rowErr } = await supabase
-            .from("books")
-            .upsert(row, { onConflict: conflictCol })
-            .select("id")
-            .single();
-          if (rowErr) {
-            failed++;
-            send({
-              type: "progress",
-              message: `[SKIP] "${row.title}": ${rowErr.message}`
-            });
-          } else {
-            inserted++;
-          }
-        } catch (e) {
-          failed++;
-          send({
-            type: "progress",
-            message: `[SKIP] "${row.title}": ${e.message}`
-          });
+    try {
+      const gbResults = await discoverBySubjectGoogle(subject);
+      let gbAdded = 0;
+      for (const r of gbResults) {
+        const isbn = r.isbn_13 || r.isbn_10;
+        if (!isbn || existingComplete.has(r.isbn_13)) continue;
+        if (!discovered.has(isbn)) {
+          discovered.set(isbn, { ...r, category: label.toLowerCase() });
+          gbAdded++;
         }
       }
-    } else {
-      inserted += data?.length || 0;
+      send({
+        type: "progress",
+        message: `  → ${gbResults.length} found, ${gbAdded} new ISBNs`
+      });
+    } catch (e) {
+      send({
+        type: "progress",
+        message: `  → Google Books error: ${e.message}`
+      });
     }
+
+    await sleep(500);
   }
 
-  // 6. Summary
+  // 3. Filter and sort by edition_count (most popular first)
+  const toProcess = [...discovered.values()].filter(
+    (r) => !existingComplete.has(r.isbn_13)
+  );
+  toProcess.sort((a, b) => (b.edition_count || 0) - (a.edition_count || 0));
+
+  send({
+    type: "progress",
+    message: `Discovery complete. ${discovered.size} unique ISBNs. Processing ${toProcess.length} new books...`
+  });
+
+  const results = {
+    processed: 0,
+    inserted: 0,
+    coverFailures: 0,
+    incompleteBooks: 0,
+    failed: 0
+  };
+
+  for (let i = 0; i < toProcess.length; i++) {
+    const item = toProcess[i];
+    const isbn = item.isbn_13 || item.isbn_10;
+
+    send({
+      type: "progress",
+      message: `[${i + 1}/${toProcess.length}] ${item.ol_preview?.title || item.google_preview?.title || isbn}...`
+    });
+
+    try {
+      // 4. Fetch full data from ISBNdb single-book endpoint
+      let adapted = null;
+
+      const isbndbRes = await fetch(`https://api2.isbndb.com/book/${isbn}`, {
+        headers: { Authorization: apiKey }
+      });
+
+      if (isbndbRes.ok) {
+        const isbndbData = await isbndbRes.json();
+        if (isbndbData.book) {
+          adapted = normaliseISBNdb(isbndbData.book);
+        }
+      }
+
+      // 5. Fall back to Open Library if ISBNdb had nothing or missing description
+      if ((!adapted || !adapted.description) && isbn) {
+        try {
+          const olRes = await fetch(
+            `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`
+          );
+          if (olRes.ok) {
+            const olData = await olRes.json();
+            const olBook = olData[`ISBN:${isbn}`];
+            if (olBook) {
+              const olAdapted = normaliseOpenLibrary(olBook);
+              if (!adapted) {
+                adapted = olAdapted;
+              } else {
+                adapted.description =
+                  adapted.description || olAdapted.description;
+                adapted.genres = [
+                  ...new Set([
+                    ...(adapted.genres || []),
+                    ...(olAdapted.genres || [])
+                  ])
+                ];
+                adapted.cover_remote =
+                  adapted.cover_remote || olAdapted.cover_remote;
+              }
+            }
+          }
+        } catch {
+          // OL fallback failed — continue
+        }
+      }
+
+      // If still nothing, use preview data from discovery
+      if (!adapted) {
+        const preview = item.ol_preview || item.google_preview;
+        if (preview) {
+          adapted = {
+            title: preview.title,
+            authors: preview.authors || [],
+            description: preview.description || null,
+            isbn_13: item.isbn_13,
+            isbn_10: item.isbn_10,
+            genres: preview.subjects || preview.categories || [],
+            page_count: preview.page_count || null,
+            published_date: preview.first_publish_year
+              ? `${preview.first_publish_year}-01-01`
+              : preview.published_date || null,
+            publisher: preview.publisher || null,
+            language: "en",
+            cover_remote: preview.cover_id
+              ? `https://covers.openlibrary.org/b/id/${preview.cover_id}-L.jpg`
+              : preview.cover_url || null,
+            _source: "discovery_preview"
+          };
+        }
+      }
+
+      if (!adapted?.title) {
+        send({ type: "progress", message: "  [SKIP] No title found" });
+        results.failed++;
+        await sleep(300);
+        continue;
+      }
+
+      // Include the discovered category in genres
+      const genres = [
+        ...new Set(
+          [...(adapted.genres || []), item.category]
+            .map((g) => g?.toLowerCase().trim())
+            .filter(Boolean)
+        )
+      ].slice(0, 15);
+
+      const description = sanitiseDescription(adapted.description);
+
+      // 6. Cover image
+      let cover_url = null;
+      const coverRemote =
+        adapted.cover_remote ||
+        (item.ol_preview?.cover_id
+          ? `https://covers.openlibrary.org/b/id/${item.ol_preview.cover_id}-L.jpg`
+          : null);
+
+      if (coverRemote) {
+        try {
+          const coverRes = await fetch(coverRemote);
+          if (!coverRes.ok) throw new Error(`HTTP ${coverRes.status}`);
+
+          const contentType = coverRes.headers.get("content-type") || "";
+          const contentLength = coverRes.headers.get("content-length");
+
+          // Reject Open Library placeholder GIFs (tiny, < 500 bytes)
+          if (
+            contentType.includes("gif") ||
+            (contentLength && parseInt(contentLength) < 500)
+          ) {
+            throw new Error("Placeholder cover image");
+          }
+
+          const ext = contentType.includes("png") ? ".png" : ".jpg";
+          const filename = `${isbn}${ext}`;
+          const buffer = Buffer.from(await coverRes.arrayBuffer());
+
+          if (buffer.length < 500) throw new Error("Cover too small");
+
+          const { error: uploadError } = await supabase.storage
+            .from("books")
+            .upload(filename, buffer, { contentType, upsert: true });
+
+          if (uploadError) throw uploadError;
+          cover_url = filename;
+        } catch (e) {
+          send({
+            type: "progress",
+            message: `  [COVER FAIL] ${e.message}`
+          });
+          results.coverFailures++;
+        }
+      } else {
+        results.coverFailures++;
+      }
+
+      const is_incomplete =
+        !adapted.title ||
+        !adapted.authors?.length ||
+        !description ||
+        !cover_url;
+
+      const bookData = {
+        isbn_13: adapted.isbn_13 || item.isbn_13 || null,
+        isbn_10: adapted.isbn_10 || item.isbn_10 || null,
+        title: adapted.title,
+        authors: adapted.authors || [],
+        description: description || null,
+        cover_url,
+        genres,
+        page_count: adapted.page_count || null,
+        published_date: normaliseDate(adapted.published_date),
+        publisher: adapted.publisher || null,
+        language: normaliseLanguage(adapted.language),
+        source: adapted._source || "isbndb",
+        last_synced_at: new Date().toISOString(),
+        is_incomplete,
+        bookshop_affiliate_link: getBookshopLink(
+          adapted.isbn_13 || item.isbn_13
+        )
+      };
+
+      const conflictCol = bookData.isbn_13 ? "isbn_13" : "isbn_10";
+      const { error: upsertError } = await supabase
+        .from("books")
+        .upsert(bookData, {
+          onConflict: conflictCol,
+          ignoreDuplicates: false
+        });
+
+      if (upsertError) {
+        send({
+          type: "progress",
+          message: `  [DB ERROR] ${upsertError.message}`
+        });
+        results.failed++;
+      } else {
+        results.inserted++;
+        if (is_incomplete) results.incompleteBooks++;
+        send({
+          type: "progress",
+          message: `  [OK] ${adapted.title}${is_incomplete ? " (incomplete)" : ""} — ${item.edition_count || 0} editions`
+        });
+      }
+
+      results.processed++;
+    } catch (e) {
+      send({ type: "progress", message: `  [ERROR] ${e.message}` });
+      results.failed++;
+    }
+
+    await sleep(300);
+  }
+
   send({
     type: "summary",
     data: {
-      totalFetched,
-      uniqueAfterDedup,
-      alreadyInDb,
-      processed: newRaw.length,
-      inserted,
-      coverFailures,
-      incompleteBooks,
-      failed
+      subjectsQueried: subjects.length,
+      totalDiscovered: discovered.size,
+      alreadyInDb: existingComplete.size,
+      processed: results.processed,
+      inserted: results.inserted,
+      coverFailures: results.coverFailures,
+      incompleteBooks: results.incompleteBooks,
+      failed: results.failed
     }
   });
 }

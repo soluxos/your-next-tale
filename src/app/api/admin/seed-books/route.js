@@ -1,7 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
-import { runSeeder, DEFAULT_SUBJECT_TERMS } from "@/lib/books/seeder";
-
-export { DEFAULT_SUBJECT_TERMS };
+import { SEED_SUBJECTS, runSeeder } from "@/lib/books/seeder";
 
 export async function GET(request) {
   const supabase = await createClient();
@@ -24,13 +22,33 @@ export async function GET(request) {
   }
 
   const url = new URL(request.url);
-  const termsParam = url.searchParams.get("terms");
-  const terms = termsParam
-    ? termsParam
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean)
-    : DEFAULT_SUBJECT_TERMS;
+  const subjectsParam = url.searchParams.get("subjects");
+  const subjects = subjectsParam
+    ? SEED_SUBJECTS.filter((s) =>
+        subjectsParam
+          .split(",")
+          .map((l) => l.trim())
+          .includes(s.label)
+      )
+    : SEED_SUBJECTS;
+
+  // Also support custom subjects passed as JSON
+  const customParam = url.searchParams.get("custom");
+  if (customParam) {
+    const customLabels = customParam
+      .split(",")
+      .map((l) => l.trim())
+      .filter(Boolean);
+    for (const label of customLabels) {
+      if (!subjects.find((s) => s.label === label)) {
+        subjects.push({
+          subject: label.toLowerCase(),
+          label,
+          minEditions: 3
+        });
+      }
+    }
+  }
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -42,7 +60,7 @@ export async function GET(request) {
       };
 
       try {
-        await runSeeder({ terms, send, supabase });
+        await runSeeder({ subjects, send, supabase });
       } catch (e) {
         send({ type: "error", message: e.message });
       } finally {

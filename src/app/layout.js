@@ -78,8 +78,8 @@ export default function RootLayout({ children }) {
         <div aria-hidden="true" className="scanlines-overlay" />
         <AuthProvider>
           <TopNavigation />
+          {children}
         </AuthProvider>
-        {children}
         <Footer />
         <Script src="https://scripts.simpleanalyticscdn.com/latest.js" />
       </body>

@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { DEFAULT_SUBJECT_TERMS } from "@/lib/books/seeder";
+import { SEED_SUBJECTS } from "@/lib/books/seeder";
 
 export default function SeedBooksPage() {
-  const [selectedTerms, setSelectedTerms] = useState([
-    ...DEFAULT_SUBJECT_TERMS
-  ]);
+  const [selectedLabels, setSelectedLabels] = useState(
+    SEED_SUBJECTS.map((s) => s.label)
+  );
   const [customTerms, setCustomTerms] = useState([]);
   const [inputValue, setInputValue] = useState("");
   const [running, setRunning] = useState(false);
@@ -20,27 +20,23 @@ export default function SeedBooksPage() {
     logEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [log]);
 
-  const toggleTerm = (term) => {
-    setSelectedTerms((prev) =>
-      prev.includes(term) ? prev.filter((t) => t !== term) : [...prev, term]
+  const toggleLabel = (label) => {
+    setSelectedLabels((prev) =>
+      prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label]
     );
   };
 
   const addCustomTerm = (raw) => {
-    const term = raw.trim().toLowerCase().replace(/,+$/, "");
+    const term = raw.trim().replace(/,+$/, "");
     if (!term) return;
     if (!customTerms.includes(term)) {
       setCustomTerms((prev) => [...prev, term]);
-    }
-    if (!selectedTerms.includes(term)) {
-      setSelectedTerms((prev) => [...prev, term]);
     }
     setInputValue("");
   };
 
   const removeCustomTerm = (term) => {
     setCustomTerms((prev) => prev.filter((t) => t !== term));
-    setSelectedTerms((prev) => prev.filter((t) => t !== term));
   };
 
   const handleInputKeyDown = (e) => {
@@ -62,9 +58,13 @@ export default function SeedBooksPage() {
     setSummary(null);
     setError(null);
 
-    const params = new URLSearchParams({
-      terms: selectedTerms.join(",")
-    });
+    const params = new URLSearchParams();
+    if (selectedLabels.length > 0) {
+      params.set("subjects", selectedLabels.join(","));
+    }
+    if (customTerms.length > 0) {
+      params.set("custom", customTerms.join(","));
+    }
 
     const eventSource = new EventSource(`/api/admin/seed-books?${params}`);
 
@@ -93,29 +93,35 @@ export default function SeedBooksPage() {
     };
   };
 
+  const totalTerms = selectedLabels.length + customTerms.length;
+
   return (
     <div className="space-y-8">
       <div>
         <p className="font-departureMono uppercase text-[10px] text-white/40">
-          ISBNdb Subject Seeder
+          Multi-Source Seeder
         </p>
         <p className="font-ppMondwest text-white text-[28px] mt-1">
           Seed Books
         </p>
+        <p className="font-departureMono text-[10px] text-white/30 mt-2 max-w-lg">
+          Discovers popular books via Open Library edition count + Google Books
+          relevance, then enriches each with ISBNdb metadata.
+        </p>
       </div>
 
-      {/* Preset term pills */}
+      {/* Subject pills */}
       <div className="space-y-3">
         <p className="font-departureMono uppercase text-[10px] text-white/40">
-          Preset Genres
+          Subjects
         </p>
         <div className="flex flex-wrap gap-2">
-          {DEFAULT_SUBJECT_TERMS.map((term) => {
-            const active = selectedTerms.includes(term);
+          {SEED_SUBJECTS.map(({ label, minEditions }) => {
+            const active = selectedLabels.includes(label);
             return (
               <button
-                key={term}
-                onClick={() => toggleTerm(term)}
+                key={label}
+                onClick={() => toggleLabel(label)}
                 disabled={running}
                 className={
                   active
@@ -123,23 +129,24 @@ export default function SeedBooksPage() {
                     : "border border-white/30 text-white/50 font-departureMono uppercase text-[11px] rounded-[8px] px-3 py-2 cursor-pointer hover:border-white/60 hover:text-white/80"
                 }
               >
-                {term}
+                {label}
+                <span className="ml-1.5 text-[9px] opacity-50">
+                  ≥{minEditions}ed
+                </span>
               </button>
             );
           })}
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() =>
-              setSelectedTerms([...DEFAULT_SUBJECT_TERMS, ...customTerms])
-            }
+            onClick={() => setSelectedLabels(SEED_SUBJECTS.map((s) => s.label))}
             disabled={running}
             className="font-departureMono uppercase text-[10px] text-white/50 hover:text-white transition-colors"
           >
             Select All
           </button>
           <button
-            onClick={() => setSelectedTerms([])}
+            onClick={() => setSelectedLabels([])}
             disabled={running}
             className="font-departureMono uppercase text-[10px] text-white/50 hover:text-white transition-colors"
           >
@@ -190,29 +197,23 @@ export default function SeedBooksPage() {
             placeholder={
               customTerms.length === 0 ? "Type a genre and press Enter…" : ""
             }
-            className="flex-1 min-w-[180px] bg-transparent outline-none font-departureMono uppercase text-[11px] text-white placeholder-white/30 disabled:opacity-40"
+            className="flex-1 min-w-[180px] bg-transparent outline-none font-departureMono text-[11px] text-white placeholder-white/30 disabled:opacity-40 border-none"
           />
         </div>
         <p className="font-departureMono text-[10px] text-white/30">
-          Press Enter or comma to add. Backspace to remove the last tag.
+          Press Enter or comma to add. Custom genres use minEditions=3.
         </p>
       </div>
-
-      {/* Selected summary */}
-      {selectedTerms.length > 0 && (
-        <p className="font-departureMono text-[10px] text-white/40">
-          {selectedTerms.length} term{selectedTerms.length !== 1 ? "s" : ""}{" "}
-          selected: {selectedTerms.join(", ")}
-        </p>
-      )}
 
       {/* Run button */}
       <button
         onClick={handleRun}
-        disabled={running || selectedTerms.length === 0}
+        disabled={running || totalTerms === 0}
         className="bg-white text-[#0D00FF] font-departureMono uppercase text-[12px] min-h-[48px] px-8 rounded-[8px] disabled:opacity-40 hover:bg-white/90 transition-colors"
       >
-        {running ? "Seeding..." : `Run Seed (${selectedTerms.length} terms)`}
+        {running
+          ? "Seeding..."
+          : `Run Seed (${totalTerms} subject${totalTerms !== 1 ? "s" : ""})`}
       </button>
 
       {/* Live log */}
@@ -245,15 +246,14 @@ export default function SeedBooksPage() {
           </p>
           <div className="grid grid-cols-2 gap-4">
             {[
-              ["Fetched", summary.totalFetched],
-              ["Unique", summary.uniqueAfterDedup],
+              ["Subjects Queried", summary.subjectsQueried],
+              ["Total Discovered", summary.totalDiscovered],
               ["Already in DB", summary.alreadyInDb],
+              ["Processed", summary.processed],
               ["Inserted", summary.inserted],
               ["Cover Failures", summary.coverFailures],
               ["Incomplete", summary.incompleteBooks],
-              ...(summary.failed > 0
-                ? [["Failed (skipped)", summary.failed]]
-                : [])
+              ...(summary.failed > 0 ? [["Failed", summary.failed]] : [])
             ].map(([label, value]) => (
               <div key={label}>
                 <p className="font-departureMono uppercase text-[10px] text-white/40">

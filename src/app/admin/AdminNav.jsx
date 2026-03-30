@@ -6,9 +6,11 @@ import { cn } from "@/lib/utils";
 
 const navLinks = [
   { label: "Dashboard", href: "/admin" },
+  { label: "Books", href: "/admin/books" },
   { label: "Components", href: "/admin/components" },
   { label: "Seed Books", href: "/admin/seed-books" },
   { label: "Add Book", href: "/admin/add-new-book" },
+  { label: "Fix Dupes", href: "/admin/dedupe" },
   { label: "Scrape Test", href: "/admin/scrape-testing" }
 ];
 

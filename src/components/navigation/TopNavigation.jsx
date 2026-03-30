@@ -17,14 +17,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function TopNavigation() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, avatarUrl, loading } = useAuth();
   const isLoggedIn = !!user;
   const isAdmin = profile?.role === "admin";
   const fullName = profile?.full_name || "";
   const username = profile?.username || "";
-  const avatarUrl = profile?.avatar_url
-    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${profile.avatar_url}`
-    : null;
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);

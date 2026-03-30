@@ -285,7 +285,7 @@ export default function ShelfView({
                         {Array.from({ length: itemsPerRow }).map((_, i) => (
                           <div
                             key={i}
-                            className="w-full animate-pulse bg-[#bbb] rounded-sm"
+                            className="w-full relative z-10 animate-pulse bg-[#bbb] rounded-sm"
                             style={{ aspectRatio: "2 / 3" }}
                           />
                         ))}
@@ -461,7 +461,7 @@ export default function ShelfView({
                           )}
                         </div>
                         {/* Bottom bar */}
-                        <div className="h-[40px] w-full bg-[#f5f5f5] shrink-0 absolute bottom-0 left-0 z-[1]" />
+                        <div className="h-[40px] w-full bg-[#f5f5f5] shrink-0 absolute bottom-0 left-0" />
                       </div>
 
                       {/* Right inner shelf panel */}
