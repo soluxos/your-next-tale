@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { SEED_GENRES, runSeeder } from "@/lib/books/seeder";
+import { revalidatePath } from "next/cache";
 
 export async function GET(request) {
   const supabase = await createClient();
@@ -43,6 +44,8 @@ export async function GET(request) {
 
       try {
         await runSeeder({ genres, send, supabase });
+        revalidatePath("/");
+        revalidatePath("/books");
       } catch (e) {
         send({ type: "error", message: e.message });
       } finally {

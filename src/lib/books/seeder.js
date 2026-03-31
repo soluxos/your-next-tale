@@ -8,7 +8,6 @@ import {
 import { normaliseISBNdb } from "./adapters/isbndb";
 import { sanitiseDescription } from "./sanitiseDescription";
 import { normaliseLanguage } from "./normaliseLanguage";
-import { revalidatePath } from "next/cache";
 import { getBookshopLink } from "../bookshop";
 
 export const SEED_GENRES = [
@@ -337,10 +336,6 @@ export async function runSeeder({ genres = SEED_GENRES, send, supabase }) {
 
     await sleep(300);
   }
-
-  // Revalidate cached pages so new books appear on the live site
-  revalidatePath("/");
-  revalidatePath("/books");
 
   send({
     type: "summary",
