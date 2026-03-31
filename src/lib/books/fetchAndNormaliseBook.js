@@ -325,6 +325,11 @@ export async function fetchAndNormaliseBook(input, supabase) {
   };
 
   // ── 10. Upsert ──────────────────────────────────────────────────────────────
+  console.log(
+    `[fetchAndNormalise] bookshop check for ${merged.isbn_13}: ` +
+      `${gbTitleData?._onBookshop ?? isbndbTitleData?._onBookshop ?? "not checked"}`
+  );
+
   const conflictCol = bookData.isbn_13 ? "isbn_13" : "isbn_10";
 
   if (!bookData.isbn_13 && !bookData.isbn_10) {
@@ -556,14 +561,42 @@ async function fetchFromIsbndbByTitle(title, author) {
       .filter((e) => e.score > 0)
       .sort((a, b) => b.score - a.score);
 
-    const best = scored.length ? scored[0].book : null;
-    if (!best) return null;
+    if (!scored.length) return null;
+
+    // Phase 2: check top 3 on Bookshop.org
+    const top3 = scored.slice(0, 3);
+    const bookshopChecks = await Promise.all(
+      top3.map(async (candidate) => {
+        const onBookshop = candidate.book.isbn13
+          ? await isOnBookshop(candidate.book.isbn13)
+          : false;
+        return {
+          ...candidate,
+          onBookshop,
+          bookshopBonus: onBookshop ? 50 : 0
+        };
+      })
+    );
+
+    const finalRanked = bookshopChecks.sort(
+      (a, b) => b.score + b.bookshopBonus - (a.score + a.bookshopBonus)
+    );
+
+    console.log(
+      `[fetchFromIsbndbByTitle] top candidates:`,
+      finalRanked.slice(0, 3).map((c) => {
+        return `${c.book.isbn13} score=${c.score} bookshop=${c.onBookshop}`;
+      })
+    );
+
+    const best = finalRanked[0].book;
 
     const normalised = normaliseISBNdb(best);
     normalised._source = "isbndb";
     normalised._isEnglishEdition = !!(
       best.isbn13 && isEnglishIsbn(best.isbn13)
     );
+    normalised._onBookshop = finalRanked[0].onBookshop;
     return normalised;
   } catch (e) {
     console.error("ISBNdb title search error:", e);
@@ -648,6 +681,23 @@ async function fetchFromGoogleBooks(isbn) {
   }
 }
 
+async function isOnBookshop(isbn13) {
+  if (!isbn13) return false;
+  try {
+    const res = await fetch(`https://bookshop.org/a/0/${isbn13}`, {
+      method: "HEAD",
+      redirect: "follow",
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      }
+    });
+    return res.ok && (res.url || "").includes("/p/books/");
+  } catch {
+    return false;
+  }
+}
+
 /** Score a Google Books volumeInfo by data completeness. English is mandatory. */
 function scoreEdition(volumeInfo) {
   let score = 0;
@@ -688,9 +738,9 @@ async function fetchFromGoogleBooksByTitle(title, author) {
     const items = (data.items || []).filter((i) => i.volumeInfo);
     if (!items.length) return null;
 
-    // Rank by data completeness — score >= 100 means English is confirmed.
+    // Phase 1: synchronous ranking by data completeness.
     // langRestrict=en is only a hint so we enforce language strictly here.
-    const ranked = items
+    const phase1Ranked = items
       .map((item) => {
         const ids = item.volumeInfo.industryIdentifiers || [];
         const hasIsbn = ids.some(
@@ -705,16 +755,51 @@ async function fetchFromGoogleBooksByTitle(title, author) {
       .filter((e) => e.hasIsbn && e.score > 0)
       .sort((a, b) => b.score - a.score);
 
-    const volumeInfo = ranked.length ? ranked[0].info : items[0].volumeInfo;
-    if (!volumeInfo) return null;
+    if (!phase1Ranked.length) {
+      const volumeInfo = items[0].volumeInfo;
+      if (!volumeInfo) return null;
+      const normalised = normaliseGoogleBooks(volumeInfo);
+      normalised._source = "googlebooks";
+      normalised._isEnglishEdition = false;
+      return normalised;
+    }
 
-    const normalised = normaliseGoogleBooks(volumeInfo);
-    normalised._source = "googlebooks";
-    // _isEnglishEdition = top-ranked result has a confirmed English ISBN prefix
-    const topIsbn13 = ranked[0]?.info.industryIdentifiers?.find(
+    // Phase 2: check top 3 on Bookshop.org (parallel, ~500ms each)
+    const top3 = phase1Ranked.slice(0, 3);
+    const bookshopChecks = await Promise.all(
+      top3.map(async (candidate) => {
+        const isbn13 = (candidate.info.industryIdentifiers || []).find(
+          (id) => id.type === "ISBN_13"
+        )?.identifier;
+        const onBookshop = isbn13 ? await isOnBookshop(isbn13) : false;
+        return { ...candidate, onBookshop, bookshopBonus: onBookshop ? 50 : 0 };
+      })
+    );
+
+    // Re-rank with Bookshop.org bonus applied
+    const finalRanked = bookshopChecks.sort(
+      (a, b) => b.score + b.bookshopBonus - (a.score + a.bookshopBonus)
+    );
+
+    const best = finalRanked[0];
+    const bestIsbn13 = (best.info.industryIdentifiers || []).find(
       (id) => id.type === "ISBN_13"
     )?.identifier;
-    normalised._isEnglishEdition = !!(topIsbn13 && isEnglishIsbn(topIsbn13));
+
+    console.log(
+      `[fetchFromGoogleBooksByTitle] top candidates:`,
+      finalRanked.slice(0, 3).map((c) => {
+        const isbn = (c.info.industryIdentifiers || []).find(
+          (i) => i.type === "ISBN_13"
+        )?.identifier;
+        return `${isbn} score=${c.score} bookshop=${c.onBookshop}`;
+      })
+    );
+
+    const normalised = normaliseGoogleBooks(best.info);
+    normalised._source = "googlebooks";
+    normalised._isEnglishEdition = !!(bestIsbn13 && isEnglishIsbn(bestIsbn13));
+    normalised._onBookshop = best.onBookshop;
     return normalised;
   } catch (e) {
     console.error("Google Books title search error:", e);

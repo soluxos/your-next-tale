@@ -131,7 +131,7 @@ body {
 
 input,
 textarea {
-  border: solid 1px var(--foreground);
+  border: solid 1px #dddddd;
 }
 
 label {

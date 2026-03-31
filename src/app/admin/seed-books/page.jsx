@@ -66,13 +66,13 @@ export default function SeedBooksPage() {
   return (
     <div className="space-y-8">
       <div>
-        <p className="font-departureMono uppercase text-[10px] text-white/40">
+        <p className="font-departureMono uppercase text-[10px] text-textSecondary">
           Multi-Source Seeder
         </p>
-        <p className="font-ppMondwest text-white text-[28px] mt-1">
+        <p className="font-ppMondwest text-textPrimary text-[28px] mt-1">
           Seed Books
         </p>
-        <p className="font-departureMono text-[10px] text-white/30 mt-2 max-w-lg">
+        <p className="font-departureMono text-[10px] text-textSecondary mt-2 max-w-lg">
           Discovers popular books via Hardcover community read counts, then
           enriches each with ISBNdb metadata.
         </p>
@@ -80,7 +80,7 @@ export default function SeedBooksPage() {
 
       {/* Genre pills */}
       <div className="space-y-3">
-        <p className="font-departureMono uppercase text-[10px] text-white/40">
+        <p className="font-departureMono uppercase text-[10px] text-textSecondary">
           Genres
         </p>
         <div className="flex flex-wrap gap-2">
@@ -93,8 +93,8 @@ export default function SeedBooksPage() {
                 disabled={running}
                 className={
                   active
-                    ? "bg-white text-[#0D00FF] font-departureMono uppercase text-[11px] rounded-[8px] px-3 py-2 cursor-pointer"
-                    : "border border-white/30 text-white/50 font-departureMono uppercase text-[11px] rounded-[8px] px-3 py-2 cursor-pointer hover:border-white/60 hover:text-white/80"
+                    ? "bg-[#1f1f1f] text-white font-departureMono uppercase text-[11px] rounded-[8px] px-3 py-2 cursor-pointer"
+                    : "border border-border text-textSecondary font-departureMono uppercase text-[11px] rounded-[8px] px-3 py-2 cursor-pointer hover:border-[#1f1f1f] hover:text-textPrimary"
                 }
               >
                 {label}
@@ -109,14 +109,14 @@ export default function SeedBooksPage() {
           <button
             onClick={() => setSelectedLabels(SEED_GENRES.map((g) => g.label))}
             disabled={running}
-            className="font-departureMono uppercase text-[10px] text-white/50 hover:text-white transition-colors"
+            className="font-departureMono uppercase text-[10px] text-textSecondary hover:text-textPrimary transition-colors"
           >
             Select All
           </button>
           <button
             onClick={() => setSelectedLabels([])}
             disabled={running}
-            className="font-departureMono uppercase text-[10px] text-white/50 hover:text-white transition-colors"
+            className="font-departureMono uppercase text-[10px] text-textSecondary hover:text-textPrimary transition-colors"
           >
             Clear All
           </button>
@@ -127,7 +127,7 @@ export default function SeedBooksPage() {
       <button
         onClick={handleRun}
         disabled={running || totalTerms === 0}
-        className="bg-white text-[#0D00FF] font-departureMono uppercase text-[12px] min-h-[48px] px-8 rounded-[8px] disabled:opacity-40 hover:bg-white/90 transition-colors"
+        className="bg-[#1f1f1f] text-white font-departureMono uppercase text-[12px] min-h-[48px] px-8 rounded-[8px] disabled:opacity-40 hover:bg-[#484848] transition-colors"
       >
         {running
           ? "Seeding..."
@@ -136,10 +136,10 @@ export default function SeedBooksPage() {
 
       {/* Live log */}
       {log.length > 0 && (
-        <div className="bg-black/30 border border-white/10 rounded-[8px] p-4 h-96 overflow-y-auto font-mono text-[11px] text-white/70 space-y-0.5">
+        <div className="bg-[#f0f0f0] border border-border rounded-[8px] p-4 h-96 overflow-y-auto font-mono text-[11px] text-textPrimary space-y-0.5">
           {log.map((line, i) => (
             <div key={i} className="leading-relaxed">
-              <span className="text-white/30 mr-2 select-none">
+              <span className="text-textSecondary mr-2 select-none">
                 {String(i + 1).padStart(3, "0")}
               </span>
               {line}
@@ -151,15 +151,15 @@ export default function SeedBooksPage() {
 
       {/* Error */}
       {error && (
-        <p className="text-red-400 bg-red-900/20 border border-red-500/20 rounded-[8px] px-4 py-3 font-departureMono text-[11px]">
+        <p className="text-red-600 bg-red-50 border border-red-200 rounded-[8px] px-4 py-3 font-departureMono text-[11px]">
           {error}
         </p>
       )}
 
       {/* Summary */}
       {summary && (
-        <div className="border border-white/10 rounded-[8px] p-6 space-y-3">
-          <p className="font-departureMono uppercase text-[11px] text-white/40">
+        <div className="border border-border rounded-[8px] p-6 space-y-3">
+          <p className="font-departureMono uppercase text-[11px] text-textSecondary">
             Seed Complete
           </p>
           <div className="grid grid-cols-2 gap-4">
@@ -174,10 +174,10 @@ export default function SeedBooksPage() {
               ...(summary.failed > 0 ? [["Failed", summary.failed]] : [])
             ].map(([label, value]) => (
               <div key={label}>
-                <p className="font-departureMono uppercase text-[10px] text-white/40">
+                <p className="font-departureMono uppercase text-[10px] text-textSecondary">
                   {label}
                 </p>
-                <p className="font-ppMondwest text-white text-[28px] leading-none mt-1">
+                <p className="font-ppMondwest text-textPrimary text-[28px] leading-none mt-1">
                   {value}
                 </p>
               </div>

@@ -264,7 +264,9 @@ export default function AddBookDrawer({
           <div className="space-y-2">
             {results.map((result, i) => {
               const preview = result.preview || {};
-              const key = preview.isbn_13 || `${preview.title}-${i}`;
+              const key = preview.isbn_13
+                ? `${preview.isbn_13}-${i}`
+                : `${preview.title}-${i}`;
               const stateKey = preview.isbn_13 || preview.title;
               const isAdding = adding === stateKey;
               const allCovers = preview.all_covers || [];

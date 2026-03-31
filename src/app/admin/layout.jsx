@@ -23,13 +23,13 @@ export default async function AdminLayout({ children }) {
   if (!profile || profile.role !== "admin") redirect("/login");
 
   return (
-    <div className="min-h-screen flex bg-[#0D00FF]">
-      <aside className="w-56 shrink-0 border-r border-white/10 flex flex-col gap-1 p-4">
+    <div className="min-h-screen flex bg-[#f9f9fb]">
+      <aside className="w-56 shrink-0 border-r border-border bg-white flex flex-col gap-1 p-4">
         <div className="mb-6">
-          <p className="font-departureMono uppercase text-[10px] text-white/40">
+          <p className="font-departureMono uppercase text-[10px] text-textSecondary">
             Admin
           </p>
-          <p className="font-ppMondwest text-white text-[18px]">
+          <p className="font-ppMondwest text-textPrimary text-[18px]">
             Your Next Tale
           </p>
         </div>

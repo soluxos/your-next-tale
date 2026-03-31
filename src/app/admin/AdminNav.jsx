@@ -26,8 +26,8 @@ export default function AdminNav() {
           className={cn(
             "font-departureMono uppercase text-[11px] rounded-[8px] px-3 py-2 transition-colors",
             pathname === link.href
-              ? "bg-white/10 text-white"
-              : "text-white/50 hover:text-white hover:bg-white/5"
+              ? "bg-[#f0f0f0] text-textPrimary"
+              : "text-textSecondary hover:text-textPrimary hover:bg-[#f8f8f8]"
           )}
         >
           {link.label}

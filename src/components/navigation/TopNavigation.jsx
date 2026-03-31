@@ -7,7 +7,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/utils/supabase/client";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Facehash } from "facehash";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,11 +17,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function TopNavigation() {
-  const { user, profile, avatarUrl, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const isLoggedIn = !!user;
   const isAdmin = profile?.role === "admin";
   const fullName = profile?.full_name || "";
   const username = profile?.username || "";
+  const facehashColor = profile?.facehash_color;
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -50,15 +51,6 @@ export default function TopNavigation() {
     return "";
   }
   const activeItem = getActiveItem();
-
-  const getInitials = (name) => {
-    if (!name) return user?.email?.[0]?.toUpperCase() ?? "?";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
-  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -149,12 +141,31 @@ export default function TopNavigation() {
             /* Logged-in: avatar dropdown */
             <DropdownMenu>
               <DropdownMenuTrigger className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-border">
-                <Avatar className="h-9 w-9 border border-border">
-                  <AvatarImage src={avatarUrl} alt={fullName} />
-                  <AvatarFallback className="text-[11px] font-departureMono bg-[#f4f4f4] text-textPrimary">
-                    {getInitials(fullName)}
-                  </AvatarFallback>
-                </Avatar>
+                <Facehash
+                  name={fullName || user?.email || "user"}
+                  size={36}
+                  variant="solid"
+                  enableBlink
+                  className="rounded-full text-black"
+                  colors={
+                    facehashColor
+                      ? [facehashColor]
+                      : [
+                          "oklch(0.7 0.24 0)",
+                          "oklch(0.7 0.24 30)",
+                          "oklch(0.7 0.24 60)",
+                          "oklch(0.7 0.24 90)",
+                          "oklch(0.7 0.24 120)",
+                          "oklch(0.7 0.24 150)",
+                          "oklch(0.7 0.24 180)",
+                          "oklch(0.7 0.24 210)",
+                          "oklch(0.7 0.24 240)",
+                          "oklch(0.7 0.24 270)",
+                          "oklch(0.7 0.24 300)",
+                          "oklch(0.7 0.24 330)"
+                        ]
+                  }
+                />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <div className="px-2 py-1.5">

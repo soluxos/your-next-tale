@@ -39,17 +39,17 @@ const ScrapeBookPage = () => {
   return (
     <div className="space-y-6">
       <div>
-        <p className="font-departureMono uppercase text-[10px] text-white/40">
+        <p className="font-departureMono uppercase text-[10px] text-textSecondary">
           Scraper
         </p>
-        <p className="font-ppMondwest text-white text-[28px] mt-1">
+        <p className="font-ppMondwest text-textPrimary text-[28px] mt-1">
           Scrape Amazon Book
         </p>
       </div>
       <div className="space-y-2">
         <label
           htmlFor="url"
-          className="font-departureMono uppercase text-[10px] text-white/40"
+          className="font-departureMono uppercase text-[10px] text-textSecondary"
         >
           Amazon Book URL
         </label>
@@ -58,30 +58,30 @@ const ScrapeBookPage = () => {
           id="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          className="block w-full p-2 border border-white/20 bg-white/5 rounded-[8px] text-white font-departureMono text-[12px] placeholder:text-white/30 focus:outline-none focus:border-white/40"
+          className="block w-full p-2 border border-border bg-white rounded-[8px] text-textPrimary font-departureMono text-[12px] placeholder:text-textSecondary focus:outline-none focus:border-[#1f1f1f]"
           placeholder="Enter Amazon book URL"
         />
       </div>
       <button
         onClick={handleScrape}
         disabled={loading}
-        className="bg-white text-[#0D00FF] font-departureMono uppercase text-[12px] min-h-[48px] px-8 rounded-[8px] disabled:opacity-40 hover:bg-white/90 transition-colors"
+        className="bg-[#1f1f1f] text-white font-departureMono uppercase text-[12px] min-h-[48px] px-8 rounded-[8px] disabled:opacity-40 hover:bg-[#484848] transition-colors"
       >
         {loading ? "Scraping..." : "Scrape Book"}
       </button>
 
       {error && (
-        <p className="text-red-400 bg-red-900/20 border border-red-500/20 rounded-[8px] px-4 py-3 font-departureMono text-[11px]">
+        <p className="text-red-600 bg-red-50 border border-red-200 rounded-[8px] px-4 py-3 font-departureMono text-[11px]">
           Error: {error}
         </p>
       )}
 
       {bookDetails && (
-        <div className="border border-white/10 rounded-[8px] p-6 space-y-3">
-          <p className="font-ppMondwest text-white text-[22px]">
+        <div className="border border-border rounded-[8px] p-6 space-y-3">
+          <p className="font-ppMondwest text-textPrimary text-[22px]">
             {bookDetails.title}
           </p>
-          <p className="font-departureMono uppercase text-[10px] text-white/40">
+          <p className="font-departureMono uppercase text-[10px] text-textSecondary">
             {bookDetails.author}
           </p>
           {bookDetails.imageUrl && (
@@ -91,7 +91,7 @@ const ScrapeBookPage = () => {
               className="w-32 h-auto rounded-sm"
             />
           )}
-          <p className="font-departureMono text-[11px] text-white/60 whitespace-pre-wrap">
+          <p className="font-departureMono text-[11px] text-textSecondary whitespace-pre-wrap">
             {bookDetails.description}
           </p>
         </div>

@@ -25,22 +25,24 @@ export default async function AdminDashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <p className="font-departureMono uppercase text-[10px] text-white/40">
+        <p className="font-departureMono uppercase text-[10px] text-textSecondary">
           Overview
         </p>
-        <p className="font-ppMondwest text-white text-[28px] mt-1">Dashboard</p>
+        <p className="font-ppMondwest text-textPrimary text-[28px] mt-1">
+          Dashboard
+        </p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="border border-white/10 rounded-[8px] p-6"
+            className="border border-border rounded-[8px] p-6"
           >
-            <p className="font-departureMono uppercase text-[10px] text-white/40">
+            <p className="font-departureMono uppercase text-[10px] text-textSecondary">
               {stat.label}
             </p>
-            <p className="font-ppMondwest text-white text-[40px] leading-none mt-2">
+            <p className="font-ppMondwest text-textPrimary text-[40px] leading-none mt-2">
               {stat.value}
             </p>
           </div>
@@ -50,13 +52,13 @@ export default async function AdminDashboard() {
       <div className="flex gap-3">
         <Link
           href="/admin/seed-books"
-          className="border border-white/30 text-white font-departureMono uppercase text-[11px] rounded-[8px] px-6 py-3 hover:bg-white/5 transition-colors"
+          className="border border-border text-textPrimary font-departureMono uppercase text-[11px] rounded-[8px] px-6 py-3 hover:bg-[#f0f0f0] transition-colors"
         >
           Seed Books
         </Link>
         <Link
           href="/admin/add-new-book"
-          className="border border-white/30 text-white font-departureMono uppercase text-[11px] rounded-[8px] px-6 py-3 hover:bg-white/5 transition-colors"
+          className="border border-border text-textPrimary font-departureMono uppercase text-[11px] rounded-[8px] px-6 py-3 hover:bg-[#f0f0f0] transition-colors"
         >
           Add Book
         </Link>

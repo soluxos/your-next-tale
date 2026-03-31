@@ -10,6 +10,11 @@ export default function Avatar({ uid, url, size, onUpload }) {
 
   useEffect(() => {
     async function downloadImage(path) {
+      // OAuth providers (Google, GitHub, etc.) store a full URL directly
+      if (path.startsWith("http")) {
+        setAvatarUrl(path);
+        return;
+      }
       try {
         const { data, error } = await supabase.storage.from("avatars").download(path);
         if (error) throw error;

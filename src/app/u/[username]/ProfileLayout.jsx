@@ -4,7 +4,7 @@ import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Facehash } from "facehash";
 import TopNavigation from "@/components/navigation/TopNavigation";
 import ManageShelvesPanel from "@/components/shelves/ManageShelvesPanel";
 
@@ -18,15 +18,6 @@ export default function ProfileLayout({ profile, shelves, isOwner, children }) {
   const segments = pathname.split("/");
   // /u/[username]/[shelfSlug] → segments[3]
   const activeSlug = segments[3] || "all";
-
-  const getInitials = (name) => {
-    if (!name) return profile.username?.[0]?.toUpperCase() ?? "?";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
-  };
 
   // Build tab list: "All" virtual shelf + real shelves
   const tabs = [
@@ -48,12 +39,31 @@ export default function ProfileLayout({ profile, shelves, isOwner, children }) {
       {/* Profile header */}
       <div className="px-5 py-[120px]">
         <div className="max-w-4xl mx-auto flex flex-col items-center gap-4">
-          <Avatar className="h-16 w-16 border border-border shrink-0">
-            <AvatarImage src={profile.avatarUrl} alt={profile.full_name} />
-            <AvatarFallback className="text-[14px] font-departureMono bg-[#f4f4f4] text-textPrimary">
-              {getInitials(profile.full_name)}
-            </AvatarFallback>
-          </Avatar>
+          <Facehash
+            name={profile.full_name || profile.username || "user"}
+            size={64}
+            variant="solid"
+            enableBlink
+            className="rounded-full text-black"
+            colors={
+              profile.facehash_color
+                ? [profile.facehash_color]
+                : [
+                    "oklch(0.7 0.24 0)",
+                    "oklch(0.7 0.24 30)",
+                    "oklch(0.7 0.24 60)",
+                    "oklch(0.7 0.24 90)",
+                    "oklch(0.7 0.24 120)",
+                    "oklch(0.7 0.24 150)",
+                    "oklch(0.7 0.24 180)",
+                    "oklch(0.7 0.24 210)",
+                    "oklch(0.7 0.24 240)",
+                    "oklch(0.7 0.24 270)",
+                    "oklch(0.7 0.24 300)",
+                    "oklch(0.7 0.24 330)"
+                  ]
+            }
+          />
 
           <div className="min-w-0 flex-1 text-center">
             <h1 className="font-ppMondwest text-xl text-textPrimary truncate">

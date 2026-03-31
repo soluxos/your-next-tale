@@ -22,7 +22,9 @@ export default async function UserLayout({ children, params }) {
   // Fetch profile
   const { data: profile } = await supabase
     .from(TABLES.PROFILES)
-    .select("id, full_name, username, avatar_url, bio, is_private")
+    .select(
+      "id, full_name, username, avatar_url, bio, is_private, facehash_color"
+    )
     .eq("username", username)
     .single();
 
@@ -76,11 +78,13 @@ export default async function UserLayout({ children, params }) {
     }
   }
 
-  // Resolve avatar URL
-  // Resolve avatar URL — use public storage URL (no authenticated download needed)
+  // Resolve avatar URL — full HTTP URLs (OAuth) are used directly;
+  // storage paths are resolved via the public bucket URL.
   let avatarUrl = null;
   if (profile.avatar_url) {
-    avatarUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${profile.avatar_url}`;
+    avatarUrl = profile.avatar_url.startsWith("http")
+      ? profile.avatar_url
+      : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${profile.avatar_url}`;
   }
 
   return (

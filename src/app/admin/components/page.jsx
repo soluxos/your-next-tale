@@ -3,10 +3,10 @@ export default function ComponentsPage() {
     <div className="space-y-12 max-w-4xl">
       {/* Page header */}
       <div className="mb-8">
-        <h1 className="font-ppMondwest text-white text-[32px]">
+        <h1 className="font-ppMondwest text-textPrimary text-[32px]">
           Component Library
         </h1>
-        <p className="font-departureMono uppercase text-[11px] text-white/40 mt-2">
+        <p className="font-departureMono uppercase text-[11px] text-textSecondary mt-2">
           Design system reference — all UI patterns in one place
         </p>
       </div>
@@ -15,9 +15,11 @@ export default function ComponentsPage() {
           SECTION 1 — Typography
       ──────────────────────────────────────────── */}
       <section className="space-y-4">
-        <div className="border-b border-white/10 pb-2">
-          <h2 className="font-ppMondwest text-white text-[22px]">Typography</h2>
-          <p className="font-departureMono uppercase text-[10px] text-white/40 mt-1">
+        <div className="border-b border-border pb-2">
+          <h2 className="font-ppMondwest text-textPrimary text-[22px]">
+            Typography
+          </h2>
+          <p className="font-departureMono uppercase text-[10px] text-textSecondary mt-1">
             All fonts and sizes in active use
           </p>
         </div>
@@ -106,9 +108,11 @@ export default function ComponentsPage() {
           SECTION 2 — Buttons
       ──────────────────────────────────────────── */}
       <section className="space-y-4">
-        <div className="border-b border-white/10 pb-2">
-          <h2 className="font-ppMondwest text-white text-[22px]">Buttons</h2>
-          <p className="font-departureMono uppercase text-[10px] text-white/40 mt-1">
+        <div className="border-b border-border pb-2">
+          <h2 className="font-ppMondwest text-textPrimary text-[22px]">
+            Buttons
+          </h2>
+          <p className="font-departureMono uppercase text-[10px] text-textSecondary mt-1">
             Four canonical variants — full (h-44px) and compact (h-36px)
           </p>
         </div>
@@ -215,14 +219,14 @@ export default function ComponentsPage() {
 
         {/* On blue background */}
         <div className="space-y-2">
-          <p className="font-departureMono uppercase text-[10px] text-white/40">
-            Admin variants — on blue
+          <p className="font-departureMono uppercase text-[10px] text-textSecondary">
+            Admin variants
           </p>
           <div className="flex flex-wrap gap-3 items-center">
-            <button className="bg-white text-[#0D00FF] hover:bg-[#e8e8e8] font-departureMono uppercase text-[11px] rounded-[8px] px-4 h-[44px] transition-colors">
+            <button className="bg-[#1f1f1f] text-white hover:bg-[#484848] font-departureMono uppercase text-[11px] rounded-[8px] px-4 h-[44px] transition-colors">
               Submit
             </button>
-            <button className="border border-white/30 text-white hover:bg-white/5 font-departureMono uppercase text-[11px] rounded-[8px] px-4 h-[36px] transition-colors">
+            <button className="border border-border text-textPrimary hover:bg-[#f4f4f4] font-departureMono uppercase text-[11px] rounded-[8px] px-4 h-[36px] transition-colors">
               Secondary
             </button>
           </div>
@@ -233,11 +237,11 @@ export default function ComponentsPage() {
           SECTION 3 — Form Inputs
       ──────────────────────────────────────────── */}
       <section className="space-y-4">
-        <div className="border-b border-white/10 pb-2">
-          <h2 className="font-ppMondwest text-white text-[22px]">
+        <div className="border-b border-border pb-2">
+          <h2 className="font-ppMondwest text-textPrimary text-[22px]">
             Form Inputs
           </h2>
-          <p className="font-departureMono uppercase text-[10px] text-white/40 mt-1">
+          <p className="font-departureMono uppercase text-[10px] text-textSecondary mt-1">
             Text input, textarea, select — all with canonical label above
           </p>
         </div>
@@ -296,11 +300,11 @@ export default function ComponentsPage() {
           SECTION 4 — Badges and Tags
       ──────────────────────────────────────────── */}
       <section className="space-y-4">
-        <div className="border-b border-white/10 pb-2">
-          <h2 className="font-ppMondwest text-white text-[22px]">
+        <div className="border-b border-border pb-2">
+          <h2 className="font-ppMondwest text-textPrimary text-[22px]">
             Badges &amp; Tags
           </h2>
-          <p className="font-departureMono uppercase text-[10px] text-white/40 mt-1">
+          <p className="font-departureMono uppercase text-[10px] text-textSecondary mt-1">
             Four semantic badge variants
           </p>
         </div>
@@ -329,11 +333,11 @@ export default function ComponentsPage() {
           SECTION 5 — Navigation Patterns
       ──────────────────────────────────────────── */}
       <section className="space-y-4">
-        <div className="border-b border-white/10 pb-2">
-          <h2 className="font-ppMondwest text-white text-[22px]">
+        <div className="border-b border-border pb-2">
+          <h2 className="font-ppMondwest text-textPrimary text-[22px]">
             Navigation Patterns
           </h2>
-          <p className="font-departureMono uppercase text-[10px] text-white/40 mt-1">
+          <p className="font-departureMono uppercase text-[10px] text-textSecondary mt-1">
             Shelf tab bar — active vs inactive state
           </p>
         </div>
@@ -360,11 +364,11 @@ export default function ComponentsPage() {
           SECTION 6 — Sheet / Panel Header
       ──────────────────────────────────────────── */}
       <section className="space-y-4">
-        <div className="border-b border-white/10 pb-2">
-          <h2 className="font-ppMondwest text-white text-[22px]">
+        <div className="border-b border-border pb-2">
+          <h2 className="font-ppMondwest text-textPrimary text-[22px]">
             Sheet / Panel Header
           </h2>
-          <p className="font-departureMono uppercase text-[10px] text-white/40 mt-1">
+          <p className="font-departureMono uppercase text-[10px] text-textSecondary mt-1">
             Standard header pattern used in BookDetailPanel and AddBookDrawer
           </p>
         </div>
@@ -405,11 +409,11 @@ export default function ComponentsPage() {
           SECTION 7 — Confirmation / Inline States
       ──────────────────────────────────────────── */}
       <section className="space-y-4">
-        <div className="border-b border-white/10 pb-2">
-          <h2 className="font-ppMondwest text-white text-[22px]">
+        <div className="border-b border-border pb-2">
+          <h2 className="font-ppMondwest text-textPrimary text-[22px]">
             Inline Feedback States
           </h2>
-          <p className="font-departureMono uppercase text-[10px] text-white/40 mt-1">
+          <p className="font-departureMono uppercase text-[10px] text-textSecondary mt-1">
             Saved, warning, and error states
           </p>
         </div>
@@ -438,9 +442,11 @@ export default function ComponentsPage() {
           SECTION 8 — Avatar
       ──────────────────────────────────────────── */}
       <section className="space-y-4">
-        <div className="border-b border-white/10 pb-2">
-          <h2 className="font-ppMondwest text-white text-[22px]">Avatar</h2>
-          <p className="font-departureMono uppercase text-[10px] text-white/40 mt-1">
+        <div className="border-b border-border pb-2">
+          <h2 className="font-ppMondwest text-textPrimary text-[22px]">
+            Avatar
+          </h2>
+          <p className="font-departureMono uppercase text-[10px] text-textSecondary mt-1">
             Three sizes — initials fallback
           </p>
         </div>
@@ -474,11 +480,11 @@ export default function ComponentsPage() {
           SECTION 9 — Dividers and Separators
       ──────────────────────────────────────────── */}
       <section className="space-y-4">
-        <div className="border-b border-white/10 pb-2">
-          <h2 className="font-ppMondwest text-white text-[22px]">
+        <div className="border-b border-border pb-2">
+          <h2 className="font-ppMondwest text-textPrimary text-[22px]">
             Dividers &amp; Separators
           </h2>
-          <p className="font-departureMono uppercase text-[10px] text-white/40 mt-1">
+          <p className="font-departureMono uppercase text-[10px] text-textSecondary mt-1">
             Horizontal rules, vertical separators, admin section dividers
           </p>
         </div>
@@ -509,11 +515,11 @@ export default function ComponentsPage() {
           </div>
         </div>
         <div>
-          <p className="font-departureMono uppercase text-[10px] text-white/40 mb-3">
-            Admin section divider — on blue
+          <p className="font-departureMono uppercase text-[10px] text-textSecondary mb-3">
+            Section divider
           </p>
-          <div className="border-b border-white/10 pb-3">
-            <p className="font-ppMondwest text-white text-[18px]">
+          <div className="border-b border-border pb-3">
+            <p className="font-ppMondwest text-textPrimary text-[18px]">
               Section Title
             </p>
           </div>
@@ -524,11 +530,11 @@ export default function ComponentsPage() {
           SECTION 10 — Icon Buttons
       ──────────────────────────────────────────── */}
       <section className="space-y-4">
-        <div className="border-b border-white/10 pb-2">
-          <h2 className="font-ppMondwest text-white text-[22px]">
+        <div className="border-b border-border pb-2">
+          <h2 className="font-ppMondwest text-textPrimary text-[22px]">
             Icon Buttons
           </h2>
-          <p className="font-departureMono uppercase text-[10px] text-white/40 mt-1">
+          <p className="font-departureMono uppercase text-[10px] text-textSecondary mt-1">
             Two sizes — pencil, trash, close
           </p>
         </div>
@@ -674,11 +680,11 @@ export default function ComponentsPage() {
           SECTION 11 — Loading and Empty States
       ──────────────────────────────────────────── */}
       <section className="space-y-4">
-        <div className="border-b border-white/10 pb-2">
-          <h2 className="font-ppMondwest text-white text-[22px]">
+        <div className="border-b border-border pb-2">
+          <h2 className="font-ppMondwest text-textPrimary text-[22px]">
             Loading &amp; Empty States
           </h2>
-          <p className="font-departureMono uppercase text-[10px] text-white/40 mt-1">
+          <p className="font-departureMono uppercase text-[10px] text-textSecondary mt-1">
             Spinner and empty shelf pattern
           </p>
         </div>
@@ -727,11 +733,11 @@ export default function ComponentsPage() {
           SECTION 12 — Colour Palette
       ──────────────────────────────────────────── */}
       <section className="space-y-4">
-        <div className="border-b border-white/10 pb-2">
-          <h2 className="font-ppMondwest text-white text-[22px]">
+        <div className="border-b border-border pb-2">
+          <h2 className="font-ppMondwest text-textPrimary text-[22px]">
             Colour Palette
           </h2>
-          <p className="font-departureMono uppercase text-[10px] text-white/40 mt-1">
+          <p className="font-departureMono uppercase text-[10px] text-textSecondary mt-1">
             All design system colour tokens
           </p>
         </div>

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Camera, User, Mail, Globe, Lock, Bell, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Facehash } from "facehash";
 import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -17,22 +18,21 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/utils/supabase/client";
+import { useAuth } from "@/components/providers/AuthProvider";
 
 export default function UserSettings({ user }) {
   const supabase = createClient();
+  const { refreshProfile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef(null);
 
   // Form states
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [website, setWebsite] = useState("");
-  const [avatarPath, setAvatarPath] = useState(null); // storage path
-  const [avatarUrl, setAvatarUrl] = useState(null); // displayable URL
   const [isPrivate, setIsPrivate] = useState(false);
+  const [facehashColor, setFacehashColor] = useState(null);
 
   // Password states
   const [currentPassword, setCurrentPassword] = useState("");
@@ -53,7 +53,9 @@ export default function UserSettings({ user }) {
 
       const { data, error, status } = await supabase
         .from("profiles")
-        .select(`full_name, username, website, avatar_url, is_private`)
+        .select(
+          `full_name, username, website, avatar_url, is_private, facehash_color`
+        )
         .eq("id", user?.id)
         .single();
 
@@ -65,8 +67,8 @@ export default function UserSettings({ user }) {
         setFullName(data.full_name || "");
         setUsername(data.username || "");
         setWebsite(data.website || "");
-        setAvatarPath(data.avatar_url);
         setIsPrivate(data.is_private ?? false);
+        setFacehashColor(data.facehash_color || null);
       }
     } catch (error) {
       console.error("Error loading user data:", error);
@@ -79,26 +81,6 @@ export default function UserSettings({ user }) {
     getProfile();
   }, [user, getProfile]);
 
-  // Download avatar from Supabase storage when avatarPath changes
-  useEffect(() => {
-    async function downloadAvatar(path) {
-      try {
-        const { data, error } = await supabase.storage
-          .from("avatars")
-          .download(path);
-        if (error) throw error;
-        const url = URL.createObjectURL(data);
-        setAvatarUrl(url);
-      } catch (error) {
-        console.error("Error downloading avatar:", error);
-      }
-    }
-
-    if (avatarPath) {
-      downloadAvatar(avatarPath);
-    }
-  }, [avatarPath, supabase]);
-
   const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
@@ -107,11 +89,12 @@ export default function UserSettings({ user }) {
         full_name: fullName,
         username,
         website,
-        avatar_url: avatarPath,
         is_private: isPrivate,
+        facehash_color: facehashColor,
         updated_at: new Date().toISOString()
       });
       if (error) throw error;
+      await refreshProfile();
       setShowSaved(true);
       setTimeout(() => setShowSaved(false), 2000);
     } catch (error) {
@@ -151,50 +134,6 @@ export default function UserSettings({ user }) {
     }));
   };
 
-  const uploadAvatar = async (event) => {
-    try {
-      setUploading(true);
-
-      if (!event.target.files || event.target.files.length === 0) {
-        throw new Error("You must select an image to upload.");
-      }
-
-      const file = event.target.files[0];
-      const fileExt = file.name.split(".").pop();
-      const filePath = `${user?.id}-${Math.random()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      // Update avatar path (triggers re-download via useEffect)
-      setAvatarPath(filePath);
-
-      // Save the new avatar path to the profile
-      const { error: updateError } = await supabase.from("profiles").upsert({
-        id: user?.id,
-        avatar_url: filePath,
-        updated_at: new Date().toISOString()
-      });
-      if (updateError) throw updateError;
-    } catch (error) {
-      alert("Error uploading avatar!");
-      console.error(error);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const getInitials = (name) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <div className="p-6 pt-20 max-w-3xl mx-auto">
@@ -228,33 +167,75 @@ export default function UserSettings({ user }) {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Profile Photo */}
-                <div className="font-departureMono uppercase text-[10px] text-textSecondary flex flex-col gap-2">
+                {/* Profile Avatar */}
+                <div className="font-departureMono uppercase text-[10px] text-textSecondary flex flex-col gap-3">
                   <div className="flex items-center gap-2">
-                    <Camera className="h-3 w-3" />
-                    <span>Profile Photo</span>
+                    <span>Profile Avatar</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-9 w-9">
-                      <AvatarImage src={avatarUrl} alt={fullName} />
-                      <AvatarFallback className="font-departureMono text-[11px] bg-[#f4f4f4] text-textPrimary">
-                        {getInitials(fullName)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <button
-                      disabled={uploading}
-                      onClick={() => fileInputRef.current?.click()}
-                      className="h-[36px] px-3 font-departureMono uppercase text-[10px] text-textPrimary border border-border rounded-[8px] hover:bg-[#f4f4f4] transition-colors disabled:opacity-40"
-                    >
-                      {uploading ? "Uploading..." : "Upload Photo"}
-                    </button>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={uploadAvatar}
+                  <div className="flex items-center gap-3">
+                    <Facehash
+                      name={fullName || username || "user"}
+                      size={48}
+                      variant="solid"
+                      enableBlink
+                      className="rounded-full text-black"
+                      colors={
+                        facehashColor
+                          ? [facehashColor]
+                          : [
+                              "oklch(0.7 0.24 0)",
+                              "oklch(0.7 0.24 30)",
+                              "oklch(0.7 0.24 60)",
+                              "oklch(0.7 0.24 90)",
+                              "oklch(0.7 0.24 120)",
+                              "oklch(0.7 0.24 150)",
+                              "oklch(0.7 0.24 180)",
+                              "oklch(0.7 0.24 210)",
+                              "oklch(0.7 0.24 240)",
+                              "oklch(0.7 0.24 270)",
+                              "oklch(0.7 0.24 300)",
+                              "oklch(0.7 0.24 330)"
+                            ]
+                      }
                     />
+                    <p className="font-departureMono text-[10px] text-textSecondary">
+                      Generated from your name
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <span className="font-departureMono uppercase text-[10px] text-textSecondary">
+                      Avatar Colour
+                    </span>
+                    <div className="flex gap-2 flex-wrap">
+                      {[
+                        "oklch(0.7 0.24 0)",
+                        "oklch(0.7 0.24 30)",
+                        "oklch(0.7 0.24 60)",
+                        "oklch(0.7 0.24 90)",
+                        "oklch(0.7 0.24 120)",
+                        "oklch(0.7 0.24 150)",
+                        "oklch(0.7 0.24 180)",
+                        "oklch(0.7 0.24 210)",
+                        "oklch(0.7 0.24 240)",
+                        "oklch(0.7 0.24 270)",
+                        "oklch(0.7 0.24 300)",
+                        "oklch(0.7 0.24 330)"
+                      ].map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => setFacehashColor(color)}
+                          className={cn(
+                            "w-8 h-8 rounded-full border-2 transition-all",
+                            facehashColor === color
+                              ? "border-textPrimary scale-110"
+                              : "border-transparent hover:border-border"
+                          )}
+                          style={{ backgroundColor: color }}
+                          aria-label={`Select colour ${color}`}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
 

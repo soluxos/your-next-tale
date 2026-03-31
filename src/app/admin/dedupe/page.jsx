@@ -31,13 +31,13 @@ export default function DedupePage() {
   return (
     <div className="space-y-8">
       <div>
-        <p className="font-departureMono uppercase text-[10px] text-white/40">
+        <p className="font-departureMono uppercase text-[10px] text-textSecondary">
           Maintenance
         </p>
-        <p className="font-ppMondwest text-white text-[28px] mt-1">
+        <p className="font-ppMondwest text-textPrimary text-[28px] mt-1">
           Fix Duplicates
         </p>
-        <p className="font-departureMono text-[10px] text-white/30 mt-2 max-w-lg">
+        <p className="font-departureMono text-[10px] text-textSecondary mt-2 max-w-lg">
           Finds duplicate books by normalised title + first author name. Keeps
           the highest-quality record and reassigns user_books references before
           deleting duplicates.
@@ -47,36 +47,36 @@ export default function DedupePage() {
       <button
         onClick={handleRun}
         disabled={running}
-        className="bg-white text-[#0D00FF] font-departureMono uppercase text-[12px] min-h-[48px] px-8 rounded-[8px] disabled:opacity-40 hover:bg-white/90 transition-colors"
+        className="bg-[#1f1f1f] text-white font-departureMono uppercase text-[12px] min-h-[48px] px-8 rounded-[8px] disabled:opacity-40 hover:bg-[#484848] transition-colors"
       >
         {running ? "Running..." : "Run Deduplication"}
       </button>
 
       {error && (
-        <p className="text-red-400 bg-red-900/20 border border-red-500/20 rounded-[8px] px-4 py-3 font-departureMono text-[11px]">
+        <p className="text-red-600 bg-red-50 border border-red-200 rounded-[8px] px-4 py-3 font-departureMono text-[11px]">
           {error}
         </p>
       )}
 
       {result && (
-        <div className="border border-white/10 rounded-[8px] p-6 space-y-3">
-          <p className="font-departureMono uppercase text-[11px] text-white/40">
+        <div className="border border-border rounded-[8px] p-6 space-y-3">
+          <p className="font-departureMono uppercase text-[11px] text-textSecondary">
             Deduplication Complete
           </p>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="font-departureMono uppercase text-[10px] text-white/40">
+              <p className="font-departureMono uppercase text-[10px] text-textSecondary">
                 Groups Merged
               </p>
-              <p className="font-ppMondwest text-white text-[28px] leading-none mt-1">
+              <p className="font-ppMondwest text-textPrimary text-[28px] leading-none mt-1">
                 {result.mergedGroups}
               </p>
             </div>
             <div>
-              <p className="font-departureMono uppercase text-[10px] text-white/40">
+              <p className="font-departureMono uppercase text-[10px] text-textSecondary">
                 Records Deleted
               </p>
-              <p className="font-ppMondwest text-white text-[28px] leading-none mt-1">
+              <p className="font-ppMondwest text-textPrimary text-[28px] leading-none mt-1">
                 {result.deletedCount}
               </p>
             </div>
@@ -84,14 +84,14 @@ export default function DedupePage() {
 
           {result.errors && result.errors.length > 0 && (
             <div className="mt-4 space-y-1">
-              <p className="font-departureMono uppercase text-[10px] text-red-400/60">
+              <p className="font-departureMono uppercase text-[10px] text-red-600">
                 Errors
               </p>
-              <div className="bg-black/30 border border-white/10 rounded-[8px] p-3 max-h-48 overflow-y-auto">
+              <div className="bg-[#f8f8f8] border border-border rounded-[8px] p-3 max-h-48 overflow-y-auto">
                 {result.errors.map((err, i) => (
                   <p
                     key={i}
-                    className="font-mono text-[10px] text-red-400/70 leading-relaxed"
+                    className="font-mono text-[10px] text-red-600 leading-relaxed"
                   >
                     {err}
                   </p>

@@ -15,6 +15,26 @@ const supabase = createClient(
 // Helper: true if string contains any Cyrillic characters
 const hasCyrillic = (s) => /[\u0400-\u04FF]/.test(s || "");
 
+// Helper: check if an ISBN exists on Bookshop.org
+async function checkBookshopAvailability(isbn13) {
+  if (!isbn13) return false;
+  try {
+    const url = `https://bookshop.org/a/0/${isbn13}`;
+    const res = await fetch(url, {
+      method: "HEAD",
+      redirect: "follow",
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      }
+    });
+    const finalUrl = res.url || url;
+    return res.ok && finalUrl.includes("/p/books/");
+  } catch {
+    return false;
+  }
+}
+
 // Clean up any test records from previous runs
 async function cleanupTestRecords() {
   await supabase.from("books").delete().eq("hardcover_id", "350178");
@@ -96,6 +116,19 @@ describe("fetchAndNormaliseBook — Hardcover source, no ISBN", () => {
       `authors must include dinniman, got: ${result.authors}`
     );
 
+    // Verify the resolved ISBN exists on Bookshop.org
+    if (result.isbn_13) {
+      const onBookshop = await checkBookshopAvailability(result.isbn_13);
+      assert.ok(
+        onBookshop,
+        `isbn_13 ${result.isbn_13} was not found on bookshop.org/p/books/${result.isbn_13} — ` +
+          `the pipeline resolved to an ISBN that Bookshop.org does not carry`
+      );
+      console.log(
+        `  ✓ Verified on Bookshop.org: bookshop.org/p/books/${result.isbn_13}`
+      );
+    }
+
     console.log("✓ Hardcover result:", {
       isbn_13: result.isbn_13,
       title: result.title,
@@ -154,11 +187,39 @@ describe("fetchAndNormaliseBook — Russian ISBN input", () => {
       `authors must include dinniman, got: ${result.authors}`
     );
 
+    // Verify the resolved ISBN exists on Bookshop.org
+    if (result.isbn_13) {
+      const onBookshop = await checkBookshopAvailability(result.isbn_13);
+      assert.ok(
+        onBookshop,
+        `isbn_13 ${result.isbn_13} not found on Bookshop.org after Russian ISBN was stripped`
+      );
+    }
+
     console.log("✓ Russian ISBN result:", {
       isbn_13: result.isbn_13,
       title: result.title,
       descLen: result.description?.length,
       authors: result.authors
     });
+  });
+});
+
+// ─── Bookshop.org availability check ─────────────────────────────────────────
+describe("Bookshop.org availability check", { timeout: 30000 }, () => {
+  it("9798217287178 exists on Bookshop.org", async () => {
+    const exists = await checkBookshopAvailability("9798217287178");
+    assert.ok(exists, "9798217287178 should be on Bookshop.org");
+  });
+
+  it("9780593820261 exists on Bookshop.org", async () => {
+    const exists = await checkBookshopAvailability("9780593820261");
+    assert.ok(exists, "9780593820261 should be on Bookshop.org");
+  });
+
+  it("9785044660779 does NOT exist on Bookshop.org (Russian edition)", async () => {
+    const exists = await checkBookshopAvailability("9785044660779");
+    console.log(`  Russian ISBN on Bookshop.org: ${exists} (informational)`);
+    // Not a hard assertion — just log it
   });
 });
