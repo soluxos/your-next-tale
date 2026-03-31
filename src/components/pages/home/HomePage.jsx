@@ -238,6 +238,11 @@ export default function HomePage(props) {
                               <Book
                                 book={book}
                                 onImageLoad={() => handleImageLoad(book.id)}
+                                onDeleted={(id) =>
+                                  setBooks((prev) =>
+                                    prev.filter((b) => b.id !== id)
+                                  )
+                                }
                                 {...book}
                               />
                             )}

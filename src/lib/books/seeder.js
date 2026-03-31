@@ -1,20 +1,23 @@
-import { discoverBySubject } from "./sources/openLibraryDiscover";
-import { discoverBySubjectGoogle } from "./sources/googleBooksDiscover";
+import {
+  discoverPopularBooks,
+  getBookDetails,
+  extractGenres,
+  extractAuthors
+} from "./sources/hardcover";
 import { normaliseISBNdb } from "./adapters/isbndb";
-import { normaliseOpenLibrary } from "./adapters/openlibrary";
 import { sanitiseDescription } from "./sanitiseDescription";
 import { normaliseLanguage } from "./normaliseLanguage";
 import { getBookshopLink } from "../bookshop";
 
-export const SEED_SUBJECTS = [
-  { subject: "fantasy", label: "Fantasy", minEditions: 8 },
-  { subject: "epic fantasy", label: "Epic Fantasy", minEditions: 5 },
-  { subject: "science fiction", label: "Sci-Fi", minEditions: 8 },
-  { subject: "space opera", label: "Space Opera", minEditions: 5 },
-  { subject: "dystopian fiction", label: "Dystopian", minEditions: 5 },
-  { subject: "urban fantasy", label: "Urban Fantasy", minEditions: 5 },
-  { subject: "dark fantasy", label: "Dark Fantasy", minEditions: 5 },
-  { subject: "romantasy", label: "Romantasy", minEditions: 3 }
+export const SEED_GENRES = [
+  { query: "Fantasy", label: "Fantasy", minReaders: 100 },
+  { query: "Epic Fantasy", label: "Epic Fantasy", minReaders: 50 },
+  { query: "Science Fiction", label: "Sci-Fi", minReaders: 100 },
+  { query: "Space Opera", label: "Space Opera", minReaders: 50 },
+  { query: "Dystopia", label: "Dystopian", minReaders: 50 },
+  { query: "Urban Fantasy", label: "Urban Fantasy", minReaders: 50 },
+  { query: "Dark Fantasy", label: "Dark Fantasy", minReaders: 50 },
+  { query: "Romantasy", label: "Romantasy", minReaders: 25 }
 ];
 
 function sleep(ms) {
@@ -40,19 +43,18 @@ function normaliseDate(raw) {
 }
 
 /**
- * Multi-source seeder: discovers popular books via Open Library edition count
- * and Google Books relevance, then enriches each with ISBNdb metadata.
+ * Hardcover-powered seeder: discovers popular books via community read counts,
+ * enriches with ISBNdb metadata, and falls back to Hardcover data if ISBNdb misses.
  */
-export async function runSeeder({ subjects = SEED_SUBJECTS, send, supabase }) {
+export async function runSeeder({ genres = SEED_GENRES, send, supabase }) {
   const apiKey = process.env.ISBNDB_API_KEY;
-  if (!apiKey) throw new Error("ISBNDB_API_KEY is not set");
 
   send({
     type: "progress",
-    message: `Starting discovery for ${subjects.length} subjects...`
+    message: `Starting Hardcover discovery for ${genres.length} genres...`
   });
 
-  // 1. Fetch all existing isbn_13s — skip already-complete books
+  // 1. Fetch all existing isbn_13s of complete books — skip re-processing them
   const { data: existing } = await supabase
     .from("books")
     .select("isbn_13, is_incomplete");
@@ -66,83 +68,64 @@ export async function runSeeder({ subjects = SEED_SUBJECTS, send, supabase }) {
     message: `${existingComplete.size} complete books already in DB.`
   });
 
-  // 2. Discover ISBNs from all subjects
-  const discovered = new Map();
+  // 2. Discover books from Hardcover for each genre
+  const discovered = new Map(); // hardcover_id → { ...discoveryData, category }
 
-  for (const { subject, label, minEditions } of subjects) {
-    // Open Library
+  for (const { query: genreQuery, label, minReaders } of genres) {
     send({
       type: "progress",
-      message: `Discovering "${label}" from Open Library...`
+      message: `Discovering "${label}" from Hardcover (min ${minReaders} readers)...`
     });
 
     try {
-      const olResults = await discoverBySubject(subject, { minEditions });
+      const results = await discoverPopularBooks({
+        genreTag: genreQuery,
+        targetCount: 50,
+        minUsersReadCount: minReaders
+      });
+
       let added = 0;
-      for (const r of olResults) {
-        const isbn = r.isbn_13 || r.isbn_10;
-        if (!isbn || existingComplete.has(r.isbn_13)) continue;
-        if (!discovered.has(isbn)) {
-          discovered.set(isbn, { ...r, category: label.toLowerCase() });
+      for (const r of results) {
+        if (r.isbn_13 && existingComplete.has(r.isbn_13)) continue;
+        if (!discovered.has(r.hardcover_id)) {
+          discovered.set(r.hardcover_id, {
+            ...r,
+            category: label.toLowerCase()
+          });
           added++;
         } else if (
-          r.edition_count > (discovered.get(isbn).edition_count || 0)
+          r.users_read_count >
+          (discovered.get(r.hardcover_id).users_read_count || 0)
         ) {
-          discovered.set(isbn, { ...r, category: label.toLowerCase() });
+          discovered.set(r.hardcover_id, {
+            ...r,
+            category: label.toLowerCase()
+          });
         }
       }
+
       send({
         type: "progress",
-        message: `  → ${olResults.length} found, ${added} new ISBNs`
+        message: `  → ${results.length} found, ${added} new books`
       });
     } catch (e) {
       send({
         type: "progress",
-        message: `  → Open Library error: ${e.message}`
+        message: `  → Hardcover error: ${e.message}`
       });
     }
 
     await sleep(1000);
-
-    // Google Books
-    send({
-      type: "progress",
-      message: `  Discovering "${label}" from Google Books...`
-    });
-    try {
-      const gbResults = await discoverBySubjectGoogle(subject);
-      let gbAdded = 0;
-      for (const r of gbResults) {
-        const isbn = r.isbn_13 || r.isbn_10;
-        if (!isbn || existingComplete.has(r.isbn_13)) continue;
-        if (!discovered.has(isbn)) {
-          discovered.set(isbn, { ...r, category: label.toLowerCase() });
-          gbAdded++;
-        }
-      }
-      send({
-        type: "progress",
-        message: `  → ${gbResults.length} found, ${gbAdded} new ISBNs`
-      });
-    } catch (e) {
-      send({
-        type: "progress",
-        message: `  → Google Books error: ${e.message}`
-      });
-    }
-
-    await sleep(500);
   }
 
-  // 3. Filter and sort by edition_count (most popular first)
-  const toProcess = [...discovered.values()].filter(
-    (r) => !existingComplete.has(r.isbn_13)
-  );
-  toProcess.sort((a, b) => (b.edition_count || 0) - (a.edition_count || 0));
+  // 3. Sort by popularity, skip any that are already complete in DB
+  const toProcess = [...discovered.values()]
+    .filter((r) => !r.isbn_13 || !existingComplete.has(r.isbn_13))
+    .sort((a, b) => b.users_read_count - a.users_read_count);
 
   send({
     type: "progress",
-    message: `Discovery complete. ${discovered.size} unique ISBNs. Processing ${toProcess.length} new books...`
+    message: `Discovery complete. ${discovered.size} unique books. Processing ${toProcess.length}...`
   });
 
   const results = {
@@ -155,120 +138,101 @@ export async function runSeeder({ subjects = SEED_SUBJECTS, send, supabase }) {
 
   for (let i = 0; i < toProcess.length; i++) {
     const item = toProcess[i];
-    const isbn = item.isbn_13 || item.isbn_10;
 
     send({
       type: "progress",
-      message: `[${i + 1}/${toProcess.length}] ${item.ol_preview?.title || item.google_preview?.title || isbn}...`
+      message: `[${i + 1}/${toProcess.length}] ${item.title || item.hardcover_id} (${item.users_read_count} readers)...`
     });
 
     try {
-      // 4. Fetch full data from ISBNdb single-book endpoint
-      let adapted = null;
+      // 4. Get full details from Hardcover
+      const details = await getBookDetails(item.hardcover_id);
+      await sleep(400);
 
-      const isbndbRes = await fetch(`https://api2.isbndb.com/book/${isbn}`, {
-        headers: { Authorization: apiKey }
-      });
+      const edition = details?.editions?.[0] || null;
+      const isbn_13 = edition?.isbn_13 || item.isbn_13 || null;
+      const isbn_10 = edition?.isbn_10 || item.isbn_10 || null;
 
-      if (isbndbRes.ok) {
-        const isbndbData = await isbndbRes.json();
-        if (isbndbData.book) {
-          adapted = normaliseISBNdb(isbndbData.book);
-        }
-      }
-
-      // 5. Fall back to Open Library if ISBNdb had nothing or missing description
-      if ((!adapted || !adapted.description) && isbn) {
-        try {
-          const olRes = await fetch(
-            `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`
-          );
-          if (olRes.ok) {
-            const olData = await olRes.json();
-            const olBook = olData[`ISBN:${isbn}`];
-            if (olBook) {
-              const olAdapted = normaliseOpenLibrary(olBook);
-              if (!adapted) {
-                adapted = olAdapted;
-              } else {
-                adapted.description =
-                  adapted.description || olAdapted.description;
-                adapted.genres = [
-                  ...new Set([
-                    ...(adapted.genres || []),
-                    ...(olAdapted.genres || [])
-                  ])
-                ];
-                adapted.cover_remote =
-                  adapted.cover_remote || olAdapted.cover_remote;
-              }
-            }
-          }
-        } catch {
-          // OL fallback failed — continue
-        }
-      }
-
-      // If still nothing, use preview data from discovery
-      if (!adapted) {
-        const preview = item.ol_preview || item.google_preview;
-        if (preview) {
-          adapted = {
-            title: preview.title,
-            authors: preview.authors || [],
-            description: preview.description || null,
-            isbn_13: item.isbn_13,
-            isbn_10: item.isbn_10,
-            genres: preview.subjects || preview.categories || [],
-            page_count: preview.page_count || null,
-            published_date: preview.first_publish_year
-              ? `${preview.first_publish_year}-01-01`
-              : preview.published_date || null,
-            publisher: preview.publisher || null,
-            language: "en",
-            cover_remote: preview.cover_id
-              ? `https://covers.openlibrary.org/b/id/${preview.cover_id}-L.jpg`
-              : preview.cover_url || null,
-            _source: "discovery_preview"
-          };
-        }
-      }
-
-      if (!adapted?.title) {
-        send({ type: "progress", message: "  [SKIP] No title found" });
-        results.failed++;
-        await sleep(300);
+      // Skip if already complete in DB (resolved after fetching isbn_13 from editions)
+      if (isbn_13 && existingComplete.has(isbn_13)) {
+        send({ type: "progress", message: "  [SKIP] Already in DB" });
         continue;
       }
 
-      // Include the discovered category in genres
+      // 5. Try ISBNdb enrichment if we have an ISBN
+      let isbndbData = null;
+      if (isbn_13 && apiKey) {
+        try {
+          const isbndbRes = await fetch(
+            `https://api2.isbndb.com/book/${isbn_13}`,
+            { headers: { Authorization: apiKey } }
+          );
+          if (isbndbRes.ok) {
+            const json = await isbndbRes.json();
+            if (json.book) isbndbData = normaliseISBNdb(json.book);
+          }
+        } catch {
+          // ISBNdb enrichment failed — continue with Hardcover data
+        }
+      }
+
+      // 6. Merge data, preferring ISBNdb, falling back to Hardcover
+      const hcAuthors =
+        extractAuthors(details?.cached_contributors) || item.author_names || [];
+      const hcGenres = extractGenres(details?.cached_tags);
+
+      const title = isbndbData?.title || details?.title || item.title;
+      if (!title) {
+        send({ type: "progress", message: "  [SKIP] No title found" });
+        results.failed++;
+        continue;
+      }
+
+      const authors = isbndbData?.authors?.length
+        ? isbndbData.authors
+        : hcAuthors;
+
+      const description = sanitiseDescription(
+        isbndbData?.description || details?.description || null
+      );
+
       const genres = [
         ...new Set(
-          [...(adapted.genres || []), item.category]
+          [...(isbndbData?.genres || []), ...hcGenres, item.category]
             .map((g) => g?.toLowerCase().trim())
             .filter(Boolean)
         )
       ].slice(0, 15);
 
-      const description = sanitiseDescription(adapted.description);
+      const page_count = isbndbData?.page_count || details?.pages || null;
 
-      // 6. Cover image
+      const published_date = normaliseDate(
+        isbndbData?.published_date ||
+          edition?.release_date ||
+          details?.release_date ||
+          null
+      );
+
+      const publisher =
+        isbndbData?.publisher || edition?.publisher?.name || null;
+
+      const cover_remote =
+        isbndbData?.cover_remote ||
+        details?.image?.url ||
+        item.image_url ||
+        null;
+
+      // 7. Upload cover image to Supabase storage
       let cover_url = null;
-      const coverRemote =
-        adapted.cover_remote ||
-        (item.ol_preview?.cover_id
-          ? `https://covers.openlibrary.org/b/id/${item.ol_preview.cover_id}-L.jpg`
-          : null);
-
-      if (coverRemote) {
+      if (cover_remote) {
+        const isbn = isbn_13 || isbn_10 || String(item.hardcover_id);
         try {
-          const coverRes = await fetch(coverRemote);
+          const coverRes = await fetch(cover_remote);
           if (!coverRes.ok) throw new Error(`HTTP ${coverRes.status}`);
 
           const contentType = coverRes.headers.get("content-type") || "";
           const contentLength = coverRes.headers.get("content-length");
 
-          // Reject Open Library placeholder GIFs (tiny, < 500 bytes)
           if (
             contentType.includes("gif") ||
             (contentLength && parseInt(contentLength) < 500)
@@ -300,38 +264,36 @@ export async function runSeeder({ subjects = SEED_SUBJECTS, send, supabase }) {
       }
 
       const is_incomplete =
-        !adapted.title ||
-        !adapted.authors?.length ||
-        !description ||
-        !cover_url;
+        !title || !authors.length || !description || !cover_url;
 
       const bookData = {
-        isbn_13: adapted.isbn_13 || item.isbn_13 || null,
-        isbn_10: adapted.isbn_10 || item.isbn_10 || null,
-        title: adapted.title,
-        authors: adapted.authors || [],
+        isbn_13: isbn_13 || null,
+        isbn_10: isbn_10 || null,
+        title,
+        authors,
         description: description || null,
         cover_url,
         genres,
-        page_count: adapted.page_count || null,
-        published_date: normaliseDate(adapted.published_date),
-        publisher: adapted.publisher || null,
-        language: normaliseLanguage(adapted.language),
-        source: adapted._source || "isbndb",
+        page_count,
+        published_date,
+        publisher,
+        language: normaliseLanguage(isbndbData?.language || "en"),
+        source: isbndbData ? "isbndb" : "hardcover",
         last_synced_at: new Date().toISOString(),
         is_incomplete,
-        bookshop_affiliate_link: getBookshopLink(
-          adapted.isbn_13 || item.isbn_13
-        )
+        bookshop_affiliate_link: getBookshopLink(isbn_13)
       };
 
       const conflictCol = bookData.isbn_13 ? "isbn_13" : "isbn_10";
-      const { error: upsertError } = await supabase
-        .from("books")
-        .upsert(bookData, {
-          onConflict: conflictCol,
-          ignoreDuplicates: false
-        });
+      const { error: upsertError } =
+        bookData.isbn_13 || bookData.isbn_10
+          ? await supabase
+              .from("books")
+              .upsert(bookData, {
+                onConflict: conflictCol,
+                ignoreDuplicates: false
+              })
+          : await supabase.from("books").insert(bookData);
 
       if (upsertError) {
         send({
@@ -344,7 +306,7 @@ export async function runSeeder({ subjects = SEED_SUBJECTS, send, supabase }) {
         if (is_incomplete) results.incompleteBooks++;
         send({
           type: "progress",
-          message: `  [OK] ${adapted.title}${is_incomplete ? " (incomplete)" : ""} — ${item.edition_count || 0} editions`
+          message: `  [OK] ${title}${is_incomplete ? " (incomplete)" : ""} — ${item.users_read_count} readers`
         });
       }
 
@@ -360,7 +322,7 @@ export async function runSeeder({ subjects = SEED_SUBJECTS, send, supabase }) {
   send({
     type: "summary",
     data: {
-      subjectsQueried: subjects.length,
+      genresQueried: genres.length,
       totalDiscovered: discovered.size,
       alreadyInDb: existingComplete.size,
       processed: results.processed,

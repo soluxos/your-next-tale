@@ -5,6 +5,7 @@ import { normaliseISBNdb } from "@/lib/books/adapters/isbndb";
 import { normaliseOpenLibrary } from "@/lib/books/adapters/openlibrary";
 import { normaliseGoogleBooks } from "@/lib/books/adapters/googlebooks";
 import { searchGoogleBooks } from "@/lib/books/sources/googlebooks";
+import { searchHardcover } from "@/lib/books/sources/hardcover";
 import { isEnglish } from "@/lib/books/normaliseLanguage";
 
 export async function GET(request) {
@@ -29,13 +30,16 @@ export async function GET(request) {
   const isbndbPromise = fetchISBNdb(trimmed);
   const openLibraryPromise = fetchOpenLibrary(trimmed);
   const googleBooksPromise = searchGoogleBooks(trimmed, 5);
+  const hardcoverPromise = searchHardcover(trimmed);
 
-  const [localResult, isbndbResults, olResults, gbResults] = await Promise.all([
-    localPromise,
-    isbndbPromise,
-    openLibraryPromise,
-    googleBooksPromise
-  ]);
+  const [localResult, isbndbResults, olResults, gbResults, hcResults] =
+    await Promise.all([
+      localPromise,
+      isbndbPromise,
+      openLibraryPromise,
+      googleBooksPromise,
+      hardcoverPromise
+    ]);
 
   const localBooks = localResult.data || [];
 
@@ -110,6 +114,10 @@ export async function GET(request) {
     });
   }
 
+  for (const result of hcResults) {
+    allResults.push(result);
+  }
+
   // 4. Group by normalised title + first author to merge editions
   const groups = new Map();
   for (const result of allResults) {
@@ -128,11 +136,19 @@ export async function GET(request) {
     group.sort((a, b) => {
       if (a.source === "local" && b.source !== "local") return -1;
       if (b.source === "local" && a.source !== "local") return 1;
-      const score = (r) =>
-        (r.preview?.cover_preview_url ? 2 : 0) +
-        (r.preview?.isbn_13 ? 1 : 0) +
-        (r.preview?.author ? 1 : 0) +
-        (!r.is_incomplete ? 1 : 0);
+      if (a.source === "hardcover" && b.source !== "hardcover") return -1;
+      if (b.source === "hardcover" && a.source !== "hardcover") return 1;
+      const score = (r) => {
+        let s = 0;
+        if (r.preview?.cover_preview_url) s += 2;
+        if (r.preview?.isbn_13) s += 1;
+        if (r.preview?.author) s += 1;
+        if (!r.is_incomplete) s += 1;
+        if (r.source === "hardcover") s += 15;
+        if ((r.preview?.users_read_count || 0) > 1000) s += 10;
+        else if ((r.preview?.users_read_count || 0) > 100) s += 5;
+        return s;
+      };
       return score(b) - score(a);
     });
 

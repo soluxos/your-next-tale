@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { motion } from "motion/react";
 import { createClient } from "@/utils/supabase/client";
+import { useAuth } from "@/components/providers/AuthProvider";
 import {
   HoverCard,
   HoverCardTrigger,
@@ -15,9 +16,14 @@ const Book = (props) => {
   const [coverUrl, setCoverUrl] = useState(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const { book, onImageLoad } = props;
-  const { id, title, cover_url } = book;
+  const [deleted, setDeleted] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const { book, onImageLoad, onDeleted } = props;
+  const { id, title, cover_url } = book;
+
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === "admin";
 
   const drawerRef = useRef();
 
@@ -56,6 +62,20 @@ const Book = (props) => {
     setIsHovered(false);
   };
 
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/books/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        closeDrawer();
+        setDeleted(true);
+        if (onDeleted) onDeleted(id);
+      }
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const handleMouseEnter = () => {
     setIsHovered(true);
   };
@@ -63,6 +83,8 @@ const Book = (props) => {
   const handleMouseLeave = () => {
     setIsHovered(false);
   };
+
+  if (deleted) return null;
 
   return (
     <>
@@ -72,6 +94,9 @@ const Book = (props) => {
           book={book}
           coverUrl={coverUrl}
           onClose={closeDrawer}
+          isAdmin={isAdmin}
+          onDelete={handleDelete}
+          deleting={deleting}
         />
       )}
 
@@ -120,7 +145,13 @@ const Book = (props) => {
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
           >
-            <BookPopover book={book} onOpenDrawer={openDrawer} />
+            <BookPopover
+              book={book}
+              onOpenDrawer={openDrawer}
+              isAdmin={isAdmin}
+              onDelete={handleDelete}
+              deleting={deleting}
+            />
           </HoverCardContent>
         </HoverCard>
       </div>
