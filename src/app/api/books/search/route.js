@@ -11,6 +11,7 @@ import { isEnglish } from "@/lib/books/normaliseLanguage";
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q");
+  const sourceFilter = searchParams.get("source"); // "local" = DB only
 
   if (!q || !q.trim()) {
     return NextResponse.json({ results: [] });
@@ -22,9 +23,32 @@ export async function GET(request) {
   const supabase = await createClient();
   const localPromise = supabase
     .from(TABLES.BOOKS)
-    .select("id, title, authors, isbn_13, isbn_10, cover_url, is_incomplete")
+    .select(
+      "id, title, authors, isbn_13, isbn_10, cover_url, is_incomplete, description, genres, page_count, published_date, publisher, language, bookshop_affiliate_link, source, last_synced_at, hardcover_id"
+    )
     .or(`title.ilike.%${trimmed}%,authors.cs.{${trimmed}}`)
     .limit(10);
+
+  // If source=local, skip external searches entirely
+  if (sourceFilter === "local") {
+    const localResult = await localPromise;
+    const localBooks = localResult.data || [];
+    const results = localBooks.map((book) => ({
+      source: "local",
+      is_incomplete: book.is_incomplete || false,
+      _raw: book,
+      preview: {
+        title: book.title,
+        author: book.authors?.[0] || null,
+        isbn_13: book.isbn_13,
+        isbn_10: book.isbn_10,
+        cover_preview_url: book.cover_url
+          ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/books/${book.cover_url}`
+          : null
+      }
+    }));
+    return NextResponse.json({ results });
+  }
 
   // 2. External searches in parallel
   const isbndbPromise = fetchISBNdb(trimmed);

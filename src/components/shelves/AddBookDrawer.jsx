@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { addBookToShelf } from "@/lib/shelfBooks";
 import { getUserShelves } from "@/lib/bookshelves";
-import { fetchAndNormaliseBook } from "@/lib/books/fetchAndNormaliseBook";
 import { TABLES } from "@/lib/supabase/types";
 
 export default function AddBookDrawer({
@@ -28,6 +27,8 @@ export default function AddBookDrawer({
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [searchedExternal, setSearchedExternal] = useState(false);
+  const [loadingExternal, setLoadingExternal] = useState(false);
   const [shelves, setShelves] = useState([]);
   const [selectedShelfId, setSelectedShelfId] = useState(shelfId || "");
   const [adding, setAdding] = useState(null);
@@ -36,6 +37,7 @@ export default function AddBookDrawer({
   const [warning, setWarning] = useState(null);
   const [selectedCovers, setSelectedCovers] = useState({});
   const fetchedShelves = useRef(false);
+  const lastQuery = useRef("");
 
   const loadShelves = async () => {
     if (fetchedShelves.current) return;
@@ -52,16 +54,19 @@ export default function AddBookDrawer({
     }
   };
 
+  // Phase 1: Fast DB-only search
   const handleSearch = async () => {
     if (!query.trim()) return;
     setLoading(true);
     setError(null);
     setWarning(null);
+    setSearchedExternal(false);
+    lastQuery.current = query.trim();
     await loadShelves();
 
     try {
       const res = await fetch(
-        `/api/books/search?q=${encodeURIComponent(query.trim())}`
+        `/api/books/search?q=${encodeURIComponent(query.trim())}&source=local`
       );
       if (!res.ok) throw new Error("Search failed");
 
@@ -76,6 +81,28 @@ export default function AddBookDrawer({
     }
   };
 
+  // Phase 2: Full external search (user-triggered)
+  const handleSearchExternal = async () => {
+    const q = lastQuery.current;
+    if (!q) return;
+    setLoadingExternal(true);
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/books/search?q=${encodeURIComponent(q)}`);
+      if (!res.ok) throw new Error("Search failed");
+
+      const data = await res.json();
+      setResults(data.results || []);
+      setSearchedExternal(true);
+    } catch (e) {
+      console.error("External search error:", e);
+      setError("Online search failed. Please try again.");
+    } finally {
+      setLoadingExternal(false);
+    }
+  };
+
   const handleAddBook = async (result) => {
     if (!selectedShelfId) return;
     const key = result.preview?.isbn_13 || result.preview?.title;
@@ -87,20 +114,42 @@ export default function AddBookDrawer({
     try {
       let book;
 
-      if (result.source === "local" && result._raw?.id) {
-        // Local book — no need to normalise, just add to shelf
+      if (
+        result.source === "local" &&
+        result._raw?.id &&
+        !result._raw?.is_incomplete
+      ) {
+        // Complete local book — use directly
         book = result._raw;
       } else {
-        // External result — run through the normalisation pipeline
+        // External result OR incomplete local book — normalise server-side
+        // (cover fetching hits external CDNs that are CORS-blocked in the browser)
         const chosenCover =
           selectedCovers[result.preview?.isbn_13 || result.preview?.title];
         const previewForAdd = chosenCover
           ? { ...result.preview, cover_preview_url: chosenCover }
           : result.preview;
-        book = await fetchAndNormaliseBook(
-          { _raw: result._raw, source: result.source, preview: previewForAdd },
-          supabase
-        );
+
+        const res = await fetch("/api/books/normalise", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            _raw: result._raw,
+            source: result.source,
+            preview: previewForAdd,
+            ...(result.hardcover_id
+              ? { hardcover_id: result.hardcover_id }
+              : {})
+          })
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || "Normalisation failed");
+        }
+
+        const data = await res.json();
+        book = data.book;
       }
 
       if (!book) {
@@ -144,6 +193,10 @@ export default function AddBookDrawer({
     if (e.key === "Enter") handleSearch();
   };
 
+  const hasSearched = lastQuery.current && !loading;
+  const showExternalPrompt =
+    hasSearched && !searchedExternal && !loadingExternal;
+
   return (
     <Sheet open onOpenChange={(open) => !open && onClose()}>
       <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
@@ -180,7 +233,7 @@ export default function AddBookDrawer({
           {/* Search */}
           <div className="flex gap-2">
             <Input
-              placeholder="Search by title..."
+              placeholder="Search by title or author..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -298,9 +351,36 @@ export default function AddBookDrawer({
             })}
           </div>
 
-          {!loading && results.length === 0 && query && !error && (
+          {/* "Can't find it?" prompt — shown after DB search, before external search */}
+          {showExternalPrompt && (
+            <div className="text-center py-3 space-y-2">
+              {results.length === 0 && (
+                <p className="font-departureMono uppercase text-[10px] text-textSecondary">
+                  No results in our catalogue
+                </p>
+              )}
+              <button
+                onClick={handleSearchExternal}
+                className="font-departureMono uppercase text-[11px] text-textSecondary hover:text-textPrimary underline underline-offset-2 transition-colors"
+              >
+                {results.length === 0
+                  ? "Search online for this book"
+                  : "Can\u2019t find it? Search online"}
+              </button>
+            </div>
+          )}
+
+          {/* Loading indicator for external search */}
+          {loadingExternal && (
+            <p className="text-center font-departureMono uppercase text-[10px] text-textSecondary py-4 animate-pulse">
+              Searching online sources...
+            </p>
+          )}
+
+          {/* No results at all after external search */}
+          {searchedExternal && !loadingExternal && results.length === 0 && (
             <p className="text-center font-departureMono uppercase text-[10px] text-textSecondary py-4">
-              No results found
+              No results found — try a different search term
             </p>
           )}
         </div>

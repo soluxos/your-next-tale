@@ -2,25 +2,14 @@ import { normaliseISBNdb } from "./adapters/isbndb";
 import { normaliseOpenLibrary } from "./adapters/openlibrary";
 import { normaliseGoogleBooks } from "./adapters/googlebooks";
 import { sanitiseDescription } from "./sanitiseDescription";
-import { normaliseLanguage } from "./normaliseLanguage";
+import { normaliseLanguage, isEnglish } from "./normaliseLanguage";
 import { getBookshopLink } from "@/lib/bookshop";
 import { TABLES } from "@/lib/supabase/types";
 
 const STALE_DAYS = 30;
 
-/**
- * Fetch, normalise, download cover, and upsert a book into the books table.
- *
- * Accepts either:
- *  - An ISBN string (will fetch fresh from all three APIs)
- *  - A search result object with { _raw, source, preview } from the search API
- *
- * Always fetches full data from all sources by ISBN rather than relying on
- * partial _raw data from search results — ensures description, genres, etc.
- * are complete.
- */
 export async function fetchAndNormaliseBook(input, supabase) {
-  // 1. Extract the best available ISBN from the input
+  // ── 1. Extract ISBN + title/author from the input ──────────────────────────
   let isbn = null;
   if (typeof input === "string") {
     isbn = input;
@@ -30,10 +19,23 @@ export async function fetchAndNormaliseBook(input, supabase) {
       input?.preview?.isbn_10 ||
       input?._raw?.isbn13 ||
       input?._raw?.isbn ||
+      input?._raw?.isbn_13 ||
+      input?._raw?.isbn_10 ||
       null;
   }
 
-  // 2. If we have an ISBN, check the local DB first
+  const preview = typeof input === "string" ? null : input?.preview || null;
+  const inputTitle =
+    preview?.title || input?._raw?.title || input?._raw?.book_title || null;
+  const inputAuthor =
+    preview?.author ||
+    input?._raw?.authors?.[0] ||
+    input?._raw?.author_names?.[0] ||
+    null;
+
+  console.log(`[fetchAndNormalise] "${inputTitle}" isbn=${isbn}`);
+
+  // ── 2. DB cache — only use if fully complete ───────────────────────────────
   if (isbn) {
     const { data: existing } = await supabase
       .from(TABLES.BOOKS)
@@ -41,117 +43,163 @@ export async function fetchAndNormaliseBook(input, supabase) {
       .or(`isbn_13.eq.${isbn},isbn_10.eq.${isbn}`)
       .single();
 
-    if (existing && existing.last_synced_at && !existing.is_incomplete) {
-      const syncedAt = new Date(existing.last_synced_at);
-      const thirtyDaysAgo = new Date(
-        Date.now() - STALE_DAYS * 24 * 60 * 60 * 1000
-      );
-      if (syncedAt > thirtyDaysAgo) {
-        return existing; // fresh enough, return as-is
+    if (
+      existing?.description &&
+      existing?.cover_url &&
+      !existing?.is_incomplete
+    ) {
+      const syncedAt = new Date(existing.last_synced_at || 0);
+      const staleAt = new Date(Date.now() - STALE_DAYS * 24 * 60 * 60 * 1000);
+      if (syncedAt > staleAt) {
+        console.log(`[fetchAndNormalise] returning fresh DB record`);
+        return existing;
       }
     }
   }
 
-  // 3. Fetch FULL data from all sources in parallel using the ISBN
-  //    Do NOT rely on _raw from the search result — always fetch fresh
-  //    so we get the complete data including description, genres, page_count etc.
-  const preview = typeof input === "string" ? null : input?.preview || null;
+  // For local source: if already complete return immediately, else extract ISBN
+  if (typeof input === "object" && input?.source === "local" && input?._raw) {
+    const raw = input._raw;
+    if (!raw.is_incomplete && raw.description && raw.cover_url) return raw;
+    if (!isbn) isbn = raw.isbn_13 || raw.isbn_10 || null;
+  }
 
-  const [isbndbResult, openLibraryResult, googleBooksResult] =
-    await Promise.allSettled([
-      isbn ? fetchFromIsbndb(isbn) : Promise.resolve(null),
-      isbn ? fetchFromOpenLibrary(isbn) : Promise.resolve(null),
-      isbn
-        ? fetchFromGoogleBooks(isbn)
-        : fetchFromGoogleBooksByTitle(preview?.title, preview?.author)
-    ]);
+  // ── 3. Round 1: fetch all sources in parallel ──────────────────────────────
+  // Always run a title-based Google Books search with langRestrict=en — this is
+  // our most reliable route to the English edition.
+  const [isbndbR, olR, gbIsbnR, gbTitleR] = await Promise.allSettled([
+    isbn ? fetchFromIsbndb(isbn) : Promise.resolve(null),
+    isbn ? fetchFromOpenLibrary(isbn) : Promise.resolve(null),
+    isbn ? fetchFromGoogleBooks(isbn) : Promise.resolve(null),
+    inputTitle
+      ? fetchFromGoogleBooksByTitle(inputTitle, inputAuthor)
+      : Promise.resolve(null)
+  ]);
 
-  const isbndbData =
-    isbndbResult.status === "fulfilled" ? isbndbResult.value : null;
-  const openLibraryData =
-    openLibraryResult.status === "fulfilled" ? openLibraryResult.value : null;
-  const googleBooksData =
-    googleBooksResult.status === "fulfilled" ? googleBooksResult.value : null;
+  let isbndbData = isbndbR.status === "fulfilled" ? isbndbR.value : null;
+  let olData = olR.status === "fulfilled" ? olR.value : null;
+  let gbIsbnData = gbIsbnR.status === "fulfilled" ? gbIsbnR.value : null;
+  let gbTitleData = gbTitleR.status === "fulfilled" ? gbTitleR.value : null;
 
-  // If we have no ISBN but have _raw from search, use that as a fallback
-  // to avoid returning nothing at all
+  console.log(
+    `[fetchAndNormalise] round1 — isbndb:${!!isbndbData}(${isbndbData?.language}) ol:${!!olData}(${olData?.language}) gbIsbn:${!!gbIsbnData}(${gbIsbnData?.language}) gbTitle:${!!gbTitleData}(${gbTitleData?.language})`
+  );
+
+  // ── 4. Non-English ISBN detection ─────────────────────────────────────────
+  // If all ISBN-based results declare a non-English language, the ISBN we were
+  // given is for a translated edition. Use the English ISBN from the title search
+  // and re-fetch ISBNdb + OpenLibrary with it.
+  // Only evaluate sources that actually declare a language.
+  // If every such source says non-English → the ISBN is for a translated edition.
+  const isbnSourcesWithLang = [isbndbData, olData, gbIsbnData].filter(
+    (s) => s?.language
+  );
+  const allNonEnglish =
+    isbnSourcesWithLang.length > 0 &&
+    isbnSourcesWithLang.every((s) => !isEnglish(s.language));
+
+  if (allNonEnglish) {
+    const englishIsbn = gbTitleData?.isbn_13 || gbTitleData?.isbn_10;
+    console.warn(
+      `[fetchAndNormalise] ISBN ${isbn} is non-English (${isbndbData?.language || olData?.language}). ` +
+        `Switching to English ISBN: ${englishIsbn || "none found"}`
+    );
+
+    if (englishIsbn && englishIsbn !== isbn) {
+      isbn = englishIsbn;
+      const [isbndb2R, ol2R, gbIsbn2R] = await Promise.allSettled([
+        fetchFromIsbndb(isbn),
+        fetchFromOpenLibrary(isbn),
+        fetchFromGoogleBooks(isbn)
+      ]);
+      isbndbData = isbndb2R.status === "fulfilled" ? isbndb2R.value : null;
+      olData = ol2R.status === "fulfilled" ? ol2R.value : null;
+      gbIsbnData = gbIsbn2R.status === "fulfilled" ? gbIsbn2R.value : null;
+      console.log(
+        `[fetchAndNormalise] round2 — isbndb:${!!isbndbData} ol:${!!olData} gbIsbn:${!!gbIsbnData}`
+      );
+    }
+  }
+
+  // ── 5. _raw fallback ───────────────────────────────────────────────────────
   let fallbackData = null;
-  if (!isbn && typeof input === "object" && input?._raw) {
-    if (input.source === "isbndb") fallbackData = normaliseISBNdb(input._raw);
-    else if (input.source === "openlibrary")
+  if (typeof input === "object" && input?._raw) {
+    const src = input.source;
+    if (src === "isbndb") fallbackData = normaliseISBNdb(input._raw);
+    else if (src === "openlibrary")
       fallbackData = normaliseOpenLibrary(input._raw);
-    else if (input.source === "googlebooks")
+    else if (src === "googlebooks")
       fallbackData = normaliseGoogleBooks(input._raw);
-
-    if (fallbackData) fallbackData._source = input.source;
+    if (fallbackData) fallbackData._source = src;
   }
 
-  // Handle local source — just return from DB
-  if (
-    typeof input === "object" &&
-    input?.source === "local" &&
-    input?._raw?.id
-  ) {
-    const { data } = await supabase
-      .from(TABLES.BOOKS)
-      .select("*")
-      .eq("id", input._raw.id)
-      .single();
-    if (data) return data;
-  }
-
-  // 4. Merge all sources using best-available-data rules
+  // ── 6. Merge — sanitiseDescription rejects non-Latin text ─────────────────
   const merged = mergeBookData([
     isbndbData,
-    openLibraryData,
-    googleBooksData,
+    olData,
+    gbIsbnData,
+    gbTitleData,
     fallbackData
   ]);
 
+  console.log(
+    `[fetchAndNormalise] merged — title:"${merged.title}" desc:${!!merged.description} cover:${!!merged.cover_remote} lang:${merged.language}`
+  );
+
   if (!merged.title) {
-    console.error("fetchAndNormaliseBook: could not determine title for", isbn);
+    console.error(
+      `[fetchAndNormalise] FAILED: no title for isbn=${isbn} title="${inputTitle}"`
+    );
     return null;
   }
 
-  // 5. Handle cover image
-  //    Prefer cover from the user's selected cover (preview.cover_preview_url)
-  //    then merged remote cover, then Open Library cover API
-  const coverRemoteUrl =
-    preview?.cover_preview_url ||
-    merged.cover_remote ||
-    (isbn ? `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg` : null);
-
-  let cover_url = null;
-  if (coverRemoteUrl) {
-    cover_url = await downloadAndUploadCover(
-      coverRemoteUrl,
-      merged.isbn_13 || merged.isbn_10,
-      supabase
+  if (!merged.description) {
+    console.warn(
+      `[fetchAndNormalise] WARNING: no description for "${merged.title}". Sources: isbndb=${isbndbData?.description?.slice(0, 30)} ol=${olData?.description?.slice(0, 30)} gb=${gbIsbnData?.description?.slice(0, 30)} gbTitle=${gbTitleData?.description?.slice(0, 30)}`
     );
   }
 
-  // 6. Sanitise description
+  // ── 7. Cover — try candidates in order until one uploads ──────────────────
+  const isbnForCover = merged.isbn_13 || merged.isbn_10 || isbn;
+  const coverCandidates = [
+    preview?.cover_preview_url,
+    merged.cover_remote,
+    isbndbData?.cover_remote,
+    gbIsbnData?.cover_remote,
+    gbTitleData?.cover_remote,
+    olData?.cover_remote,
+    isbnForCover
+      ? `https://covers.openlibrary.org/b/isbn/${isbnForCover}-L.jpg`
+      : null
+  ].filter(Boolean);
+
+  let cover_url = null;
+  for (const url of coverCandidates) {
+    cover_url = await downloadAndUploadCover(url, isbnForCover, supabase);
+    if (cover_url) break;
+  }
+
+  if (!cover_url) {
+    console.warn(
+      `[fetchAndNormalise] WARNING: no cover for "${merged.title}" — tried ${coverCandidates.length} URLs`
+    );
+  }
+
+  // ── 8. Finalise ────────────────────────────────────────────────────────────
   const description = sanitiseDescription(merged.description);
-
-  // 6b. Normalise published_date to YYYY-MM-DD
   const published_date = normaliseDate(merged.published_date);
-
-  // 7. Determine is_incomplete
   const is_incomplete =
     !merged.title ||
     !merged.authors?.length ||
     !description ||
-    (!merged.isbn_13 && !merged.isbn_10) ||
-    !cover_url;
+    (!merged.isbn_13 && !merged.isbn_10);
 
-  // 8. Normalise genres
   const genres = [
     ...new Set(
       (merged.genres || []).map((g) => g.toLowerCase().trim()).filter(Boolean)
     )
   ].slice(0, 15);
 
-  // 9. Build the final book object
   const bookData = {
     isbn_13: merged.isbn_13 || null,
     isbn_10: merged.isbn_10 || null,
@@ -163,7 +211,7 @@ export async function fetchAndNormaliseBook(input, supabase) {
     page_count: merged.page_count || null,
     published_date: published_date || null,
     publisher: merged.publisher || null,
-    language: normaliseLanguage(merged.language) || "en",
+    language: "en",
     bookshop_affiliate_link: getBookshopLink(merged.isbn_13) || null,
     source: merged.source || "unknown",
     last_synced_at: new Date().toISOString(),
@@ -173,19 +221,17 @@ export async function fetchAndNormaliseBook(input, supabase) {
       : {})
   };
 
-  // 10. Upsert — conflict on isbn_13 if available, else isbn_10
+  // ── 9. Upsert ──────────────────────────────────────────────────────────────
   const conflictCol = bookData.isbn_13 ? "isbn_13" : "isbn_10";
 
   if (!bookData.isbn_13 && !bookData.isbn_10) {
-    // No ISBN at all — just insert
     const { data: inserted, error } = await supabase
       .from(TABLES.BOOKS)
       .insert(bookData)
       .select()
       .single();
-
     if (error) {
-      console.error("fetchAndNormaliseBook insert error:", error);
+      console.error("[fetchAndNormalise] insert error:", error.message);
       return null;
     }
     return inserted;
@@ -198,8 +244,7 @@ export async function fetchAndNormaliseBook(input, supabase) {
     .single();
 
   if (error) {
-    console.error("fetchAndNormaliseBook upsert error:", error);
-    // Fallback: try to find and update existing
+    console.error("[fetchAndNormalise] upsert error:", error.message);
     if (bookData.isbn_13) {
       const { data: existing } = await supabase
         .from(TABLES.BOOKS)
@@ -219,6 +264,9 @@ export async function fetchAndNormaliseBook(input, supabase) {
     return null;
   }
 
+  console.log(
+    `[fetchAndNormalise] saved "${bookData.title}" id=${upserted?.id} incomplete=${is_incomplete}`
+  );
   return upserted;
 }
 
@@ -378,6 +426,26 @@ async function fetchFromOpenLibrary(isbn) {
 
     const normalised = normaliseOpenLibrary(bookData);
     normalised._source = "openlibrary";
+
+    // The edition endpoint rarely has a description — it lives in the work record.
+    // Fetch the work to get it if it's missing.
+    if (!normalised.description && bookData.works?.[0]?.key) {
+      try {
+        const workRes = await fetch(
+          `https://openlibrary.org${bookData.works[0].key}.json`
+        );
+        if (workRes.ok) {
+          const workData = await workRes.json();
+          const rawDesc = workData.description;
+          const descStr =
+            typeof rawDesc === "string" ? rawDesc : rawDesc?.value || null;
+          normalised.description = sanitiseDescription(descStr);
+        }
+      } catch {
+        // Work fetch failed — proceed without description
+      }
+    }
+
     return normalised;
   } catch (e) {
     console.error("Open Library fetch error:", e);
