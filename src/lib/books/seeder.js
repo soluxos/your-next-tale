@@ -2,11 +2,13 @@ import {
   discoverPopularBooks,
   getBookDetails,
   extractGenres,
-  extractAuthors
+  extractAuthors,
+  cleanTitle
 } from "./sources/hardcover";
 import { normaliseISBNdb } from "./adapters/isbndb";
 import { sanitiseDescription } from "./sanitiseDescription";
 import { normaliseLanguage } from "./normaliseLanguage";
+import { revalidatePath } from "next/cache";
 import { getBookshopLink } from "../bookshop";
 
 export const SEED_GENRES = [
@@ -54,18 +56,25 @@ export async function runSeeder({ genres = SEED_GENRES, send, supabase }) {
     message: `Starting Hardcover discovery for ${genres.length} genres...`
   });
 
-  // 1. Fetch all existing isbn_13s of complete books — skip re-processing them
+  // 1. Fetch existing books — skip re-processing them
   const { data: existing } = await supabase
     .from("books")
-    .select("isbn_13, is_incomplete");
+    .select("isbn_13, hardcover_id, is_incomplete");
 
-  const existingComplete = new Set(
-    (existing || []).filter((b) => !b.is_incomplete).map((b) => b.isbn_13)
+  const existingByIsbn = new Set(
+    (existing || [])
+      .filter((b) => !b.is_incomplete && b.isbn_13)
+      .map((b) => b.isbn_13)
+  );
+  const existingByHardcoverId = new Set(
+    (existing || [])
+      .filter((b) => !b.is_incomplete && b.hardcover_id)
+      .map((b) => b.hardcover_id)
   );
 
   send({
     type: "progress",
-    message: `${existingComplete.size} complete books already in DB.`
+    message: `${existingByIsbn.size} complete books in DB (${existingByHardcoverId.size} with Hardcover IDs).`
   });
 
   // 2. Discover books from Hardcover for each genre
@@ -86,11 +95,13 @@ export async function runSeeder({ genres = SEED_GENRES, send, supabase }) {
 
       let added = 0;
       for (const r of results) {
-        if (r.isbn_13 && existingComplete.has(r.isbn_13)) continue;
+        if (!r.hardcover_id) continue;
+        if (existingByHardcoverId.has(String(r.hardcover_id))) continue;
+        if (r.isbn_13 && existingByIsbn.has(r.isbn_13)) continue;
         if (!discovered.has(r.hardcover_id)) {
           discovered.set(r.hardcover_id, {
             ...r,
-            category: label.toLowerCase()
+            primaryGenre: label.toLowerCase()
           });
           added++;
         } else if (
@@ -99,7 +110,7 @@ export async function runSeeder({ genres = SEED_GENRES, send, supabase }) {
         ) {
           discovered.set(r.hardcover_id, {
             ...r,
-            category: label.toLowerCase()
+            primaryGenre: label.toLowerCase()
           });
         }
       }
@@ -120,7 +131,7 @@ export async function runSeeder({ genres = SEED_GENRES, send, supabase }) {
 
   // 3. Sort by popularity, skip any that are already complete in DB
   const toProcess = [...discovered.values()]
-    .filter((r) => !r.isbn_13 || !existingComplete.has(r.isbn_13))
+    .filter((r) => !r.isbn_13 || !existingByIsbn.has(r.isbn_13))
     .sort((a, b) => b.users_read_count - a.users_read_count);
 
   send({
@@ -139,9 +150,13 @@ export async function runSeeder({ genres = SEED_GENRES, send, supabase }) {
   for (let i = 0; i < toProcess.length; i++) {
     const item = toProcess[i];
 
+    const seriesLabel = item.is_standalone
+      ? "standalone"
+      : `series #${item.series_position}`;
+
     send({
       type: "progress",
-      message: `[${i + 1}/${toProcess.length}] ${item.title || item.hardcover_id} (${item.users_read_count} readers)...`
+      message: `[${i + 1}/${toProcess.length}] ${item.title || item.hardcover_id} (${item.users_read_count} readers, ${seriesLabel})...`
     });
 
     try {
@@ -153,9 +168,12 @@ export async function runSeeder({ genres = SEED_GENRES, send, supabase }) {
       const isbn_13 = edition?.isbn_13 || item.isbn_13 || null;
       const isbn_10 = edition?.isbn_10 || item.isbn_10 || null;
 
-      // Skip if already complete in DB (resolved after fetching isbn_13 from editions)
-      if (isbn_13 && existingComplete.has(isbn_13)) {
-        send({ type: "progress", message: "  [SKIP] Already in DB" });
+      // Skip if already in DB by ISBN (resolved after fetching isbn_13 from editions)
+      if (isbn_13 && existingByIsbn.has(isbn_13)) {
+        send({
+          type: "progress",
+          message: `  [SKIP] ISBN ${isbn_13} already in DB`
+        });
         continue;
       }
 
@@ -181,7 +199,9 @@ export async function runSeeder({ genres = SEED_GENRES, send, supabase }) {
         extractAuthors(details?.cached_contributors) || item.author_names || [];
       const hcGenres = extractGenres(details?.cached_tags);
 
-      const title = isbndbData?.title || details?.title || item.title;
+      const title = cleanTitle(
+        isbndbData?.title || details?.title || item.title
+      );
       if (!title) {
         send({ type: "progress", message: "  [SKIP] No title found" });
         results.failed++;
@@ -198,7 +218,7 @@ export async function runSeeder({ genres = SEED_GENRES, send, supabase }) {
 
       const genres = [
         ...new Set(
-          [...(isbndbData?.genres || []), ...hcGenres, item.category]
+          [...(isbndbData?.genres || []), ...hcGenres, item.primaryGenre]
             .map((g) => g?.toLowerCase().trim())
             .filter(Boolean)
         )
@@ -281,18 +301,17 @@ export async function runSeeder({ genres = SEED_GENRES, send, supabase }) {
         source: isbndbData ? "isbndb" : "hardcover",
         last_synced_at: new Date().toISOString(),
         is_incomplete,
-        bookshop_affiliate_link: getBookshopLink(isbn_13)
+        bookshop_affiliate_link: getBookshopLink(isbn_13),
+        hardcover_id: String(item.hardcover_id)
       };
 
       const conflictCol = bookData.isbn_13 ? "isbn_13" : "isbn_10";
       const { error: upsertError } =
         bookData.isbn_13 || bookData.isbn_10
-          ? await supabase
-              .from("books")
-              .upsert(bookData, {
-                onConflict: conflictCol,
-                ignoreDuplicates: false
-              })
+          ? await supabase.from("books").upsert(bookData, {
+              onConflict: conflictCol,
+              ignoreDuplicates: false
+            })
           : await supabase.from("books").insert(bookData);
 
       if (upsertError) {
@@ -319,12 +338,16 @@ export async function runSeeder({ genres = SEED_GENRES, send, supabase }) {
     await sleep(300);
   }
 
+  // Revalidate cached pages so new books appear on the live site
+  revalidatePath("/");
+  revalidatePath("/books");
+
   send({
     type: "summary",
     data: {
       genresQueried: genres.length,
       totalDiscovered: discovered.size,
-      alreadyInDb: existingComplete.size,
+      alreadyInDb: existingByIsbn.size,
       processed: results.processed,
       inserted: results.inserted,
       coverFailures: results.coverFailures,

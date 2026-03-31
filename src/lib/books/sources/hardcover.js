@@ -7,6 +7,38 @@ const HARDCOVER_ENDPOINT = "https://api.hardcover.app/v1/graphql";
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+function isFirstInSeriesOrStandalone(bookSeriesEntries) {
+  if (!bookSeriesEntries?.length) return true;
+  const positions = bookSeriesEntries.map((e) => parseFloat(e.position));
+  return positions.some((p) => p === 1.0);
+}
+
+export function cleanTitle(raw) {
+  if (!raw || typeof raw !== "string") return raw;
+
+  return raw
+    .replace(/^#\d+\s+/i, "")
+    .replace(
+      /\b(instant|debut|reese'?s?|oprah'?s?|a\s+)?\s*(#\d+\s+)?(new york times|nyt|sunday times|usa today|national|international)\s+bestsell(er|ing)\b/gi,
+      ""
+    )
+    .replace(
+      /\b(#\d+\s+)?(sunday times|new york times|nyt|times|usa today|wall street journal|washington post|national|international)\s+bestsell(er|ing)\b/gi,
+      ""
+    )
+    .replace(
+      /\s*[\(\[]\s*(book\s*\d+(\s+of\s*\d+)?|the\s+\w[\w\s]*series[^)\]]*|#\d+)\s*[\)\]]/gi,
+      ""
+    )
+    .replace(
+      /\s*:\s*(the\s+)?(#\d+\s+)?(sunday times|new york times|nyt|times)\s+bestsell(er|ing).*/gi,
+      ""
+    )
+    .replace(/[\s:–—-]+$/, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 async function hardcoverQuery(query, variables = {}) {
   const token = process.env.HARDCOVER_API_TOKEN;
   if (!token) throw new Error("HARDCOVER_API_TOKEN is not set");
@@ -84,6 +116,9 @@ export async function discoverPopularBooks({
         title
         users_read_count
         image { url }
+        book_series {
+          position
+        }
         editions(
           where: {
             isbn_13: { _is_null: false }
@@ -119,15 +154,23 @@ export async function discoverPopularBooks({
       if (seenIds.has(book.id)) continue;
       seenIds.add(book.id);
 
+      if (!isFirstInSeriesOrStandalone(book.book_series)) continue;
+
       const edition = book.editions?.[0] || null;
+      const seriesPositions = (book.book_series || []).map((e) =>
+        parseFloat(e.position)
+      );
+
       books.push({
         hardcover_id: book.id,
-        title: book.title,
+        title: cleanTitle(book.title),
         author_names: [],
         users_read_count: book.users_read_count || 0,
         isbn_13: edition?.isbn_13 || null,
         isbn_10: edition?.isbn_10 || null,
-        image_url: book.image?.url || null
+        image_url: book.image?.url || null,
+        series_position: seriesPositions[0] || null,
+        is_standalone: !book.book_series?.length
       });
     }
 
@@ -181,7 +224,9 @@ export async function getBookDetails(hardcoverId) {
   `;
 
   const data = await hardcoverQuery(query, { id: parseInt(hardcoverId, 10) });
-  return data?.books?.[0] || null;
+  const book = data?.books?.[0] || null;
+  if (book) book.title = cleanTitle(book.title);
+  return book;
 }
 
 /**
@@ -284,6 +329,7 @@ export async function searchHardcover(q) {
       return {
         source: "hardcover",
         is_incomplete: false,
+        hardcover_id: doc.id || null,
         _raw: doc,
         preview: {
           title: doc.title,

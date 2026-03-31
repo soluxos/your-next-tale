@@ -3,8 +3,7 @@ import { notFound } from "next/navigation";
 import BookDetailPage from "@/components/pages/book/BookDetailPage";
 import { generateBookSlug, getBookFromSlug } from "@/lib/slugify";
 
-// Enable static generation
-export const dynamic = "force-static";
+// Enable ISR — regenerate on request after this many seconds
 export const revalidate = 3600; // Revalidate every hour
 
 // Generate static params for all books at build time

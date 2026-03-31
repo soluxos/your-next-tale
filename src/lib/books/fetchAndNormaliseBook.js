@@ -167,7 +167,10 @@ export async function fetchAndNormaliseBook(input, supabase) {
     bookshop_affiliate_link: getBookshopLink(merged.isbn_13) || null,
     source: merged.source || "unknown",
     last_synced_at: new Date().toISOString(),
-    is_incomplete
+    is_incomplete,
+    ...(typeof input === "object" && input?.hardcover_id
+      ? { hardcover_id: String(input.hardcover_id) }
+      : {})
   };
 
   // 10. Upsert — conflict on isbn_13 if available, else isbn_10

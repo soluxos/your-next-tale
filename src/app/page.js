@@ -2,6 +2,8 @@ import React from "react";
 import HomePage from "@/components/pages/home/HomePage";
 import { createStaticClient } from "@/utils/supabase/static";
 
+export const revalidate = 60;
+
 export default async function BooksPage() {
   const supabase = createStaticClient();
 

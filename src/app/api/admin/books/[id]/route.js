@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 
 export async function DELETE(request, { params }) {
   const { id } = await params;
@@ -32,7 +33,10 @@ export async function DELETE(request, { params }) {
     admin = createAdminClient();
   } catch (e) {
     console.error("[admin delete] createAdminClient failed:", e.message);
-    return NextResponse.json({ error: "Admin client init failed: " + e.message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Admin client init failed: " + e.message },
+      { status: 500 }
+    );
   }
 
   const { data: book, error: bookError } = await admin
@@ -43,7 +47,10 @@ export async function DELETE(request, { params }) {
 
   if (!book) {
     console.error("[admin delete] book lookup error:", bookError);
-    return NextResponse.json({ error: bookError?.message ?? "Not found" }, { status: 404 });
+    return NextResponse.json(
+      { error: bookError?.message ?? "Not found" },
+      { status: 404 }
+    );
   }
 
   // 1. Fetch user_book IDs before deleting anything
@@ -78,6 +85,10 @@ export async function DELETE(request, { params }) {
   if (book.cover_url) {
     await admin.storage.from("books").remove([book.cover_url]);
   }
+
+  // 6. Revalidate cached pages so the site reflects the deletion
+  revalidatePath("/");
+  revalidatePath("/books");
 
   return NextResponse.json({ success: true, deleted: book.title });
 }
