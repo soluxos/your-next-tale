@@ -3,6 +3,7 @@ import { normaliseOpenLibrary } from "./adapters/openlibrary";
 import { normaliseGoogleBooks } from "./adapters/googlebooks";
 import { sanitiseDescription } from "./sanitiseDescription";
 import { normaliseLanguage, isEnglish } from "./normaliseLanguage";
+import { isEnglishIsbn, isNonEnglishIsbn } from "./isbnUtils";
 import { getBookshopLink } from "@/lib/bookshop";
 import { TABLES } from "@/lib/supabase/types";
 
@@ -35,6 +36,16 @@ export async function fetchAndNormaliseBook(input, supabase) {
 
   console.log(`[fetchAndNormalise] "${inputTitle}" isbn=${isbn}`);
 
+  // If the ISBN is from a known non-English registration group, discard it now.
+  // Do not make any API calls with it — they will return the wrong language edition.
+  // The title-based Google Books search below will find the correct English ISBN.
+  if (isbn && isNonEnglishIsbn(isbn)) {
+    console.warn(
+      `[fetchAndNormalise] Discarding non-English ISBN ${isbn} (prefix: ${isbn.substring(0, 4)})`
+    );
+    isbn = null;
+  }
+
   // ── 2. DB cache — only use if fully complete ───────────────────────────────
   if (isbn) {
     const { data: existing } = await supabase
@@ -64,49 +75,78 @@ export async function fetchAndNormaliseBook(input, supabase) {
     if (!isbn) isbn = raw.isbn_13 || raw.isbn_10 || null;
   }
 
-  // ── 3. Round 1: fetch all sources in parallel ──────────────────────────────
-  // Always run a title-based Google Books search with langRestrict=en — this is
-  // our most reliable route to the English edition.
-  const [isbndbR, olR, gbIsbnR, gbTitleR] = await Promise.allSettled([
-    isbn ? fetchFromIsbndb(isbn) : Promise.resolve(null),
-    isbn ? fetchFromOpenLibrary(isbn) : Promise.resolve(null),
-    isbn ? fetchFromGoogleBooks(isbn) : Promise.resolve(null),
-    inputTitle
-      ? fetchFromGoogleBooksByTitle(inputTitle, inputAuthor)
-      : Promise.resolve(null)
-  ]);
+  // ── 3. Round 1: fetch sources in parallel ─────────────────────────────────
+  // Hardcover ISBNs are unreliable — they come from an unsorted array covering
+  // all worldwide editions, so the one at index 0 can be any language.
+  // For Hardcover sources skip the ISBN-based fetches entirely and resolve
+  // the correct English ISBN via the title search first, then do a clean round 2.
+  const isHardcoverSource =
+    typeof input === "object" && input?.source === "hardcover";
+
+  const [isbndbR, olR, gbIsbnR, gbTitleR, isbndbTitleR] =
+    await Promise.allSettled([
+      isbn && !isHardcoverSource
+        ? fetchFromIsbndb(isbn)
+        : Promise.resolve(null),
+      isbn && !isHardcoverSource
+        ? fetchFromOpenLibrary(isbn)
+        : Promise.resolve(null),
+      isbn && !isHardcoverSource
+        ? fetchFromGoogleBooks(isbn)
+        : Promise.resolve(null),
+      inputTitle
+        ? fetchFromGoogleBooksByTitle(inputTitle, inputAuthor)
+        : Promise.resolve(null),
+      inputTitle
+        ? fetchFromIsbndbByTitle(inputTitle, inputAuthor)
+        : Promise.resolve(null)
+    ]);
 
   let isbndbData = isbndbR.status === "fulfilled" ? isbndbR.value : null;
   let olData = olR.status === "fulfilled" ? olR.value : null;
   let gbIsbnData = gbIsbnR.status === "fulfilled" ? gbIsbnR.value : null;
   let gbTitleData = gbTitleR.status === "fulfilled" ? gbTitleR.value : null;
+  let isbndbTitleData =
+    isbndbTitleR.status === "fulfilled" ? isbndbTitleR.value : null;
 
   console.log(
-    `[fetchAndNormalise] round1 — isbndb:${!!isbndbData}(${isbndbData?.language}) ol:${!!olData}(${olData?.language}) gbIsbn:${!!gbIsbnData}(${gbIsbnData?.language}) gbTitle:${!!gbTitleData}(${gbTitleData?.language})`
+    `[fetchAndNormalise] round1 — isbndb:${!!isbndbData}(${isbndbData?.language}) ol:${!!olData}(${olData?.language}) gbIsbn:${!!gbIsbnData}(${gbIsbnData?.language}) gbTitle:${!!gbTitleData}(${gbTitleData?.language}) isbndbTitle:${!!isbndbTitleData}(${isbndbTitleData?.language}) hardcoverSource:${isHardcoverSource}`
   );
 
-  // ── 4. Non-English ISBN detection ─────────────────────────────────────────
-  // If all ISBN-based results declare a non-English language, the ISBN we were
-  // given is for a translated edition. Use the English ISBN from the title search
-  // and re-fetch ISBNdb + OpenLibrary with it.
-  // Only evaluate sources that actually declare a language.
-  // If every such source says non-English → the ISBN is for a translated edition.
+  // ── 4. Resolve the best English ISBN and re-fetch with it ─────────────────
+  // Two cases trigger a round-2 ISBN fetch:
+  //   a) Hardcover source — always use the title-search English ISBN
+  //   b) Any source where at least one ISBN-based result declares a non-English language
   const isbnSourcesWithLang = [isbndbData, olData, gbIsbnData].filter(
     (s) => s?.language
   );
-  const allNonEnglish =
-    isbnSourcesWithLang.length > 0 &&
-    isbnSourcesWithLang.every((s) => !isEnglish(s.language));
+  const anyNonEnglish = isbnSourcesWithLang.some((s) => !isEnglish(s.language));
 
-  if (allNonEnglish) {
-    const englishIsbn = gbTitleData?.isbn_13 || gbTitleData?.isbn_10;
+  const needsEnglishRefetch = isHardcoverSource || anyNonEnglish;
+
+  if (needsEnglishRefetch) {
+    // Only use the ISBN from the title search if it was confirmed English.
+    // _isEnglishEdition is set by fetchFromGoogleBooksByTitle / fetchFromIsbndbByTitle.
+    const englishIsbn =
+      gbTitleData?._isEnglishEdition && isEnglishIsbn(gbTitleData?.isbn_13)
+        ? gbTitleData.isbn_13
+        : isbndbTitleData?._isEnglishEdition &&
+            isEnglishIsbn(isbndbTitleData?.isbn_13)
+          ? isbndbTitleData.isbn_13
+          : null;
+
+    // Do NOT fall back to the original Hardcover ISBN — it is unreliable and
+    // often points to a non-English edition. If we have no confirmed English ISBN,
+    // let the merge proceed with gbTitleData + fallbackData only.
+    const fetchIsbn = englishIsbn || null;
+
     console.warn(
-      `[fetchAndNormalise] ISBN ${isbn} is non-English (${isbndbData?.language || olData?.language}). ` +
-        `Switching to English ISBN: ${englishIsbn || "none found"}`
+      `[fetchAndNormalise] ${isHardcoverSource ? "Hardcover source" : `non-English ISBN ${isbn}`} — ` +
+        `English ISBN: ${englishIsbn || "not found"}${!englishIsbn && isHardcoverSource ? `, falling back to Hardcover ISBN: ${isbn}` : ""}`
     );
 
-    if (englishIsbn && englishIsbn !== isbn) {
-      isbn = englishIsbn;
+    if (fetchIsbn) {
+      if (fetchIsbn !== isbn) isbn = fetchIsbn;
       const [isbndb2R, ol2R, gbIsbn2R] = await Promise.allSettled([
         fetchFromIsbndb(isbn),
         fetchFromOpenLibrary(isbn),
@@ -116,29 +156,74 @@ export async function fetchAndNormaliseBook(input, supabase) {
       olData = ol2R.status === "fulfilled" ? ol2R.value : null;
       gbIsbnData = gbIsbn2R.status === "fulfilled" ? gbIsbn2R.value : null;
       console.log(
-        `[fetchAndNormalise] round2 — isbndb:${!!isbndbData} ol:${!!olData} gbIsbn:${!!gbIsbnData}`
+        `[fetchAndNormalise] round2 with ISBN ${isbn} — isbndb:${!!isbndbData} ol:${!!olData} gbIsbn:${!!gbIsbnData}`
       );
     }
   }
 
-  // ── 5. _raw fallback ───────────────────────────────────────────────────────
+  // ── 5. Hard English filter — ALL API sources ─────────────────────────────
+  // Any source that explicitly declares a non-English language is rejected
+  // before it can reach the merge. langRestrict=en on Google's API is a hint
+  // only — it must be enforced client-side too.
+  // The preview-based fallbackData (built below) is always English because it
+  // comes from the search result the user clicked, so the merge always has a
+  // title even when every API source is rejected.
+  const rejectIfNonEnglish = (s) => {
+    if (!s?.language) return s; // no language field → assume English, keep
+    if (!isEnglish(s.language)) {
+      console.warn(
+        `[fetchAndNormalise] REJECTED lang="${s.language}" title="${s.title}"`
+      );
+      return null;
+    }
+    return s;
+  };
+  isbndbData = rejectIfNonEnglish(isbndbData);
+  olData = rejectIfNonEnglish(olData);
+  gbIsbnData = rejectIfNonEnglish(gbIsbnData);
+  gbTitleData = rejectIfNonEnglish(gbTitleData);
+  isbndbTitleData = rejectIfNonEnglish(isbndbTitleData);
+
+  // ── 6. _raw / preview fallback ────────────────────────────────────────────
+  // Always build a fallback from whatever the input carries. For Hardcover and
+  // other non-API sources this is the only guarantee that the merge has a title
+  // even when every external API call fails or is rejected.
   let fallbackData = null;
-  if (typeof input === "object" && input?._raw) {
+  if (typeof input === "object") {
     const src = input.source;
-    if (src === "isbndb") fallbackData = normaliseISBNdb(input._raw);
-    else if (src === "openlibrary")
+    if (src === "isbndb" && input._raw) {
+      fallbackData = normaliseISBNdb(input._raw);
+    } else if (src === "openlibrary" && input._raw) {
       fallbackData = normaliseOpenLibrary(input._raw);
-    else if (src === "googlebooks")
+    } else if (src === "googlebooks" && input._raw) {
       fallbackData = normaliseGoogleBooks(input._raw);
-    if (fallbackData) fallbackData._source = src;
+    } else if (input.preview?.title) {
+      // Hardcover / unknown source — build a minimal record from the preview so
+      // the merge always has at least a title and ISBN.
+      fallbackData = {
+        title: input.preview.title,
+        authors: input.preview.author ? [input.preview.author] : [],
+        isbn_13: input.preview.isbn_13 || null,
+        isbn_10: input.preview.isbn_10 || null,
+        cover_remote: input.preview.cover_preview_url || null,
+        description: null,
+        genres: null,
+        page_count: null,
+        published_date: null,
+        publisher: null,
+        language: null
+      };
+    }
+    if (fallbackData) fallbackData._source = src || "unknown";
   }
 
-  // ── 6. Merge — sanitiseDescription rejects non-Latin text ─────────────────
+  // ── 7. Merge — sanitiseDescription rejects non-Latin text ─────────────────
   const merged = mergeBookData([
     isbndbData,
     olData,
     gbIsbnData,
     gbTitleData,
+    isbndbTitleData,
     fallbackData
   ]);
 
@@ -147,10 +232,20 @@ export async function fetchAndNormaliseBook(input, supabase) {
   );
 
   if (!merged.title) {
-    console.error(
-      `[fetchAndNormalise] FAILED: no title for isbn=${isbn} title="${inputTitle}"`
-    );
-    return null;
+    // Last resort: use the title from the raw input before giving up entirely.
+    // This prevents a 422 when all API calls fail but we still have the book's
+    // title from the search result that was clicked.
+    if (inputTitle) {
+      merged.title = inputTitle;
+      console.warn(
+        `[fetchAndNormalise] No title from APIs — using input title "${inputTitle}"`
+      );
+    } else {
+      console.error(
+        `[fetchAndNormalise] FAILED: no title for isbn=${isbn} title="${inputTitle}"`
+      );
+      return null;
+    }
   }
 
   if (!merged.description) {
@@ -159,7 +254,7 @@ export async function fetchAndNormaliseBook(input, supabase) {
     );
   }
 
-  // ── 7. Cover — try candidates in order until one uploads ──────────────────
+  // ── 8. Cover — try candidates in order until one uploads ──────────────────
   const isbnForCover = merged.isbn_13 || merged.isbn_10 || isbn;
   const coverCandidates = [
     preview?.cover_preview_url,
@@ -185,7 +280,15 @@ export async function fetchAndNormaliseBook(input, supabase) {
     );
   }
 
-  // ── 8. Finalise ────────────────────────────────────────────────────────────
+  // ── 9. Finalise ────────────────────────────────────────────────────────────
+  // Final ISBN safety check — never store a non-English ISBN in the database
+  if (merged.isbn_13 && isNonEnglishIsbn(merged.isbn_13)) {
+    console.error(
+      `[fetchAndNormalise] BLOCKED — merged isbn_13 ${merged.isbn_13} is non-English. Clearing it.`
+    );
+    merged.isbn_13 = null;
+  }
+
   const description = sanitiseDescription(merged.description);
   const published_date = normaliseDate(merged.published_date);
   const is_incomplete =
@@ -221,7 +324,7 @@ export async function fetchAndNormaliseBook(input, supabase) {
       : {})
   };
 
-  // ── 9. Upsert ──────────────────────────────────────────────────────────────
+  // ── 10. Upsert ──────────────────────────────────────────────────────────────
   const conflictCol = bookData.isbn_13 ? "isbn_13" : "isbn_10";
 
   if (!bookData.isbn_13 && !bookData.isbn_10) {
@@ -290,6 +393,11 @@ function mergeBookData(sources) {
     valid
       .map((s) => s[field])
       .filter((v) => typeof v === "string" && v.trim())
+      .filter((v) => {
+        // Final safety net — reject non-English descriptions
+        if (field === "description") return sanitiseDescription(v) !== null;
+        return true;
+      })
       .sort((a, b) => b.length - a.length)[0] || null;
 
   const pickLargestArray = (field) =>
@@ -414,6 +522,55 @@ async function fetchFromIsbndb(isbn) {
   }
 }
 
+async function fetchFromIsbndbByTitle(title, author) {
+  const apiKey = process.env.ISBNDB_API_KEY;
+  if (!apiKey || !title) return null;
+
+  try {
+    const query = author ? `${title} ${author}` : title;
+    const res = await fetch(
+      `https://api2.isbndb.com/books/${encodeURIComponent(query)}?pageSize=10`,
+      {
+        headers: { Authorization: apiKey, Accept: "application/json" }
+      }
+    );
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    const books = data.books || [];
+    if (!books.length) return null;
+
+    // Rank by English ISBN and language match
+    const scored = books
+      .map((b) => {
+        let score = 0;
+        if (b.isbn13 && isEnglishIsbn(b.isbn13)) score += 200;
+        else if (b.isbn13 && isNonEnglishIsbn(b.isbn13)) score -= 500;
+        const lang = (b.language || "").toLowerCase();
+        if (lang === "en" || lang === "english") score += 50;
+        if (b.synopsis || b.overview) score += 40;
+        if (b.isbn13) score += 20;
+        if (b.image) score += 10;
+        return { book: b, score };
+      })
+      .filter((e) => e.score > 0)
+      .sort((a, b) => b.score - a.score);
+
+    const best = scored.length ? scored[0].book : null;
+    if (!best) return null;
+
+    const normalised = normaliseISBNdb(best);
+    normalised._source = "isbndb";
+    normalised._isEnglishEdition = !!(
+      best.isbn13 && isEnglishIsbn(best.isbn13)
+    );
+    return normalised;
+  } catch (e) {
+    console.error("ISBNdb title search error:", e);
+    return null;
+  }
+}
+
 async function fetchFromOpenLibrary(isbn) {
   try {
     const url = `https://openlibrary.org/api/books?bibkeys=ISBN:${encodeURIComponent(isbn)}&format=json&jscmd=data`;
@@ -428,21 +585,27 @@ async function fetchFromOpenLibrary(isbn) {
     normalised._source = "openlibrary";
 
     // The edition endpoint rarely has a description — it lives in the work record.
-    // Fetch the work to get it if it's missing.
-    if (!normalised.description && bookData.works?.[0]?.key) {
-      try {
-        const workRes = await fetch(
-          `https://openlibrary.org${bookData.works[0].key}.json`
-        );
-        if (workRes.ok) {
+    // Some editions belong to multiple works — iterate all until a description is found.
+    if (!normalised.description && bookData.works?.length) {
+      for (const workRef of bookData.works) {
+        if (!workRef.key) continue;
+        try {
+          const workRes = await fetch(
+            `https://openlibrary.org${workRef.key}.json`
+          );
+          if (!workRes.ok) continue;
           const workData = await workRes.json();
           const rawDesc = workData.description;
           const descStr =
             typeof rawDesc === "string" ? rawDesc : rawDesc?.value || null;
-          normalised.description = sanitiseDescription(descStr);
+          const sanitised = sanitiseDescription(descStr);
+          if (sanitised) {
+            normalised.description = sanitised;
+            break;
+          }
+        } catch {
+          continue;
         }
-      } catch {
-        // Work fetch failed — proceed without description
       }
     }
 
@@ -465,11 +628,49 @@ async function fetchFromGoogleBooks(isbn) {
 
     const normalised = normaliseGoogleBooks(volumeInfo);
     normalised._source = "googlebooks";
+
+    // If the description failed sanitisation, null it out so the merge
+    // does not use a non-English description as "longest"
+    if (normalised.description) {
+      const sanitised = sanitiseDescription(normalised.description);
+      if (!sanitised) {
+        console.warn(
+          `[fetchFromGoogleBooks] ISBN ${isbn} description rejected as non-English`
+        );
+        normalised.description = null;
+      }
+    }
+
     return normalised;
   } catch (e) {
     console.error("Google Books fetch error:", e);
     return null;
   }
+}
+
+/** Score a Google Books volumeInfo by data completeness. English is mandatory. */
+function scoreEdition(volumeInfo) {
+  let score = 0;
+  const ids = volumeInfo.industryIdentifiers || [];
+  const isbn13 = ids.find((id) => id.type === "ISBN_13")?.identifier;
+
+  // ISBN prefix check — most reliable English signal
+  if (isbn13 && isEnglishIsbn(isbn13)) {
+    score += 200;
+  } else if (isbn13 && isNonEnglishIsbn(isbn13)) {
+    score -= 500;
+  }
+
+  // Language field check (secondary signal — not always present)
+  const lang = (volumeInfo.language || "").toLowerCase();
+  if (!lang || lang === "en" || lang.startsWith("en-")) score += 50;
+
+  // Data completeness
+  if (volumeInfo.description) score += 40;
+  if (isbn13) score += 20;
+  if (volumeInfo.imageLinks?.thumbnail) score += 10;
+
+  return score;
 }
 
 async function fetchFromGoogleBooksByTitle(title, author) {
@@ -478,16 +679,42 @@ async function fetchFromGoogleBooksByTitle(title, author) {
     const parts = [`intitle:${title}`];
     if (author) parts.push(`inauthor:${author}`);
     const q = parts.join("+");
-    const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&langRestrict=en&maxResults=1`;
+    // Fetch many candidates so we can rank by data completeness.
+    const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&langRestrict=en&maxResults=10`;
     const res = await fetch(url);
     if (!res.ok) return null;
 
     const data = await res.json();
-    const volumeInfo = data.items?.[0]?.volumeInfo || null;
+    const items = (data.items || []).filter((i) => i.volumeInfo);
+    if (!items.length) return null;
+
+    // Rank by data completeness — score >= 100 means English is confirmed.
+    // langRestrict=en is only a hint so we enforce language strictly here.
+    const ranked = items
+      .map((item) => {
+        const ids = item.volumeInfo.industryIdentifiers || [];
+        const hasIsbn = ids.some(
+          (id) => id.type === "ISBN_13" || id.type === "ISBN_10"
+        );
+        return {
+          info: item.volumeInfo,
+          score: scoreEdition(item.volumeInfo),
+          hasIsbn
+        };
+      })
+      .filter((e) => e.hasIsbn && e.score > 0)
+      .sort((a, b) => b.score - a.score);
+
+    const volumeInfo = ranked.length ? ranked[0].info : items[0].volumeInfo;
     if (!volumeInfo) return null;
 
     const normalised = normaliseGoogleBooks(volumeInfo);
     normalised._source = "googlebooks";
+    // _isEnglishEdition = top-ranked result has a confirmed English ISBN prefix
+    const topIsbn13 = ranked[0]?.info.industryIdentifiers?.find(
+      (id) => id.type === "ISBN_13"
+    )?.identifier;
+    normalised._isEnglishEdition = !!(topIsbn13 && isEnglishIsbn(topIsbn13));
     return normalised;
   } catch (e) {
     console.error("Google Books title search error:", e);

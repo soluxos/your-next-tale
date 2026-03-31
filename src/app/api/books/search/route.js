@@ -171,6 +171,11 @@ export async function GET(request) {
         if (r.source === "hardcover") s += 15;
         if ((r.preview?.users_read_count || 0) > 1000) s += 10;
         else if ((r.preview?.users_read_count || 0) > 100) s += 5;
+        // Prefer more recently published editions so we get newer covers & ISBNs.
+        const year = extractPublishYear(r._raw);
+        if (year >= 2015) s += 3;
+        else if (year >= 2005) s += 2;
+        else if (year >= 1990) s += 1;
         return s;
       };
       return score(b) - score(a);
@@ -202,6 +207,23 @@ export async function GET(request) {
   }
 
   return NextResponse.json({ results: results.slice(0, 20) });
+}
+
+/**
+ * Extract a publication year from the raw object returned by any source.
+ * Tries the most common field names across ISBNdb, OpenLibrary, Google Books.
+ */
+function extractPublishYear(raw) {
+  const d =
+    raw?.publishedDate ||
+    raw?.date_published ||
+    raw?.publish_date ||
+    raw?.published_date ||
+    raw?.first_publish_year ||
+    null;
+  if (!d) return 0;
+  const m = String(d).match(/(\d{4})/);
+  return m ? parseInt(m[1], 10) : 0;
 }
 
 function dedupeKey(title, author) {

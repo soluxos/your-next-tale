@@ -3,6 +3,8 @@
  * Server-side only — HARDCOVER_API_TOKEN must never reach the browser.
  */
 
+import { isNonEnglishIsbn } from "../isbnUtils";
+
 const HARDCOVER_ENDPOINT = "https://api.hardcover.app/v1/graphql";
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -161,12 +163,16 @@ export async function discoverPopularBooks({
         parseFloat(e.position)
       );
 
+      // Validate the ISBN prefix — reject non-English editions at the source
+      const rawIsbn = edition?.isbn_13 || null;
+      const safeIsbn = rawIsbn && !isNonEnglishIsbn(rawIsbn) ? rawIsbn : null;
+
       books.push({
         hardcover_id: book.id,
         title: cleanTitle(book.title),
         author_names: [],
         users_read_count: book.users_read_count || 0,
-        isbn_13: edition?.isbn_13 || null,
+        isbn_13: safeIsbn,
         isbn_10: edition?.isbn_10 || null,
         image_url: book.image?.url || null,
         series_position: seriesPositions[0] || null,
@@ -186,6 +192,7 @@ export async function discoverPopularBooks({
 /**
  * Fetch full book details from Hardcover by book ID.
  * Returns description, cover, tags, editions with ISBNs, etc.
+ * Uses a two-tier edition query: English editions first, then any edition as fallback.
  */
 export async function getBookDetails(hardcoverId) {
   const query = `
@@ -205,7 +212,7 @@ export async function getBookDetails(hardcoverId) {
         image {
           url
         }
-        editions(
+        english_editions: editions(
           where: {
             isbn_13: { _is_null: false }
             language_id: { _eq: 1 }
@@ -219,13 +226,54 @@ export async function getBookDetails(hardcoverId) {
           publisher { name }
           release_date
         }
+        any_editions: editions(
+          where: { isbn_13: { _is_null: false } }
+          order_by: { users_count: desc }
+          limit: 3
+        ) {
+          isbn_13
+          isbn_10
+          language { language }
+          edition_format
+          publisher { name }
+          release_date
+        }
       }
     }
   `;
 
   const data = await hardcoverQuery(query, { id: parseInt(hardcoverId, 10) });
   const book = data?.books?.[0] || null;
-  if (book) book.title = cleanTitle(book.title);
+  if (!book) return null;
+
+  // Prefer English edition; fall back to first available but mark the ISBN
+  // so fetchAndNormaliseBook knows it may need an English ISBN lookup
+  const englishEdition = book.english_editions?.[0] || null;
+  let anyEdition =
+    book.any_editions?.find((e) => {
+      const lang = e.language?.language?.toLowerCase();
+      return !lang || lang === "en" || lang === "eng";
+    }) ||
+    book.any_editions?.[0] ||
+    null;
+
+  // Extra safety: if even the "any" edition has a non-English ISBN prefix, null it
+  if (anyEdition?.isbn_13 && isNonEnglishIsbn(anyEdition.isbn_13)) {
+    anyEdition = null;
+  }
+
+  book.editions = englishEdition
+    ? [englishEdition]
+    : anyEdition
+      ? [anyEdition]
+      : [];
+  book._hasEnglishEdition = !!englishEdition;
+
+  // Clean up the extra fields
+  delete book.english_editions;
+  delete book.any_editions;
+
+  book.title = cleanTitle(book.title);
   return book;
 }
 

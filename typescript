@@ -1,0 +1,199 @@
+Script started on Tue Mar 31 21:12:24 2026
+[0m[49m[39m[27m[24m[K
+[1A7[0m[49m[39m[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[49m[34m[0m[34m[49m[39m [0m[49m[39m[?2004h[?25l8[0m[49m[39m[27m[24m[J]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[38;5;254m[49m[39m[27m[24m[1m[7m%[27m[1m[0m                                                                               [0m[49m[39m[27m[24m[K[0m[27m[24m[J[0m[49m[39m[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[100m[34m[0m[34m[100m[100m[30m on  [30m main [30m⇡1[0m[30m[100m[100m[30m [0m[30m[100m[49m[90m[0m[90m[49m[39m [0m[49m[39m[K[11C[0m[49m[30m[0m[30m[40m[32m [0m[32m[40m[40m[32m✔[0m[32m[40m[40m[32m [0m[32m[40m[40m[32m[37m[0m[37m[40m[47m[30m at 21:12:24[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[32D[?1h=[?25h[?2004h[?25l[0m[27m[24m[J[0m[49m[39m[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡1 [30m!7 [30m?4[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[5C[0m[49m[30m[0m[30m[40m[32m [0m[32m[40m[40m[32m✔[0m[32m[40m[40m[32m [0m[32m[40m[40m[32m[37m[0m[37m[40m[47m[30m at 21:12:24[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[26D[?25h  node[K /tmp/test_isbndb.js 2 [K>>&1[?1l>[?25l[?2004l[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;76m❯[0m[38;5;76m[49m[39m[27m[24m  node /tmp/test_isbndb.js 2>&1[K[?25h
+]2;node /tmp/test_isbndb.js 2>&1]1;nodenode:internal/modules/cjs/loader:1210
+  throw err;
+  ^
+
+Error: Cannot find module 'dotenv'
+Require stack:
+- /private/tmp/test_isbndb.js
+[90m    at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)[39m
+[90m    at Module._load (node:internal/modules/cjs/loader:1038:27)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1289:19)[39m
+[90m    at require (node:internal/modules/helpers:182:18)[39m
+    at Object.<anonymous> (/private/tmp/test_isbndb.js:1:1)
+[90m    at Module._compile (node:internal/modules/cjs/loader:1521:14)[39m
+[90m    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)[39m
+[90m    at Module.load (node:internal/modules/cjs/loader:1266:32)[39m
+[90m    at Module._load (node:internal/modules/cjs/loader:1091:12)[39m
+[90m    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)[39m {
+  code: [32m'MODULE_NOT_FOUND'[39m,
+  requireStack: [ [32m'/private/tmp/test_isbndb.js'[39m ]
+}
+
+Node.js v20.19.6
+[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
+[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡1 [30m!7 [30m?4[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[3C[0m[49m[31m[0m[31m[41m[33m 1[0m[33m[41m[41m[33m ✘[0m[33m[41m[41m[33m [0m[33m[41m[41m[33m[37m[0m[37m[41m[47m[30m at 21:12:47[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[26D[?1h=[?2004h  no[Kde --env-file=.env.local [K  -e "const k=process.env.ISBNDB_API_KEY;fetch('https://api2.isbndb.com/books/dun [Kggeon+crawler+carl?pageSize=5',{headers:{Authorization:k}}).then(r=>r.json()).the [Knn(d=>{console.log('total:',d.total);(d.books||[]).forEach((b,i)=>console.log(i,b [K..title,'isbn13:',b.isbn13,'lang:',b.language))}).catch(console.error)" 2>&1[?1l>[?25l[?2004l[4A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;196m❯[0m[38;5;196m[49m[39m[27m[24m  node --env-file=.env.local -e "const k=process.env.ISBNDB_API_KEY;fetch('https://api2.isbndb.com/books/dungeon+crawler+carl?pageSize=5',{headers:{Authorization:k}}).then(r=>r.json()).then(d=>{console.log('total:',d.total);(d.books||[]).forEach((b,i)=>console.log(i,b.title,'isbn13:',b.isbn13,'lang:',b.language))}).catch(console.error)" 2>&1[K[?25h
+]2;node --env-file=.env.local -e  2>&1]1;nodetotal: [33m34[39m
+[33m0[39m This Inevitable Ruin Dungeon Crawler Carl Book 7 isbn13: 9798344591230 lang: en
+[33m1[39m Dungeon Crawler Carl: Deluxe Edition isbn13: 9798217192199 lang: en
+[33m2[39m Dungeon Crawler Carl, Vol. 1 (Graphic Novel) isbn13: 9781638493655 lang: en
+[33m3[39m Dungeon Crawler Carl A LitRPG/Gamelit Adventure isbn13: 9798688591507 lang: en
+[33m4[39m Dungeon Crawler Carl isbn13: 9798217287161 lang: en
+[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
+[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡1 [30m!7 [30m?4[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[5C[0m[49m[30m[0m[30m[40m[32m [0m[32m[40m[40m[32m✔[0m[32m[40m[40m[32m [0m[32m[40m[40m[32m[37m[0m[37m[40m[47m[30m at 21:13:05[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[26D[?1h=[?2004h  npx[K[1Ctsx --test src/tests/b [KoookSearch.test.js 2>&1 | tail -100[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;76m❯[0m[38;5;76m[49m[39m[27m[24m  npx tsx --test src/tests/bookSearch.test.js 2>&1 | tail -100[K[?25h
+]2;npx tsx --test src/tests/bookSearch.test.js 2>&1 | tail -100]1;npx      ---
+      duration_ms: 0.819125
+      ...
+    # Subtest: detects French 978-2
+    ok 2 - detects French 978-2
+      ---
+      duration_ms: 0.582541
+      ...
+    # Subtest: detects German 978-3
+    ok 3 - detects German 978-3
+      ---
+      duration_ms: 0.940209
+      ...
+    # Subtest: does NOT flag English 978-0
+    ok 4 - does NOT flag English 978-0
+      ---
+      duration_ms: 0.592166
+      ...
+    # Subtest: does NOT flag English 978-1
+    ok 5 - does NOT flag English 978-1
+      ---
+      duration_ms: 0.314291
+      ...
+    1..5
+ok 2 - isNonEnglishIsbn
+  ---
+  duration_ms: 4.350208
+  type: 'suite'
+  ...
+# [fetchAndNormalise] "Dungeon Crawler Carl" isbn=null
+# [fetchAndNormalise] round1 — isbndb:false(undefined) ol:false(undefined) gbIsbn:false(undefined) gbTitle:false(undefined) isbndbTitle:true(en) hardcoverSource:true
+# [fetchAndNormalise] Hardcover source — English ISBN: 9798344591230
+# [fetchAndNormalise] round2 with ISBN 9798344591230 — isbndb:true ol:true gbIsbn:false
+# [fetchAndNormalise] merged — title:"This Inevitable Ruin Dungeon Crawler Carl Book 7" desc:true cover:true lang:en
+# [fetchAndNormalise] saved "This Inevitable Ruin Dungeon Crawler Carl Book 7" id=fc74955d-bbbf-4564-ab82-f16ad8503759 incomplete=false
+# Subtest: fetchAndNormaliseBook — Hardcover source, no ISBN
+    # Subtest: resolves an English edition of Dungeon Crawler Carl
+    not ok 1 - resolves an English edition of Dungeon Crawler Carl
+      ---
+      duration_ms: 2309.893542
+      location: '/Users/callum.harrod/Projects/your-next-tale/src/tests/bookSearch.test.js:2:3449'
+      failureType: 'testCodeFailure'
+      error: 'isbn_13 9798344591230 should be one of the expected English editions'
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: '=='
+      stack: |-
+        TestContext.<anonymous> (/Users/callum.harrod/Projects/your-next-tale/src/tests/bookSearch.test.js:83:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+        async Test.run (node:internal/test_runner/test:797:9)
+        async Promise.all (index 0)
+        async Suite.run (node:internal/test_runner/test:1135:7)
+        async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
+      ...
+    1..1
+not ok 3 - fetchAndNormaliseBook — Hardcover source, no ISBN
+  ---
+  duration_ms: 2684.9865
+  type: 'suite'
+  location: '/Users/callum.harrod/Projects/your-next-tale/src/tests/bookSearch.test.js:2:3298'
+  failureType: 'subtestsFailed'
+  error: '1 subtest failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# [fetchAndNormalise] "Dungeon Crawler Carl" isbn=9785044660779
+# [fetchAndNormalise] Discarding non-English ISBN 9785044660779 (prefix: 9785)
+# [fetchAndNormalise] round1 — isbndb:false(undefined) ol:false(undefined) gbIsbn:false(undefined) gbTitle:false(undefined) isbndbTitle:true(en) hardcoverSource:true
+# [fetchAndNormalise] Hardcover source — English ISBN: 9798344591230
+# [fetchAndNormalise] round2 with ISBN 9798344591230 — isbndb:true ol:true gbIsbn:false
+# [fetchAndNormalise] merged — title:"This Inevitable Ruin Dungeon Crawler Carl Book 7" desc:true cover:true lang:en
+# [fetchAndNormalise] saved "This Inevitable Ruin Dungeon Crawler Carl Book 7" id=4865cb53-9d60-45df-817f-7cd91f4fa6b4 incomplete=false
+# ✓ Russian ISBN result: {
+#   isbn_13: '9798344591230',
+#   title: 'This Inevitable Ruin Dungeon Crawler Carl Book 7',
+#   descLen: 1224,
+#   authors: [ 'Matt Dinniman' ]
+# }
+# Subtest: fetchAndNormaliseBook — Russian ISBN input
+    # Subtest: discards Russian ISBN and resolves English edition
+    ok 1 - discards Russian ISBN and resolves English edition
+      ---
+      duration_ms: 919.524875
+      ...
+    1..1
+ok 4 - fetchAndNormaliseBook — Russian ISBN input
+  ---
+  duration_ms: 986.526584
+  type: 'suite'
+  ...
+1..4
+# tests 13
+# suites 4
+# pass 12
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4961.083833
+[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
+[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡1 [30m!7 [30m?4[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[?1h=[?2004h  npx tsx --test src/tests/b [KoookSearch.test.js 2>&1 | tail -60[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;76m❯[0m[38;5;76m[49m[39m[27m[24m  npx tsx --test src/tests/bookSearch.test.js 2>&1 | tail -60[K[?25h
+]2;npx tsx --test src/tests/bookSearch.test.js 2>&1 | tail -60]1;npx  type: 'suite'
+  ...
+# [fetchAndNormalise] "Dungeon Crawler Carl" isbn=null
+# [fetchAndNormalise] round1 — isbndb:false(undefined) ol:false(undefined) gbIsbn:false(undefined) gbTitle:false(undefined) isbndbTitle:true(en) hardcoverSource:true
+# [fetchAndNormalise] Hardcover source — English ISBN: 9798344591230
+# [fetchAndNormalise] round2 with ISBN 9798344591230 — isbndb:true ol:true gbIsbn:false
+# [fetchAndNormalise] merged — title:"This Inevitable Ruin Dungeon Crawler Carl Book 7" desc:true cover:true lang:en
+# [fetchAndNormalise] saved "This Inevitable Ruin Dungeon Crawler Carl Book 7" id=2688a2af-2e4d-4fa7-85f7-9ad94096bf3b incomplete=false
+# ✓ Hardcover result: {
+#   isbn_13: '9798344591230',
+#   title: 'This Inevitable Ruin Dungeon Crawler Carl Book 7',
+#   descLen: 1224,
+#   authors: [ 'Matt Dinniman' ]
+# }
+# Subtest: fetchAndNormaliseBook — Hardcover source, no ISBN
+    # Subtest: resolves an English edition of Dungeon Crawler Carl
+    ok 1 - resolves an English edition of Dungeon Crawler Carl
+      ---
+      duration_ms: 1553.965084
+      ...
+    1..1
+ok 3 - fetchAndNormaliseBook — Hardcover source, no ISBN
+  ---
+  duration_ms: 1830.745916
+  type: 'suite'
+  ...
+# [fetchAndNormalise] "Dungeon Crawler Carl" isbn=9785044660779
+# [fetchAndNormalise] Discarding non-English ISBN 9785044660779 (prefix: 9785)
+# [fetchAndNormalise] round1 — isbndb:false(undefined) ol:false(undefined) gbIsbn:false(undefined) gbTitle:false(undefined) isbndbTitle:true(en) hardcoverSource:true
+# [fetchAndNormalise] Hardcover source — English ISBN: 9798344591230
+# [fetchAndNormalise] round2 with ISBN 9798344591230 — isbndb:true ol:true gbIsbn:false
+# [fetchAndNormalise] merged — title:"This Inevitable Ruin Dungeon Crawler Carl Book 7" desc:true cover:true lang:en
+# [fetchAndNormalise] saved "This Inevitable Ruin Dungeon Crawler Carl Book 7" id=e2e081f5-2698-4c9b-a877-0c06df87d0f3 incomplete=false
+# ✓ Russian ISBN result: {
+#   isbn_13: '9798344591230',
+#   title: 'This Inevitable Ruin Dungeon Crawler Carl Book 7',
+#   descLen: 1224,
+#   authors: [ 'Matt Dinniman' ]
+# }
+# Subtest: fetchAndNormaliseBook — Russian ISBN input
+    # Subtest: discards Russian ISBN and resolves English edition
+    ok 1 - discards Russian ISBN and resolves English edition
+      ---
+      duration_ms: 2255.750625
+      ...
+    1..1
+ok 4 - fetchAndNormaliseBook — Russian ISBN input
+  ---
+  duration_ms: 2318.848833
+  type: 'suite'
+  ...
+1..4
+# tests 13
+# suites 4
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5172.255209
+[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
+[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡1 [30m!7 [30m?4[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[?1h=[?2004h

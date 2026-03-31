@@ -8,6 +8,7 @@ import {
 import { normaliseISBNdb } from "./adapters/isbndb";
 import { sanitiseDescription } from "./sanitiseDescription";
 import { normaliseLanguage } from "./normaliseLanguage";
+import { isNonEnglishIsbn } from "./isbnUtils";
 import { getBookshopLink } from "../bookshop";
 
 export const SEED_GENRES = [
@@ -163,9 +164,26 @@ export async function runSeeder({ genres = SEED_GENRES, send, supabase }) {
       const details = await getBookDetails(item.hardcover_id);
       await sleep(400);
 
+      if (details && !details._hasEnglishEdition) {
+        send({
+          type: "progress",
+          message: `  [WARN] No English ISBN from Hardcover — will resolve via title search`
+        });
+      }
+
       const edition = details?.editions?.[0] || null;
-      const isbn_13 = edition?.isbn_13 || item.isbn_13 || null;
+      const rawIsbn13 = edition?.isbn_13 || item.isbn_13 || null;
       const isbn_10 = edition?.isbn_10 || item.isbn_10 || null;
+
+      // Discard non-English ISBNs — fetchAndNormaliseBook will resolve via title search
+      const isbn_13 =
+        rawIsbn13 && !isNonEnglishIsbn(rawIsbn13) ? rawIsbn13 : null;
+      if (rawIsbn13 && !isbn_13) {
+        send({
+          type: "progress",
+          message: `  [ISBN STRIPPED] ${item.title} — ${rawIsbn13} is non-English, will resolve via title search`
+        });
+      }
 
       // Skip if already in DB by ISBN (resolved after fetching isbn_13 from editions)
       if (isbn_13 && existingByIsbn.has(isbn_13)) {

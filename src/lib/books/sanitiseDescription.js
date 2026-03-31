@@ -19,12 +19,12 @@ export function sanitiseDescription(raw) {
 
   if (!cleaned) return null;
 
-  // Reject descriptions where >20% of letters are outside the Latin Unicode block
+  // Reject descriptions where >5% of letters are outside the Latin Unicode block
   // (catches Cyrillic, Arabic, CJK, Hangul, etc.)
   const letters = cleaned.match(/\p{L}/gu) || [];
   if (letters.length > 0) {
     const nonLatin = letters.filter((c) => /[^\u0000-\u024F]/u.test(c)).length;
-    if (nonLatin / letters.length >= 0.2) return null;
+    if (nonLatin / letters.length >= 0.05) return null;
   }
 
   return cleaned;
