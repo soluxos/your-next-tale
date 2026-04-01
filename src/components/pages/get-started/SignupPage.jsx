@@ -161,7 +161,15 @@ export default function SignupPage() {
 
                 {errorMessage && (
                   <p className="font-departureMono uppercase text-[10px] text-red-500">
-                    {errorMessage}
+                    {errorMessage}{" "}
+                    {errorMessage.toLowerCase().includes("already exists") && (
+                      <Link
+                        href="/login"
+                        className="underline underline-offset-2 hover:opacity-70 transition-opacity"
+                      >
+                        Sign in
+                      </Link>
+                    )}
                   </p>
                 )}
 

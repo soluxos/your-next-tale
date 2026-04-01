@@ -17,11 +17,21 @@ export async function GET(request) {
   if (token_hash && type) {
     const supabase = await createClient()
 
-    const { error } = await supabase.auth.verifyOtp({
+    const { data, error } = await supabase.auth.verifyOtp({
       type,
       token_hash
     })
-    if (!error) {
+
+    if (!error && data.user) {
+      // Ensure the profile row exists now that the user is confirmed.
+      // full_name comes from the metadata stored during signUp.
+      const fullName = data.user.user_metadata?.full_name || ""
+      await supabase.from("profiles").upsert({
+        id: data.user.id,
+        full_name: fullName,
+        updated_at: new Date().toISOString()
+      })
+
       redirectTo.searchParams.delete("next")
       return NextResponse.redirect(redirectTo)
     }

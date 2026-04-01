@@ -1,688 +1,0 @@
-Script started on Tue Mar 31 21:12:24 2026
-[0m[49m[39m[27m[24m[K
-[1A7[0m[49m[39m[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[49m[34m[0m[34m[49m[39m [0m[49m[39m[?2004h[?25l8[0m[49m[39m[27m[24m[J]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[38;5;254m[49m[39m[27m[24m[1m[7m%[27m[1m[0m                                                                               [0m[49m[39m[27m[24m[K[0m[27m[24m[J[0m[49m[39m[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[100m[34m[0m[34m[100m[100m[30m on  [30m main [30m⇡1[0m[30m[100m[100m[30m [0m[30m[100m[49m[90m[0m[90m[49m[39m [0m[49m[39m[K[11C[0m[49m[30m[0m[30m[40m[32m [0m[32m[40m[40m[32m✔[0m[32m[40m[40m[32m [0m[32m[40m[40m[32m[37m[0m[37m[40m[47m[30m at 21:12:24[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[32D[?1h=[?25h[?2004h[?25l[0m[27m[24m[J[0m[49m[39m[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡1 [30m!7 [30m?4[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[5C[0m[49m[30m[0m[30m[40m[32m [0m[32m[40m[40m[32m✔[0m[32m[40m[40m[32m [0m[32m[40m[40m[32m[37m[0m[37m[40m[47m[30m at 21:12:24[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[26D[?25h  node[K /tmp/test_isbndb.js 2 [K>>&1[?1l>[?25l[?2004l[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;76m❯[0m[38;5;76m[49m[39m[27m[24m  node /tmp/test_isbndb.js 2>&1[K[?25h
-]2;node /tmp/test_isbndb.js 2>&1]1;nodenode:internal/modules/cjs/loader:1210
-  throw err;
-  ^
-
-Error: Cannot find module 'dotenv'
-Require stack:
-- /private/tmp/test_isbndb.js
-[90m    at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)[39m
-[90m    at Module._load (node:internal/modules/cjs/loader:1038:27)[39m
-[90m    at Module.require (node:internal/modules/cjs/loader:1289:19)[39m
-[90m    at require (node:internal/modules/helpers:182:18)[39m
-    at Object.<anonymous> (/private/tmp/test_isbndb.js:1:1)
-[90m    at Module._compile (node:internal/modules/cjs/loader:1521:14)[39m
-[90m    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)[39m
-[90m    at Module.load (node:internal/modules/cjs/loader:1266:32)[39m
-[90m    at Module._load (node:internal/modules/cjs/loader:1091:12)[39m
-[90m    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)[39m {
-  code: [32m'MODULE_NOT_FOUND'[39m,
-  requireStack: [ [32m'/private/tmp/test_isbndb.js'[39m ]
-}
-
-Node.js v20.19.6
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡1 [30m!7 [30m?4[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[3C[0m[49m[31m[0m[31m[41m[33m 1[0m[33m[41m[41m[33m ✘[0m[33m[41m[41m[33m [0m[33m[41m[41m[33m[37m[0m[37m[41m[47m[30m at 21:12:47[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[26D[?1h=[?2004h  no[Kde --env-file=.env.local [K  -e "const k=process.env.ISBNDB_API_KEY;fetch('https://api2.isbndb.com/books/dun [Kggeon+crawler+carl?pageSize=5',{headers:{Authorization:k}}).then(r=>r.json()).the [Knn(d=>{console.log('total:',d.total);(d.books||[]).forEach((b,i)=>console.log(i,b [K..title,'isbn13:',b.isbn13,'lang:',b.language))}).catch(console.error)" 2>&1[?1l>[?25l[?2004l[4A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;196m❯[0m[38;5;196m[49m[39m[27m[24m  node --env-file=.env.local -e "const k=process.env.ISBNDB_API_KEY;fetch('https://api2.isbndb.com/books/dungeon+crawler+carl?pageSize=5',{headers:{Authorization:k}}).then(r=>r.json()).then(d=>{console.log('total:',d.total);(d.books||[]).forEach((b,i)=>console.log(i,b.title,'isbn13:',b.isbn13,'lang:',b.language))}).catch(console.error)" 2>&1[K[?25h
-]2;node --env-file=.env.local -e  2>&1]1;nodetotal: [33m34[39m
-[33m0[39m This Inevitable Ruin Dungeon Crawler Carl Book 7 isbn13: 9798344591230 lang: en
-[33m1[39m Dungeon Crawler Carl: Deluxe Edition isbn13: 9798217192199 lang: en
-[33m2[39m Dungeon Crawler Carl, Vol. 1 (Graphic Novel) isbn13: 9781638493655 lang: en
-[33m3[39m Dungeon Crawler Carl A LitRPG/Gamelit Adventure isbn13: 9798688591507 lang: en
-[33m4[39m Dungeon Crawler Carl isbn13: 9798217287161 lang: en
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡1 [30m!7 [30m?4[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[5C[0m[49m[30m[0m[30m[40m[32m [0m[32m[40m[40m[32m✔[0m[32m[40m[40m[32m [0m[32m[40m[40m[32m[37m[0m[37m[40m[47m[30m at 21:13:05[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[26D[?1h=[?2004h  npx[K[1Ctsx --test src/tests/b [KoookSearch.test.js 2>&1 | tail -100[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;76m❯[0m[38;5;76m[49m[39m[27m[24m  npx tsx --test src/tests/bookSearch.test.js 2>&1 | tail -100[K[?25h
-]2;npx tsx --test src/tests/bookSearch.test.js 2>&1 | tail -100]1;npx      ---
-      duration_ms: 0.819125
-      ...
-    # Subtest: detects French 978-2
-    ok 2 - detects French 978-2
-      ---
-      duration_ms: 0.582541
-      ...
-    # Subtest: detects German 978-3
-    ok 3 - detects German 978-3
-      ---
-      duration_ms: 0.940209
-      ...
-    # Subtest: does NOT flag English 978-0
-    ok 4 - does NOT flag English 978-0
-      ---
-      duration_ms: 0.592166
-      ...
-    # Subtest: does NOT flag English 978-1
-    ok 5 - does NOT flag English 978-1
-      ---
-      duration_ms: 0.314291
-      ...
-    1..5
-ok 2 - isNonEnglishIsbn
-  ---
-  duration_ms: 4.350208
-  type: 'suite'
-  ...
-# [fetchAndNormalise] "Dungeon Crawler Carl" isbn=null
-# [fetchAndNormalise] round1 — isbndb:false(undefined) ol:false(undefined) gbIsbn:false(undefined) gbTitle:false(undefined) isbndbTitle:true(en) hardcoverSource:true
-# [fetchAndNormalise] Hardcover source — English ISBN: 9798344591230
-# [fetchAndNormalise] round2 with ISBN 9798344591230 — isbndb:true ol:true gbIsbn:false
-# [fetchAndNormalise] merged — title:"This Inevitable Ruin Dungeon Crawler Carl Book 7" desc:true cover:true lang:en
-# [fetchAndNormalise] saved "This Inevitable Ruin Dungeon Crawler Carl Book 7" id=fc74955d-bbbf-4564-ab82-f16ad8503759 incomplete=false
-# Subtest: fetchAndNormaliseBook — Hardcover source, no ISBN
-    # Subtest: resolves an English edition of Dungeon Crawler Carl
-    not ok 1 - resolves an English edition of Dungeon Crawler Carl
-      ---
-      duration_ms: 2309.893542
-      location: '/Users/callum.harrod/Projects/your-next-tale/src/tests/bookSearch.test.js:2:3449'
-      failureType: 'testCodeFailure'
-      error: 'isbn_13 9798344591230 should be one of the expected English editions'
-      code: 'ERR_ASSERTION'
-      name: 'AssertionError'
-      expected: true
-      actual: false
-      operator: '=='
-      stack: |-
-        TestContext.<anonymous> (/Users/callum.harrod/Projects/your-next-tale/src/tests/bookSearch.test.js:83:14)
-        process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-        async Test.run (node:internal/test_runner/test:797:9)
-        async Promise.all (index 0)
-        async Suite.run (node:internal/test_runner/test:1135:7)
-        async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
-      ...
-    1..1
-not ok 3 - fetchAndNormaliseBook — Hardcover source, no ISBN
-  ---
-  duration_ms: 2684.9865
-  type: 'suite'
-  location: '/Users/callum.harrod/Projects/your-next-tale/src/tests/bookSearch.test.js:2:3298'
-  failureType: 'subtestsFailed'
-  error: '1 subtest failed'
-  code: 'ERR_TEST_FAILURE'
-  ...
-# [fetchAndNormalise] "Dungeon Crawler Carl" isbn=9785044660779
-# [fetchAndNormalise] Discarding non-English ISBN 9785044660779 (prefix: 9785)
-# [fetchAndNormalise] round1 — isbndb:false(undefined) ol:false(undefined) gbIsbn:false(undefined) gbTitle:false(undefined) isbndbTitle:true(en) hardcoverSource:true
-# [fetchAndNormalise] Hardcover source — English ISBN: 9798344591230
-# [fetchAndNormalise] round2 with ISBN 9798344591230 — isbndb:true ol:true gbIsbn:false
-# [fetchAndNormalise] merged — title:"This Inevitable Ruin Dungeon Crawler Carl Book 7" desc:true cover:true lang:en
-# [fetchAndNormalise] saved "This Inevitable Ruin Dungeon Crawler Carl Book 7" id=4865cb53-9d60-45df-817f-7cd91f4fa6b4 incomplete=false
-# ✓ Russian ISBN result: {
-#   isbn_13: '9798344591230',
-#   title: 'This Inevitable Ruin Dungeon Crawler Carl Book 7',
-#   descLen: 1224,
-#   authors: [ 'Matt Dinniman' ]
-# }
-# Subtest: fetchAndNormaliseBook — Russian ISBN input
-    # Subtest: discards Russian ISBN and resolves English edition
-    ok 1 - discards Russian ISBN and resolves English edition
-      ---
-      duration_ms: 919.524875
-      ...
-    1..1
-ok 4 - fetchAndNormaliseBook — Russian ISBN input
-  ---
-  duration_ms: 986.526584
-  type: 'suite'
-  ...
-1..4
-# tests 13
-# suites 4
-# pass 12
-# fail 1
-# cancelled 0
-# skipped 0
-# todo 0
-# duration_ms 4961.083833
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡1 [30m!7 [30m?4[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[?1h=[?2004h  npx tsx --test src/tests/b [KoookSearch.test.js 2>&1 | tail -60[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;76m❯[0m[38;5;76m[49m[39m[27m[24m  npx tsx --test src/tests/bookSearch.test.js 2>&1 | tail -60[K[?25h
-]2;npx tsx --test src/tests/bookSearch.test.js 2>&1 | tail -60]1;npx  type: 'suite'
-  ...
-# [fetchAndNormalise] "Dungeon Crawler Carl" isbn=null
-# [fetchAndNormalise] round1 — isbndb:false(undefined) ol:false(undefined) gbIsbn:false(undefined) gbTitle:false(undefined) isbndbTitle:true(en) hardcoverSource:true
-# [fetchAndNormalise] Hardcover source — English ISBN: 9798344591230
-# [fetchAndNormalise] round2 with ISBN 9798344591230 — isbndb:true ol:true gbIsbn:false
-# [fetchAndNormalise] merged — title:"This Inevitable Ruin Dungeon Crawler Carl Book 7" desc:true cover:true lang:en
-# [fetchAndNormalise] saved "This Inevitable Ruin Dungeon Crawler Carl Book 7" id=2688a2af-2e4d-4fa7-85f7-9ad94096bf3b incomplete=false
-# ✓ Hardcover result: {
-#   isbn_13: '9798344591230',
-#   title: 'This Inevitable Ruin Dungeon Crawler Carl Book 7',
-#   descLen: 1224,
-#   authors: [ 'Matt Dinniman' ]
-# }
-# Subtest: fetchAndNormaliseBook — Hardcover source, no ISBN
-    # Subtest: resolves an English edition of Dungeon Crawler Carl
-    ok 1 - resolves an English edition of Dungeon Crawler Carl
-      ---
-      duration_ms: 1553.965084
-      ...
-    1..1
-ok 3 - fetchAndNormaliseBook — Hardcover source, no ISBN
-  ---
-  duration_ms: 1830.745916
-  type: 'suite'
-  ...
-# [fetchAndNormalise] "Dungeon Crawler Carl" isbn=9785044660779
-# [fetchAndNormalise] Discarding non-English ISBN 9785044660779 (prefix: 9785)
-# [fetchAndNormalise] round1 — isbndb:false(undefined) ol:false(undefined) gbIsbn:false(undefined) gbTitle:false(undefined) isbndbTitle:true(en) hardcoverSource:true
-# [fetchAndNormalise] Hardcover source — English ISBN: 9798344591230
-# [fetchAndNormalise] round2 with ISBN 9798344591230 — isbndb:true ol:true gbIsbn:false
-# [fetchAndNormalise] merged — title:"This Inevitable Ruin Dungeon Crawler Carl Book 7" desc:true cover:true lang:en
-# [fetchAndNormalise] saved "This Inevitable Ruin Dungeon Crawler Carl Book 7" id=e2e081f5-2698-4c9b-a877-0c06df87d0f3 incomplete=false
-# ✓ Russian ISBN result: {
-#   isbn_13: '9798344591230',
-#   title: 'This Inevitable Ruin Dungeon Crawler Carl Book 7',
-#   descLen: 1224,
-#   authors: [ 'Matt Dinniman' ]
-# }
-# Subtest: fetchAndNormaliseBook — Russian ISBN input
-    # Subtest: discards Russian ISBN and resolves English edition
-    ok 1 - discards Russian ISBN and resolves English edition
-      ---
-      duration_ms: 2255.750625
-      ...
-    1..1
-ok 4 - fetchAndNormaliseBook — Russian ISBN input
-  ---
-  duration_ms: 2318.848833
-  type: 'suite'
-  ...
-1..4
-# tests 13
-# suites 4
-# pass 13
-# fail 0
-# cancelled 0
-# skipped 0
-# todo 0
-# duration_ms 5172.255209
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡1 [30m!7 [30m?4[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[?1h=[?2004h  npx tsx --test src/tests/b [KoookSearch.test.js 2>&1 | tail -120[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;76m❯[0m[38;5;76m[49m[39m[27m[24m  npx tsx --test src/tests/bookSearch.test.js 2>&1 | tail -120[K[?25h
-]2;npx tsx --test src/tests/bookSearch.test.js 2>&1 | tail -120]1;npx        async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
-      ...
-    1..1
-not ok 3 - fetchAndNormaliseBook — Hardcover source, no ISBN
-  ---
-  duration_ms: 4169.784208
-  type: 'suite'
-  location: '/Users/callum.harrod/Projects/your-next-tale/src/tests/bookSearch.test.js:2:3711'
-  failureType: 'subtestsFailed'
-  error: '1 subtest failed'
-  code: 'ERR_TEST_FAILURE'
-  ...
-# [fetchAndNormalise] "Dungeon Crawler Carl" isbn=9785044660779
-# [fetchAndNormalise] Discarding non-English ISBN 9785044660779 (prefix: 9785)
-# [fetchFromIsbndbByTitle] top candidates: [
-#   '9798344591230 score=320 bookshop=false',
-#   '9781638493655 score=320 bookshop=false',
-#   '9798688591507 score=320 bookshop=false'
-# ]
-# [fetchAndNormalise] round1 — isbndb:false(undefined) ol:false(undefined) gbIsbn:false(undefined) gbTitle:false(undefined) isbndbTitle:true(en) hardcoverSource:true
-# [fetchAndNormalise] Hardcover source — English ISBN: 9798344591230
-# [fetchAndNormalise] round2 with ISBN 9798344591230 — isbndb:true ol:true gbIsbn:false
-# [fetchAndNormalise] merged — title:"This Inevitable Ruin Dungeon Crawler Carl Book 7" desc:true cover:true lang:en
-# [fetchAndNormalise] bookshop check for 9798344591230: false
-# [fetchAndNormalise] saved "This Inevitable Ruin Dungeon Crawler Carl Book 7" id=5b14de3c-a2ab-4cdf-a940-cbd7c441ff22 incomplete=false
-# Subtest: fetchAndNormaliseBook — Russian ISBN input
-    # Subtest: discards Russian ISBN and resolves English edition
-    not ok 1 - discards Russian ISBN and resolves English edition
-      ---
-      duration_ms: 1351.047833
-      location: '/Users/callum.harrod/Projects/your-next-tale/src/tests/bookSearch.test.js:2:5546'
-      failureType: 'testCodeFailure'
-      error: 'isbn_13 9798344591230 not found on Bookshop.org after Russian ISBN was stripped'
-      code: 'ERR_ASSERTION'
-      name: 'AssertionError'
-      expected: true
-      actual: false
-      operator: '=='
-      stack: |-
-        TestContext.<anonymous> (/Users/callum.harrod/Projects/your-next-tale/src/tests/bookSearch.test.js:192:14)
-        process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-        async Test.run (node:internal/test_runner/test:797:9)
-        async Promise.all (index 0)
-        async Suite.run (node:internal/test_runner/test:1135:7)
-        async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
-      ...
-    1..1
-not ok 4 - fetchAndNormaliseBook — Russian ISBN input
-  ---
-  duration_ms: 1575.246625
-  type: 'suite'
-  location: '/Users/callum.harrod/Projects/your-next-tale/src/tests/bookSearch.test.js:2:5402'
-  failureType: 'subtestsFailed'
-  error: '1 subtest failed'
-  code: 'ERR_TEST_FAILURE'
-  ...
-# Subtest: Bookshop.org availability check
-    # Subtest: 9798217287178 exists on Bookshop.org
-    not ok 1 - 9798217287178 exists on Bookshop.org
-      ---
-      duration_ms: 189.462625
-      location: '/Users/callum.harrod/Projects/your-next-tale/src/tests/bookSearch.test.js:2:7021'
-      failureType: 'testCodeFailure'
-      error: '9798217287178 should be on Bookshop.org'
-      code: 'ERR_ASSERTION'
-      name: 'AssertionError'
-      expected: true
-      actual: false
-      operator: '=='
-      stack: |-
-        TestContext.<anonymous> (/Users/callum.harrod/Projects/your-next-tale/src/tests/bookSearch.test.js:211:12)
-        process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-        async Test.run (node:internal/test_runner/test:797:9)
-        async Promise.all (index 0)
-        async Suite.run (node:internal/test_runner/test:1135:7)
-        async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
-      ...
-    # Subtest: 9780593820261 exists on Bookshop.org
-    not ok 2 - 9780593820261 exists on Bookshop.org
-      ---
-      duration_ms: 196.9255
-      location: '/Users/callum.harrod/Projects/your-next-tale/src/tests/bookSearch.test.js:2:7233'
-      failureType: 'testCodeFailure'
-      error: '9780593820261 should be on Bookshop.org'
-      code: 'ERR_ASSERTION'
-      name: 'AssertionError'
-      expected: true
-      actual: false
-      operator: '=='
-      stack: |-
-        TestContext.<anonymous> (/Users/callum.harrod/Projects/your-next-tale/src/tests/bookSearch.test.js:216:12)
-        process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-        async Test.run (node:internal/test_runner/test:797:9)
-        async Suite.processPendingSubtests (node:internal/test_runner/test:526:7)
-      ...
-#   Russian ISBN on Bookshop.org: false (informational)
-    # Subtest: 9785044660779 does NOT exist on Bookshop.org (Russian edition)
-    ok 3 - 9785044660779 does NOT exist on Bookshop.org (Russian edition)
-      ---
-      duration_ms: 194.710833
-      ...
-    1..3
-not ok 5 - Bookshop.org availability check
-  ---
-  duration_ms: 581.875291
-  type: 'suite'
-  location: '/Users/callum.harrod/Projects/your-next-tale/src/tests/bookSearch.test.js:2:6944'
-  failureType: 'subtestsFailed'
-  error: '2 subtests failed'
-  code: 'ERR_TEST_FAILURE'
-  ...
-1..5
-# tests 16
-# suites 5
-# pass 12
-# fail 4
-# cancelled 0
-# skipped 0
-# todo 0
-# duration_ms 7437.369292
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!3[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[?1h=[?2004h  node /tmp/debug_bookshop.js 2 [K>>&1[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;76m❯[0m[38;5;76m[49m[39m[27m[24m  node /tmp/debug_bookshop.js 2>&1[K[?25h
-]2;node /tmp/debug_bookshop.js 2>&1]1;nodeHEAD: {
-  status: [33m404[39m,
-  ok: [33mfalse[39m,
-  url: [32m'https://bookshop.org/p/books/9780593820261'[39m,
-  redirected: [33mfalse[39m,
-  headers: { [32m'content-type'[39m: [32m'text/html; charset=UTF-8'[39m }
-}
-GET: {
-  status: [33m404[39m,
-  ok: [33mfalse[39m,
-  url: [32m'https://bookshop.org/p/books/9780593820261'[39m,
-  redirected: [33mfalse[39m,
-  bodyLen: [33m1566[39m,
-  titleMatch: [32m"The page you were looking for doesn't exist (404)"[39m,
-  hasProductPage: [33mfalse[39m,
-  finalUrlHasBooks: [33mtrue[39m
-}
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!3[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[8C[0m[49m[30m[0m[30m[40m[32m [0m[32m[40m[40m[32m✔[0m[32m[40m[40m[32m [0m[32m[40m[40m[32m[37m[0m[37m[40m[47m[30m at 21:27:08[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[29D[?1h=[?2004h  node /t[Kmp/debug_bookshop2.js  [K22>&1[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;76m❯[0m[38;5;76m[49m[39m[27m[24m  node /tmp/debug_bookshop2.js 2>&1[K[?25h
-]2;node /tmp/debug_bookshop2.js 2>&1]1;nodesearch: {
-  status: [33m403[39m,
-  finalUrl: [32m'https://bookshop.org/beta-search?keywords=9780593820261'[39m,
-  title: [32m'Just a moment...'[39m
-}
-isbn-path: {
-  status: [33m403[39m,
-  finalUrl: [32m'https://bookshop.org/p/books/9780593820261'[39m,
-  title: [32m'Just a moment...'[39m
-}
-book-path: {
-  status: [33m403[39m,
-  finalUrl: [32m'https://bookshop.org/book/9780593820261'[39m,
-  title: [32m'Just a moment...'[39m
-}
-search-isbn: {
-  status: [33m403[39m,
-  finalUrl: [32m'https://bookshop.org/beta-search?keywords=9780593820261&searchtype=isbn'[39m,
-  title: [32m'Just a moment...'[39m
-}
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!3[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[8C[0m[49m[30m[0m[30m[40m[32m [0m[32m[40m[40m[32m✔[0m[32m[40m[40m[32m [0m[32m[40m[40m[32m[37m[0m[37m[40m[47m[30m at 21:27:36[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[29D[?1h=[?2004h  node /t[Kmp/debug_bookshop3.js  [K22>&1[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;76m❯[0m[38;5;76m[49m[39m[27m[24m  node /tmp/debug_bookshop3.js 2>&1[K[?25h
-]2;node /tmp/debug_bookshop3.js 2>&1]1;node--- OpenLibrary check ---
-OL 9780593820261: status=200
-OL 9785044660779: status=404
-
---- Bookshop.org patterns ---
-/a/0/9780593820261: status=200 ok=true finalUrl=https://bookshop.org/p/books/carl-s-doomsday-scenario-matt-dinniman/f62cd04ed29db65c?ean=9780593820261&next=t&next=t&aff redirected=true
-/a/0/9785044660779: status=404 ok=false finalUrl=https://bookshop.org/a/0/9785044660779 redirected=false
-
---- Simple fetch approach ---
-manual redirect 9780593820261: status=403 location=undefined
-manual redirect 9785044660779: status=403 location=undefined
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!3[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[?1h=[?2004h  node /tmp/debug_bookshop4.js  [K22>&1[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;76m❯[0m[38;5;76m[49m[39m[27m[24m  node /tmp/debug_bookshop4.js 2>&1[K[?25h
-]2;node /tmp/debug_bookshop4.js 2>&1]1;node9798217287178: status=200 exists=true finalUrl=https://bookshop.org/p/books/carl-s-doomsday-scenario-matt-dinniman/f62cd04ed29db65c?ean=97982172871
-9780593820261: status=200 exists=true finalUrl=https://bookshop.org/p/books/carl-s-doomsday-scenario-matt-dinniman/f62cd04ed29db65c?ean=97805938202
-9798344591230: status=200 exists=true finalUrl=https://bookshop.org/p/books/this-inevitable-ruin-dungeon-crawler-carl-book-7-matt-dinniman/9c20666b
-9785044660779: status=404 exists=false finalUrl=https://bookshop.org/a/0/9785044660779
-9781638493655: status=200 exists=true finalUrl=https://bookshop.org/p/books/dungeon-crawler-carl-vol-1-graphic-novel-matt-dinniman/e62e3fcfd594dd33
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[100m[34m[0m[34m[100m[100m[30m on  [30m main [30m⇡2 [30m!3[0m[30m[100m[100m[30m [0m[30m[100m[49m[90m[0m[90m[49m[39m [0m[49m[39m[K[?1h=[?2004h[?25l[A[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!3[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[?25h  npx tsx --test src/tests/book [KSSearch.test.js 2>&1 | tail -120[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;76m❯[0m[38;5;76m[49m[39m[27m[24m  npx tsx --test src/tests/bookSearch.test.js 2>&1 | tail -120[K[?25h
-]2;npx tsx --test src/tests/bookSearch.test.js 2>&1 | tail -120]1;npx    # Subtest: detects French 978-2
-    ok 2 - detects French 978-2
-      ---
-      duration_ms: 0.457875
-      ...
-    # Subtest: detects German 978-3
-    ok 3 - detects German 978-3
-      ---
-      duration_ms: 0.514625
-      ...
-    # Subtest: does NOT flag English 978-0
-    ok 4 - does NOT flag English 978-0
-      ---
-      duration_ms: 0.144292
-      ...
-    # Subtest: does NOT flag English 978-1
-    ok 5 - does NOT flag English 978-1
-      ---
-      duration_ms: 0.080125
-      ...
-    1..5
-ok 2 - isNonEnglishIsbn
-  ---
-  duration_ms: 2.6405
-  type: 'suite'
-  ...
-# [fetchAndNormalise] "Dungeon Crawler Carl" isbn=null
-# [fetchFromIsbndbByTitle] top candidates: [
-#   '9798344591230 score=320 bookshop=true',
-#   '9781638493655 score=320 bookshop=true',
-#   '9798688591507 score=320 bookshop=true'
-# ]
-# [fetchAndNormalise] round1 — isbndb:false(undefined) ol:false(undefined) gbIsbn:false(undefined) gbTitle:false(undefined) isbndbTitle:true(en) hardcoverSource:true
-# [fetchAndNormalise] Hardcover source — English ISBN: 9798344591230
-# [fetchAndNormalise] round2 with ISBN 9798344591230 — isbndb:true ol:true gbIsbn:false
-# [fetchAndNormalise] merged — title:"This Inevitable Ruin Dungeon Crawler Carl Book 7" desc:true cover:true lang:en
-# [fetchAndNormalise] bookshop check for 9798344591230: true
-# [fetchAndNormalise] saved "This Inevitable Ruin Dungeon Crawler Carl Book 7" id=6f75fecc-20cf-4a46-9c55-4b5df956a324 incomplete=false
-#   ✓ Verified on Bookshop.org: bookshop.org/p/books/9798344591230
-# ✓ Hardcover result: {
-#   isbn_13: '9798344591230',
-#   title: 'This Inevitable Ruin Dungeon Crawler Carl Book 7',
-#   descLen: 1224,
-#   authors: [ 'Matt Dinniman' ]
-# }
-# Subtest: fetchAndNormaliseBook — Hardcover source, no ISBN
-    # Subtest: resolves an English edition of Dungeon Crawler Carl
-    ok 1 - resolves an English edition of Dungeon Crawler Carl
-      ---
-      duration_ms: 3900.594334
-      ...
-    1..1
-ok 3 - fetchAndNormaliseBook — Hardcover source, no ISBN
-  ---
-  duration_ms: 4276.458375
-  type: 'suite'
-  ...
-# [fetchAndNormalise] "Dungeon Crawler Carl" isbn=9785044660779
-# [fetchAndNormalise] Discarding non-English ISBN 9785044660779 (prefix: 9785)
-# [fetchFromIsbndbByTitle] top candidates: [
-#   '9798344591230 score=320 bookshop=true',
-#   '9781638493655 score=320 bookshop=true',
-#   '9798688591507 score=320 bookshop=true'
-# ]
-# [fetchAndNormalise] round1 — isbndb:false(undefined) ol:false(undefined) gbIsbn:false(undefined) gbTitle:false(undefined) isbndbTitle:true(en) hardcoverSource:true
-# [fetchAndNormalise] Hardcover source — English ISBN: 9798344591230
-# [fetchAndNormalise] round2 with ISBN 9798344591230 — isbndb:true ol:true gbIsbn:false
-# [fetchAndNormalise] merged — title:"This Inevitable Ruin Dungeon Crawler Carl Book 7" desc:true cover:true lang:en
-# [fetchAndNormalise] bookshop check for 9798344591230: true
-# [fetchAndNormalise] saved "This Inevitable Ruin Dungeon Crawler Carl Book 7" id=7479f03b-d065-4fad-845b-75225563a825 incomplete=false
-# ✓ Russian ISBN result: {
-#   isbn_13: '9798344591230',
-#   title: 'This Inevitable Ruin Dungeon Crawler Carl Book 7',
-#   descLen: 1224,
-#   authors: [ 'Matt Dinniman' ]
-# }
-# Subtest: fetchAndNormaliseBook — Russian ISBN input
-    # Subtest: discards Russian ISBN and resolves English edition
-    ok 1 - discards Russian ISBN and resolves English edition
-      ---
-      duration_ms: 2936.662875
-      ...
-    1..1
-ok 4 - fetchAndNormaliseBook — Russian ISBN input
-  ---
-  duration_ms: 3048.88575
-  type: 'suite'
-  ...
-# Subtest: Bookshop.org availability check
-    # Subtest: 9798217287178 exists on Bookshop.org
-    ok 1 - 9798217287178 exists on Bookshop.org
-      ---
-      duration_ms: 1039.251292
-      ...
-    # Subtest: 9780593820261 exists on Bookshop.org
-    ok 2 - 9780593820261 exists on Bookshop.org
-      ---
-      duration_ms: 873.2235
-      ...
-#   Russian ISBN on Bookshop.org: false (informational)
-    # Subtest: 9785044660779 does NOT exist on Bookshop.org (Russian edition)
-    ok 3 - 9785044660779 does NOT exist on Bookshop.org (Russian edition)
-      ---
-      duration_ms: 301.353583
-      ...
-    1..3
-ok 5 - Bookshop.org availability check
-  ---
-  duration_ms: 2216.800583
-  type: 'suite'
-  ...
-1..5
-# tests 16
-# suites 5
-# pass 16
-# fail 0
-# cancelled 0
-# skipped 0
-# todo 0
-# duration_ms 10905.597
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!3[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[?1h=[?2004h[?25l[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;76m❯[0m[38;5;76m[49m[39m[27m[24m [K[?25h[?2004l
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!3[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[4C[0m[49m[31m[0m[31m[41m[33m INT[0m[33m[41m[41m[33m ✘[0m[33m[41m[41m[33m [0m[33m[41m[41m[33m[37m[0m[37m[41m[47m[30m at 21:29:37[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[29D[?1h=[?2004h  npx[K tsx --test src/tests/book [KSSearch.test.js 2>&1[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;196m❯[0m[38;5;196m[49m[39m[27m[24m  npx tsx --test src/tests/bookSearch.test.js 2>&1[K[?25h
-]2;npx tsx --test src/tests/bookSearch.test.js 2>&1]1;npx[1G[0K⠙[1G[0K[dotenv@17.3.1] injecting env (8) from .env.local -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
-▶ isEnglishIsbn
-  [32m✔ accepts 978-0 ISBN [90m(1.228416ms)[39m[39m
-  [32m✔ accepts 978-1 ISBN [90m(0.489792ms)[39m[39m
-  [32m✔ accepts 979-8 ISBN [90m(0.135042ms)[39m[39m
-  [32m✔ rejects Russian 978-5 ISBN [90m(0.083083ms)[39m[39m
-  [32m✔ rejects French 978-2 ISBN [90m(0.084ms)[39m[39m
-  [32m✔ rejects null / invalid [90m(0.070208ms)[39m[39m
-[32m✔ isEnglishIsbn [90m(3.704958ms)[39m[39m
-▶ isNonEnglishIsbn
-  [32m✔ detects Russian 978-5 [90m(0.339709ms)[39m[39m
-  [32m✔ detects French 978-2 [90m(0.514ms)[39m[39m
-  [32m✔ detects German 978-3 [90m(0.337792ms)[39m[39m
-  [32m✔ does NOT flag English 978-0 [90m(0.812875ms)[39m[39m
-  [32m✔ does NOT flag English 978-1 [90m(0.213625ms)[39m[39m
-[32m✔ isNonEnglishIsbn [90m(3.208458ms)[39m[39m
-[fetchAndNormalise] "Dungeon Crawler Carl" isbn=null
-[fetchFromIsbndbByTitle] top candidates: [
-  [32m'9798344591230 score=320 bookshop=true'[39m,
-  [32m'9781638493655 score=320 bookshop=true'[39m,
-  [32m'9798688591507 score=320 bookshop=true'[39m
-]
-[fetchAndNormalise] round1 — isbndb:false(undefined) ol:false(undefined) gbIsbn:false(undefined) gbTitle:false(undefined) isbndbTitle:true(en) hardcoverSource:true
-[fetchAndNormalise] Hardcover source — English ISBN: 9798344591230
-[fetchAndNormalise] round2 with ISBN 9798344591230 — isbndb:true ol:true gbIsbn:false
-[fetchAndNormalise] merged — title:"This Inevitable Ruin Dungeon Crawler Carl Book 7" desc:true cover:true lang:en
-[fetchAndNormalise] bookshop check for 9798344591230: true
-[fetchAndNormalise] saved "This Inevitable Ruin Dungeon Crawler Carl Book 7" id=dd68678d-59b6-48ce-b5cc-8dfd5342da1d incomplete=false
-  ✓ Verified on Bookshop.org: bookshop.org/p/books/9798344591230
-✓ Hardcover result: {
-  isbn_13: [32m'9798344591230'[39m,
-  title: [32m'This Inevitable Ruin Dungeon Crawler Carl Book 7'[39m,
-  descLen: [33m1224[39m,
-  authors: [ [32m'Matt Dinniman'[39m ]
-}
-▶ fetchAndNormaliseBook — Hardcover source, no ISBN
-  [32m✔ resolves an English edition of Dungeon Crawler Carl [90m(3166.5535ms)[39m[39m
-[32m✔ fetchAndNormaliseBook — Hardcover source, no ISBN [90m(3409.871375ms)[39m[39m
-[fetchAndNormalise] "Dungeon Crawler Carl" isbn=9785044660779
-[fetchAndNormalise] Discarding non-English ISBN 9785044660779 (prefix: 9785)
-[fetchFromIsbndbByTitle] top candidates: [
-  [32m'9798344591230 score=320 bookshop=true'[39m,
-  [32m'9781638493655 score=320 bookshop=true'[39m,
-  [32m'9798688591507 score=320 bookshop=true'[39m
-]
-[fetchAndNormalise] round1 — isbndb:false(undefined) ol:false(undefined) gbIsbn:false(undefined) gbTitle:false(undefined) isbndbTitle:true(en) hardcoverSource:true
-[fetchAndNormalise] Hardcover source — English ISBN: 9798344591230
-[fetchAndNormalise] round2 with ISBN 9798344591230 — isbndb:true ol:true gbIsbn:false
-[fetchAndNormalise] merged — title:"This Inevitable Ruin Dungeon Crawler Carl Book 7" desc:true cover:true lang:en
-[fetchAndNormalise] bookshop check for 9798344591230: true
-[fetchAndNormalise] saved "This Inevitable Ruin Dungeon Crawler Carl Book 7" id=84ffd01e-10cc-4be9-9502-c164c75a084e incomplete=false
-✓ Russian ISBN result: {
-  isbn_13: [32m'9798344591230'[39m,
-  title: [32m'This Inevitable Ruin Dungeon Crawler Carl Book 7'[39m,
-  descLen: [33m1224[39m,
-  authors: [ [32m'Matt Dinniman'[39m ]
-}
-▶ fetchAndNormaliseBook — Russian ISBN input
-  [32m✔ discards Russian ISBN and resolves English edition [90m(3524.447167ms)[39m[39m
-[32m✔ fetchAndNormaliseBook — Russian ISBN input [90m(3593.894125ms)[39m[39m
-▶ Bookshop.org availability check
-  [32m✔ 9798217287178 exists on Bookshop.org [90m(769.138167ms)[39m[39m
-  [32m✔ 9780593820261 exists on Bookshop.org [90m(877.957708ms)[39m[39m
-  Russian ISBN on Bookshop.org: false (informational)
-  [32m✔ 9785044660779 does NOT exist on Bookshop.org (Russian edition) [90m(278.510875ms)[39m[39m
-[32m✔ Bookshop.org availability check [90m(1927.857375ms)[39m[39m
-[34mℹ tests 16[39m
-[34mℹ suites 5[39m
-[34mℹ pass 16[39m
-[34mℹ fail 0[39m
-[34mℹ cancelled 0[39m
-[34mℹ skipped 0[39m
-[34mℹ todo 0[39m
-[34mℹ duration_ms 9601.885958[39m
-[1G[0K⠙[1G[0K[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!3[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[?1h=[?2004h  npm i facehash[?1l>[?25l[?2004l[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;76m❯[0m[38;5;76m[49m[39m[27m[24m  npm i facehash[K[?25h
-]2;npm i facehash]1;npm[1G[0K⠙[1G[0K⠹[1G[0K⠸[1G[0K⠼[1G[0K⠴[1G[0K⠦[1G[0K⠧[1G[0K⠇[1G[0K⠏[1G[0K⠋[1G[0K⠙[1G[0K⠹[1G[0K⠸[1G[0K⠼[1G[0K⠴[1G[0K⠦[1G[0K⠧[1G[0K⠇[1G[0K⠏[1G[0K⠋[1G[0K⠙[1G[0K⠹[1G[0K⠸[1G[0K⠼[1G[0K⠴[1G[0K⠦[1G[0K⠧[1G[0K⠇[1G[0K⠏[1G[0K⠋[1G[0K⠙[1G[0K⠹[1G[0K⠸[1G[0K⠼[1G[0K⠴[1G[0K⠦[1G[0K⠧[1G[0K⠇[1G[0K⠏[1G[0K⠋[1G[0K⠙[1G[0K⠹[1G[0K⠸[1G[0K⠼[1G[0K⠴[1G[0K⠦[1G[0K⠧[1G[0K⠇[1G[0K⠏[1G[0K
-added 1 package, and audited 640 packages in 6s
-[1G[0K⠏[1G[0K
-[1G[0K⠏[1G[0K167 packages are looking for funding
-[1G[0K⠏[1G[0K  run `npm fund` for details
-[1G[0K⠏[1G[0K
-[31m[1m16[22m[39m vulnerabilities (4 [1mlow[22m, 5 [33m[1mmoderate[22m[39m, 6 [31m[1mhigh[22m[39m, 1 [35m[1mcritical[22m[39m)
-
-To address all issues, run:
-  npm audit fix
-
-Run `npm audit` for details.
-[1G[0K⠋[1G[0K[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[100m[34m[0m[34m[100m[100m[30m on  [30m main [30m⇡2 [30m!3[0m[30m[100m[100m[30m [0m[30m[100m[49m[90m[0m[90m[49m[39m [0m[49m[39m[K[?1h=[?2004h[?25l[A[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!20[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[?25h  cat node_modules/facehash/di [Ksst/index.mjs | head -100[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;76m❯[0m[38;5;76m[49m[39m[27m[24m  cat node_modules/facehash/dist/index.mjs | head -100[K[?25h
-]2;cat node_modules/facehash/dist/index.mjs | head -100]1;catcat: node_modules/facehash/dist/index.mjs: No such file or directory
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[100m[34m[0m[34m[100m[100m[30m on  [30m main [30m⇡2 [30m!20[0m[30m[100m[100m[30m [0m[30m[100m[49m[90m[0m[90m[49m[39m [0m[49m[39m[K[3C[0m[49m[30m[0m[30m[40m[32m 1|0[0m[32m[40m[40m[32m ✔[0m[32m[40m[40m[32m [0m[32m[40m[40m[32m[37m[0m[37m[40m[47m[30m at 00:08:22[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?1h=[?2004h[?25l[A[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[3C[0m[49m[30m[0m[30m[40m[32m 1|0[0m[32m[40m[40m[32m ✔[0m[32m[40m[40m[32m [0m[32m[40m[40m[32m[37m[0m[37m[40m[47m[30m at 00:08:22[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?25h[?25l[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;76m❯[0m[38;5;76m[49m[39m[27m[24m [K[?25h[?2004l
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[100m[34m[0m[34m[100m[100m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[100m[100m[30m [0m[30m[100m[49m[90m[0m[90m[49m[39m [0m[49m[39m[K[3C[0m[49m[31m[0m[31m[41m[33m INT[0m[33m[41m[41m[33m ✘[0m[33m[41m[41m[33m [0m[33m[41m[41m[33m[37m[0m[37m[41m[47m[30m at 00:08:47[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?1h=[?2004h[?25l[A[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[3C[0m[49m[31m[0m[31m[41m[33m INT[0m[33m[41m[41m[33m ✘[0m[33m[41m[41m[33m [0m[33m[41m[41m[33m[37m[0m[37m[41m[47m[30m at 00:08:47[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?25h  ca[Kt node_modules/facehash/di [Ksst/index.mjs 2>/dev/null | head -200[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;196m❯[0m[38;5;196m[49m[39m[27m[24m  cat node_modules/facehash/dist/index.mjs 2>/dev/null | head -200[K[?25h
-]2;cat node_modules/facehash/dist/index.mjs 2> /dev/null | head -200]1;cat[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[3C[0m[49m[30m[0m[30m[40m[32m 1|0[0m[32m[40m[40m[32m ✔[0m[32m[40m[40m[32m [0m[32m[40m[40m[32m[37m[0m[37m[40m[47m[30m at 00:08:47[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?1h=[?2004h[?25l[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;76m❯[0m[38;5;76m[49m[39m[27m[24m [K[?25h[?2004l
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[100m[34m[0m[34m[100m[100m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[100m[100m[30m [0m[30m[100m[49m[90m[0m[90m[49m[39m [0m[49m[39m[K[3C[0m[49m[31m[0m[31m[41m[33m INT[0m[33m[41m[41m[33m ✘[0m[33m[41m[41m[33m [0m[33m[41m[41m[33m[37m[0m[37m[41m[47m[30m at 00:09:10[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?1h=[?2004h[?25l[A[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[3C[0m[49m[31m[0m[31m[41m[33m INT[0m[33m[41m[41m[33m ✘[0m[33m[41m[41m[33m [0m[33m[41m[41m[33m[37m[0m[37m[41m[47m[30m at 00:09:10[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?25h  ls[K node_modules/facehash/dis [Ktt/[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;196m❯[0m[38;5;196m[49m[39m[27m[24m  ls node_modules/facehash/dist/[K[?25h
-]2;ls -G node_modules/facehash/dist/]1;lsls: node_modules/facehash/dist/: No such file or directory
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[5C[0m[49m[31m[0m[31m[41m[33m 1[0m[33m[41m[41m[33m ✘[0m[33m[41m[41m[33m [0m[33m[41m[41m[33m[37m[0m[37m[41m[47m[30m at 00:09:11[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?1h=[?2004h[?25l[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;196m❯[0m[38;5;196m[49m[39m[27m[24m [K[?25h[?2004l
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[100m[34m[0m[34m[100m[100m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[100m[100m[30m [0m[30m[100m[49m[90m[0m[90m[49m[39m [0m[49m[39m[K[3C[0m[49m[31m[0m[31m[41m[33m INT[0m[33m[41m[41m[33m ✘[0m[33m[41m[41m[33m [0m[33m[41m[41m[33m[37m[0m[37m[41m[47m[30m at 00:09:35[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?1h=[?2004h[?25l[A[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[3C[0m[49m[31m[0m[31m[41m[33m INT[0m[33m[41m[41m[33m ✘[0m[33m[41m[41m[33m [0m[33m[41m[41m[33m[37m[0m[37m[41m[47m[30m at 00:09:35[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?25h  cl[Kear && ls /Users/callum.ha [Krrrod/Projects/your-next-tale/node_modules/facehash/dist/[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;196m❯[0m[38;5;196m[49m[39m[27m[24m  clear && ls /Users/callum.harrod/Projects/your-next-tale/node_modules/facehash/dist/[K[?25h
-]2;clear && ls -G ]1;clear[3J[H[2Jls: /Users/callum.harrod/Projects/your-next-tale/node_modules/facehash/dist/: No such file or directory
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[5C[0m[49m[31m[0m[31m[41m[33m 1[0m[33m[41m[41m[33m ✘[0m[33m[41m[41m[33m [0m[33m[41m[41m[33m[37m[0m[37m[41m[47m[30m at 00:09:35[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?1h=[?2004h[?25l[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;196m❯[0m[38;5;196m[49m[39m[27m[24m [K[?25h[?2004l
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[3C[0m[49m[31m[0m[31m[41m[33m INT[0m[33m[41m[41m[33m ✘[0m[33m[41m[41m[33m [0m[33m[41m[41m[33m[37m[0m[37m[41m[47m[30m at 00:09:53[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?1h=[?2004h  ls[K /Users/callum.harrod/Proj [Keects/your-next-tale/node_modules/facehash/[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;196m❯[0m[38;5;196m[49m[39m[27m[24m  ls /Users/callum.harrod/Projects/your-next-tale/node_modules/facehash/[K[?25h
-]2;ls -G /Users/callum.harrod/Projects/your-next-tale/node_modules/facehash/]1;lshash.js        index.d.ts     index.js       [1m[36mnext[39;49m[0m           README.md
-hash.js.map    index.d.ts.map index.js.map   package.json
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[7C[0m[49m[30m[0m[30m[40m[32m [0m[32m[40m[40m[32m✔[0m[32m[40m[40m[32m [0m[32m[40m[40m[32m[37m[0m[37m[40m[47m[30m at 00:09:53[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?1h=[?2004h[?25l[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;76m❯[0m[38;5;76m[49m[39m[27m[24m [K[?25h[?2004l
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[3C[0m[49m[31m[0m[31m[41m[33m INT[0m[33m[41m[41m[33m ✘[0m[33m[41m[41m[33m [0m[33m[41m[41m[33m[37m[0m[37m[41m[47m[30m at 00:15:45[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?1h=[?2004h  np[Kx supabase --version 2>/de [Kvv/null || echo "no supabase CLI"[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;196m❯[0m[38;5;196m[49m[39m[27m[24m  npx supabase --version 2>/dev/null || echo "no supabase CLI"[K[?25h
-]2;npx supabase --version 2> /dev/null || echo "no supabase CLI"]1;npx[1G[0JNeed to install the following packages:
-supabase@2.84.5
-Ok to proceed? (y) [20G
-no supabase CLI
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[100m[34m[0m[34m[100m[100m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[100m[100m[30m [0m[30m[100m[49m[90m[0m[90m[49m[39m [0m[49m[39m[K[?1h=[?2004h[?25l[A[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[?25h  printf "n\n"[?1l>[?25l[?2004l[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;76m❯[0m[38;5;76m[49m[39m[27m[24m  printf "n\n"[K[?25h
-]2;printf "n\n"]1;printfn
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[7C[0m[49m[30m[0m[30m[40m[32m [0m[32m[40m[40m[32m✔[0m[32m[40m[40m[32m [0m[32m[40m[40m[32m[37m[0m[37m[40m[47m[30m at 00:16:03[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?1h=[?2004hy[?1l>[?25l[?2004l[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;76m❯[0m[38;5;76m[49m[39m[27m[24m y[K[?25h
-]2;y]1;yzsh: command not found: y
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[3C[0m[49m[31m[0m[31m[41m[33m 127[0m[33m[41m[41m[33m ✘[0m[33m[41m[41m[33m [0m[33m[41m[41m[33m[37m[0m[37m[41m[47m[30m at 00:16:17[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?1h=[?2004h[?25l[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;196m❯[0m[38;5;196m[49m[39m[27m[24m [K[?25h[?2004l
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[3C[0m[49m[31m[0m[31m[41m[33m INT[0m[33m[41m[41m[33m ✘[0m[33m[41m[41m[33m [0m[33m[41m[41m[33m[37m[0m[37m[41m[47m[30m at 00:16:32[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?1h=[?2004h  cd[K /Users/callum.harrod/Proj [Keects/your-next-tale && node -e "[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;196m❯[0m[38;5;196m[49m[39m[27m[24m  cd /Users/callum.harrod/Projects/your-next-tale && node -e "[K[?25h
-[0m[27m[24m[Jcmdand dquote> [K[?1h=[?2004hcconst { createClient } = require('@supabase/supabase-js');[?1l>[?2004l
-[0m[27m[24m[Jcmdand dquote> [K[?1h=[?2004hcconst url = process.env.NEXT_PUBLIC_SUPABASE_URL;[?1l>[?2004l
-[0m[27m[24m[Jcmdand dquote> [K[?1h=[?2004hcconst key = process.env.SUPABASE_SECRET_KEY;[?1l>[?2004l
-[0m[27m[24m[Jcmdand dquote> [K[?1h=[?2004hiif (!url || !key) { console.log('Missing env vars'); process.exit [K((1); }[?1l>[?2004l
-zsh: event not found: url
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[3C[0m[49m[31m[0m[31m[41m[33m INT[0m[33m[41m[41m[33m ✘[0m[33m[41m[41m[33m [0m[33m[41m[41m[33m[37m[0m[37m[41m[47m[30m at 00:16:32[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?1h=[?2004hccon[Kst supabase = createClient [K((url, key);[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;196m❯[0m[38;5;196m[49m[39m[27m[24m const supabase = createClient(url, key);[K[?25h
-]2;const supabase = createClient(url, key)]1;constzsh: missing delimiter for 'u' glob qualifier
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[5C[0m[49m[31m[0m[31m[41m[33m 1[0m[33m[41m[41m[33m ✘[0m[33m[41m[41m[33m [0m[33m[41m[41m[33m[37m[0m[37m[41m[47m[30m at 00:16:32[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?1h=[?2004hssupab[Kase.rpc('', {}).then(()  [K==> {});[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;196m❯[0m[38;5;196m[49m[39m[27m[24m supabase.rpc('', {}).then(() => {});[K[?25h
-zsh: parse error near `)'
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[5C[0m[49m[31m[0m[31m[41m[33m 1[0m[33m[41m[41m[33m ✘[0m[33m[41m[41m[33m [0m[33m[41m[41m[33m[37m[0m[37m[41m[47m[30m at 00:16:32[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?1h=[?2004h/// Ju[Kst test column exists fi [Krrst[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;196m❯[0m[38;5;196m[49m[39m[27m[24m // Just test column exists first[K[?25h
-]2;// Just test column exists first]1;//zsh: permission denied: //
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[3C[0m[49m[31m[0m[31m[41m[33m 126[0m[33m[41m[41m[33m ✘[0m[33m[41m[41m[33m [0m[33m[41m[41m[33m[37m[0m[37m[41m[47m[30m at 00:16:32[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?1h=[?2004hssup[Kabase.from('profiles').sel [Keect('facehash_color').limit(1).then(({ data, error }) => {[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;196m❯[0m[38;5;196m[49m[39m[27m[24m supabase.from('profiles').select('facehash_color').limit(1).then(({ data, error }) => {[K[?25h
-]2; > {]1;supabase.from('profiles').select('facehash_color').limit(1).then(({zsh: bad pattern: supabase.from(profiles).select(facehash_color).limit(1).then(( data) =
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[3C[0m[49m[31m[0m[31m[41m[33m 126[0m[33m[41m[41m[33m ✘[0m[33m[41m[41m[33m [0m[33m[41m[41m[33m[37m[0m[37m[41m[47m[30m at 00:16:32[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?1h=[?2004h   i[Kf (error && error.message. [Kiincludes('facehash_color')) {[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;196m❯[0m[38;5;196m[49m[39m[27m[24m   if (error && error.message.includes('facehash_color')) {[K[?25h
-[0m[27m[24m[Jthen> [K[?1h=[?2004h     console.log('COLUMN_MISSING');[?1l>[?2004l
-[0m[27m[24m[Jthen> [K[?1h=[?2004h   } else {[?1l>[?2004l
-[0m[27m[24m[Jelse> [K[?1h=[?2004h     console.log('COLUMN_EXISTS');[?1l>[?2004l
-[0m[27m[24m[Jelse> [K[?1h=[?2004h   }[?1l>[?2004l
-]2;if ( error && error.message.includes('facehash_color'); ); then; ; else; ; fi]1;ifzsh: command not found: error
-zsh: unknown file attribute: C
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[5C[0m[49m[31m[0m[31m[41m[33m 1[0m[33m[41m[41m[33m ✘[0m[33m[41m[41m[33m [0m[33m[41m[41m[33m[37m[0m[37m[41m[47m[30m at 00:16:32[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?1h=[?2004h}});[?1l>[?25l[?2004l[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;196m❯[0m[38;5;196m[49m[39m[27m[24m });[K[?25h
-zsh: parse error near `}'
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[5C[0m[49m[31m[0m[31m[41m[33m 1[0m[33m[41m[41m[33m ✘[0m[33m[41m[41m[33m [0m[33m[41m[41m[33m[37m[0m[37m[41m[47m[30m at 00:16:32[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?1h=[?2004h"[?1l>[?25l[?2004l[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;196m❯[0m[38;5;196m[49m[39m[27m[24m "[K[?25h
-[0m[27m[24m[Jdquote> [K[?1h=[?2004h  node -e 'const{createClient}=require("@supabase/supabase-js");const s=c [KrreateClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.SUPABASE_SECRET_KEY [K));s.from("profiles").select("facehash_color").limit(1).then(({data,error})=>{if( [Keerror){console.log("COLUMN_MISSING:",error.message)}else{console.log("COLUMN_EXI [KSSTS",JSON.stringify(data))}})'[?1l>[?2004l
-[0m[27m[24m[Jdquote> [K[?1h=[?2004h  cd /Users/callum.harrod/Projects/your-next-tale[?1l>[?2004l
-[0m[27m[24m[Jdquote> [K[?1h=[?2004h [?1l>[?2004l
-[0m[27m[24m[Jdquote> [K[?1h=[?2004h  "[?1l>[?2004l
-]2;]1;"zsh: no such file or directory: \n node -e 'const{createClient}=require(@supabase/supabase-js);const s=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.SUPABASE_SECRET_KEY);s.from(profiles).select(facehash_color).limit(1).then(({data,error})=>{if(error){console.log(COLUMN_MISSING:,error.message)}else{console.log(COLUMN_EXISTS,JSON.stringify(data))}})'\n cd /Users/callum.harrod/Projects/your-next-tale\n \n 
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[3C[0m[49m[31m[0m[31m[41m[33m 127[0m[33m[41m[41m[33m ✘[0m[33m[41m[41m[33m [0m[33m[41m[41m[33m[37m[0m[37m[41m[47m[30m at 00:18:41[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[28D[?1h=[?2004h[?25l[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;196m❯[0m[38;5;196m[49m[39m[27m[24m [K[?25h[?2004l
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22 [30m?1[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[?1h=[?2004h  node --env-file=.env.loca [Kll scripts/add-facehash-color.mjs[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;196m❯[0m[38;5;196m[49m[39m[27m[24m  node --env-file=.env.local scripts/add-facehash-color.mjs[K[?25h
-]2;node --env-file=.env.local scripts/add-facehash-color.mjs]1;nodeColumn missing — adding facehash_color...
-RPC not available, try running this SQL manually:
-ALTER TABLE profiles ADD COLUMN facehash_color TEXT DEFAULT NULL;
-[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22 [30m?1[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[2C[0m[49m[31m[0m[31m[41m[33m 1[0m[33m[41m[41m[33m ✘[0m[33m[41m[41m[33m [0m[33m[41m[41m[33m[37m[0m[37m[41m[47m[30m at 00:19:50[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[25D[?1h=[?2004h  g[Krep -i 'database\|postgr [Kees\|pg_\|db_url' .env.local 2>/dev/null | head -5[?1l>[?25l[?2004l[A[A[0m[27m[24m[J[0m[49m[27m[24m[38;5;196m❯[0m[38;5;196m[49m[39m[27m[24m  grep -i 'database\|postgres\|pg_\|db_url' .env.local 2>/dev/null | head -5[K[?25h
-]2;grep --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn,.idea,.tox,.venv,venv]1;grep[1m[7m%[27m[1m[0m                                                                                ]2;callum.harrod@MacBook-Pro-CallumHarrod:~/Projects/your-next-tale]1;..our-next-tale]7;file://MacBook-Pro-CallumHarrod/Users/callum.harrod/Projects/your-next-tale\[0m[27m[24m[J[0m[49m[39m
-[0m[49m[37m[0m[37m[47m[38;5;232m [0m[38;5;232m[47m[47m[38;5;232m [0m[38;5;232m[47m[44m[37m[0m[37m[44m[44m[38;5;254m  [1m[38;5;254m[44m[38;5;255m~[0m[38;5;255m[44m[44m[38;5;254m/[38;5;250mPr[0m[38;5;250m[44m[44m[38;5;254m/[1m[38;5;254m[44m[38;5;255myour-next-tale[0m[38;5;255m[44m[44m[38;5;254m[0m[38;5;254m[44m[44m[38;5;254m [0m[38;5;254m[44m[43m[34m[0m[34m[43m[43m[30m on  [30m main [30m⇡2 [30m!22 [30m?1[0m[30m[43m[43m[30m [0m[30m[43m[49m[33m[0m[33m[49m[39m [0m[49m[39m[K[4C[0m[49m[30m[0m[30m[40m[32m [0m[32m[40m[40m[32m✔[0m[32m[40m[40m[32m [0m[32m[40m[40m[32m[37m[0m[37m[40m[47m[30m at 00:20:12[0m[30m[47m[47m[30m [0m[30m[47m[47m[30m [49m[37m[0m[37m[47m[30m[0m[30m[47m[49m[39m[25D[?1h=[?2004h

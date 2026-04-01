@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Camera, User, Mail, Globe, Lock, Bell, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,9 +20,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/utils/supabase/client";
 import { useAuth } from "@/components/providers/AuthProvider";
 
-export default function UserSettings({ user }) {
-  const supabase = createClient();
-  const { refreshProfile } = useAuth();
+export default function UserSettings({ user: serverUser }) {
+  // Stable supabase client — never recreate across renders so useCallback works
+  const supabaseRef = useRef(null);
+  if (!supabaseRef.current) supabaseRef.current = createClient();
+  const supabase = supabaseRef.current;
+
+  const { user: clientUser, loading: authLoading, refreshProfile } = useAuth();
+
+  // Prefer the live client-side user (handles first-time email confirmation
+  // where the server prop may be stale before the cookie is hydrated)
+  const user = clientUser ?? serverUser;
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
@@ -48,6 +56,9 @@ export default function UserSettings({ user }) {
   });
 
   const getProfile = useCallback(async () => {
+    // Guard: user must be a real UUID string, not undefined/null/"undefined"
+    if (!user?.id || typeof user.id !== "string" || user.id === "undefined")
+      return;
     try {
       setLoading(true);
 
@@ -56,7 +67,7 @@ export default function UserSettings({ user }) {
         .select(
           `full_name, username, website, avatar_url, is_private, facehash_color`
         )
-        .eq("id", user?.id)
+        .eq("id", user.id)
         .single();
 
       if (error && status !== 406) {
@@ -78,14 +89,15 @@ export default function UserSettings({ user }) {
   }, [user, supabase]);
 
   useEffect(() => {
-    getProfile();
-  }, [user, getProfile]);
+    if (!authLoading) getProfile();
+  }, [user, authLoading, getProfile]);
 
   const handleSaveProfile = async () => {
+    if (!user?.id) return;
     setIsSaving(true);
     try {
       const { error } = await supabase.from("profiles").upsert({
-        id: user?.id,
+        id: user.id,
         full_name: fullName,
         username,
         website,
@@ -133,6 +145,16 @@ export default function UserSettings({ user }) {
       [key]: value
     }));
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="font-departureMono uppercase text-[10px] text-textSecondary">
+          Loading...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
