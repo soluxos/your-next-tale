@@ -168,7 +168,8 @@ export default function ProfileLayout({
         </div>
       </div>
 
-      {/* Shelf tab navigation */}
+      {/* Shelf tab navigation — hidden on followers/following sub-pages */}
+      {activeSlug !== "followers" && activeSlug !== "following" && (
       <div className="px-5">
         <div className="max-w-4xl mx-auto">
           <nav className="flex gap-1 overflow-x-auto no-scrollbar -mb-px items-center">
@@ -190,6 +191,7 @@ export default function ProfileLayout({
           </nav>
         </div>
       </div>
+      )}
 
       {/* Shelf content */}
       <div>{children}</div>

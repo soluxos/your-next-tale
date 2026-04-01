@@ -36,7 +36,12 @@ export default async function FollowersPage({ params }) {
     );
   }
 
-  const followers = await getFollowers(supabase, profile.id);
+  let followers = [];
+  try {
+    followers = await getFollowers(supabase, profile.id);
+  } catch (e) {
+    console.error("getFollowers error:", e);
+  }
 
   return (
     <div className="grid grid-cols-[16px_auto_16px]">

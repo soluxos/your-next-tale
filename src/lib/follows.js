@@ -80,65 +80,70 @@ export async function declineFollowRequest(
  * Get followers of a user (accepted only, with profile data).
  */
 export async function getFollowers(supabase, userId) {
-  const { data, error } = await supabase
+  const { data: follows, error } = await supabase
     .from("follows")
-    .select(
-      `
-      created_at,
-      status,
-      follower:follower_id (
-        id, username, full_name, avatar_url, is_private
-      )
-    `
-    )
+    .select("follower_id")
     .eq("following_id", userId)
-    .eq("status", "accepted")
-    .order("created_at", { ascending: false });
+    .eq("status", "accepted");
   if (error) throw error;
-  return (data || []).map((r) => r.follower);
+  if (!follows || follows.length === 0) return [];
+
+  const ids = follows.map((r) => r.follower_id);
+  const { data: profiles, error: profilesError } = await supabase
+    .from("profiles")
+    .select("id, username, full_name, avatar_url, is_private")
+    .in("id", ids);
+  if (profilesError) throw profilesError;
+  return profiles || [];
 }
 
 /**
  * Get accounts a user is following (accepted only, with profile data).
  */
 export async function getFollowing(supabase, userId) {
-  const { data, error } = await supabase
+  const { data: follows, error } = await supabase
     .from("follows")
-    .select(
-      `
-      created_at,
-      status,
-      following:following_id (
-        id, username, full_name, avatar_url, is_private
-      )
-    `
-    )
+    .select("following_id")
     .eq("follower_id", userId)
-    .eq("status", "accepted")
-    .order("created_at", { ascending: false });
+    .eq("status", "accepted");
   if (error) throw error;
-  return (data || []).map((r) => r.following);
+  if (!follows || follows.length === 0) return [];
+
+  const ids = follows.map((r) => r.following_id);
+  const { data: profiles, error: profilesError } = await supabase
+    .from("profiles")
+    .select("id, username, full_name, avatar_url, is_private")
+    .in("id", ids);
+  if (profilesError) throw profilesError;
+  return profiles || [];
 }
 
 /**
  * Get pending follow requests sent TO a user (for their notifications).
  */
 export async function getPendingRequests(supabase, userId) {
-  const { data, error } = await supabase
+  const { data: follows, error } = await supabase
     .from("follows")
-    .select(
-      `
-      id, created_at,
-      follower:follower_id (
-        id, username, full_name, avatar_url
-      )
-    `
-    )
+    .select("id, created_at, follower_id")
     .eq("following_id", userId)
     .eq("status", "pending")
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return data || [];
+  if (!follows || follows.length === 0) return [];
+
+  const ids = follows.map((r) => r.follower_id);
+  const { data: profiles, error: profilesError } = await supabase
+    .from("profiles")
+    .select("id, username, full_name, avatar_url")
+    .in("id", ids);
+  if (profilesError) throw profilesError;
+
+  const profileMap = Object.fromEntries((profiles || []).map((p) => [p.id, p]));
+  return follows.map((r) => ({
+    id: r.id,
+    created_at: r.created_at,
+    follower: profileMap[r.follower_id] || null
+  }));
 }
 
 /**

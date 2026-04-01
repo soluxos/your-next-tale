@@ -36,7 +36,12 @@ export default async function FollowingPage({ params }) {
     );
   }
 
-  const following = await getFollowing(supabase, profile.id);
+  let following = [];
+  try {
+    following = await getFollowing(supabase, profile.id);
+  } catch (e) {
+    console.error("getFollowing error:", e);
+  }
 
   return (
     <div className="grid grid-cols-[16px_auto_16px]">
