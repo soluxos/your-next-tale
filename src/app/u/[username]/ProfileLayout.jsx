@@ -7,12 +7,20 @@ import { cn } from "@/lib/utils";
 import { Facehash } from "facehash";
 import TopNavigation from "@/components/navigation/TopNavigation";
 import ManageShelvesPanel from "@/components/shelves/ManageShelvesPanel";
+import { useAuth } from "@/components/providers/AuthProvider";
 
 export default function ProfileLayout({ profile, shelves, isOwner, children }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { profile: authProfile } = useAuth();
   const [localShelves, setLocalShelves] = useState(shelves);
   const [manageShelvesOpen, setManageShelvesOpen] = useState(false);
+
+  // When viewing own profile, use the live auth context colour so it updates
+  // immediately after saving without needing a full page refresh.
+  const facehashColor = isOwner
+    ? (authProfile?.facehash_color ?? profile.facehash_color)
+    : profile.facehash_color;
 
   // Derive active slug from URL
   const segments = pathname.split("/");
@@ -46,8 +54,8 @@ export default function ProfileLayout({ profile, shelves, isOwner, children }) {
             enableBlink
             className="rounded-full text-black"
             colors={
-              profile.facehash_color
-                ? [profile.facehash_color]
+              facehashColor
+                ? [facehashColor]
                 : [
                     "oklch(0.7 0.24 0)",
                     "oklch(0.7 0.24 30)",

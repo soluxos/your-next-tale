@@ -73,9 +73,9 @@ export default function TopNavigation() {
         damping: 25,
         duration: 0.6
       }}
-      className="z-50 px-6 py-4 bg-white"
+      className="z-50 px-6 py-4 border-b border-border fixed top-0 left-0 right-0 bg-white"
     >
-      <div className="max-w-full w-full px-5 mx-auto flex items-center justify-between md:grid md:grid-cols-3">
+      <div className="max-w-full w-full px-5 mx-auto flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3">
           <span className="font-ppMondwest text-[18px] text-textPrimary">
@@ -83,27 +83,26 @@ export default function TopNavigation() {
           </span>
         </Link>
 
-        {/* Center Navigation */}
-        <nav className="hidden md:flex items-center justify-center gap-1">
-          {visibleNavItems.map((item) => (
-            <Link
-              key={item.id}
-              href={item.href}
-              onClick={() => setMobileMenuOpen(false)}
-              className={cn(
-                "px-4 py-2 font-departureMono uppercase text-[11px] rounded-[8px] transition-colors",
-                activeItem === item.id
-                  ? "bg-[#f4f4f4] text-textPrimary"
-                  : "text-textSecondary hover:bg-[#f4f4f4] hover:text-textPrimary"
-              )}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-
         {/* Right Actions */}
         <div className="flex items-center justify-end gap-3">
+          <nav className="hidden md:flex items-center justify-center gap-1">
+            {visibleNavItems.map((item) => (
+              <Link
+                key={item.id}
+                href={item.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className={cn(
+                  "px-4 py-2 font-departureMono uppercase text-[11px] rounded-[8px] transition-colors",
+                  activeItem === item.id
+                    ? "underline text-textPrimary"
+                    : "text-textSecondary hover:bg-[#f4f4f4] hover:text-textPrimary"
+                )}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

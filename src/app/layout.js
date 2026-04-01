@@ -74,11 +74,11 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased text-foreground relative bg-white`}
       >
-        <div aria-hidden="true" className="noise-overlay" />
-        <div aria-hidden="true" className="scanlines-overlay" />
+        <div aria-hidden="true" className="noise-overlay z-100" />
+        <div aria-hidden="true" className="scanlines-overlay z-100" />
         <AuthProvider>
           <TopNavigation />
-          {children}
+          <main className="mt-[69px]">{children}</main>
         </AuthProvider>
         <Footer />
         <Script src="https://scripts.simpleanalyticscdn.com/latest.js" />
