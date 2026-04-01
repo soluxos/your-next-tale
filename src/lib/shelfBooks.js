@@ -1,5 +1,6 @@
 import { TABLES } from "@/lib/supabase/types";
 import { getOrCreateUserBook } from "@/lib/userBooks";
+import { recordActivity } from "@/lib/activities";
 
 /**
  * Add a book to a shelf.
@@ -11,27 +12,48 @@ export async function addBookToShelf(supabase, userId, bookId, shelfId) {
   // 1. Ensure user_books row
   const userBook = await getOrCreateUserBook(supabase, userId, bookId);
 
-  // 2. Fetch target shelf to check is_exclusive
+  // 2. Fetch target shelf (including name for activity snapshot)
   const { data: shelf, error: shelfErr } = await supabase
     .from(TABLES.BOOKSHELVES)
-    .select("id, is_exclusive")
+    .select("id, name, is_exclusive")
     .eq("id", shelfId)
     .single();
 
   if (shelfErr) throw shelfErr;
 
   // 3. If exclusive, remove from any other exclusive shelves
+  let previousShelfId = null;
+  let previousShelfName = null;
   if (shelf.is_exclusive) {
-    // Get all exclusive shelf IDs for this user
+    // Find current exclusive shelf (for move detection)
     const { data: exclusiveShelves } = await supabase
       .from(TABLES.BOOKSHELVES)
-      .select("id")
+      .select("id, name")
       .eq("user_id", userId)
       .eq("is_exclusive", true);
 
     const exclusiveIds = (exclusiveShelves || []).map((s) => s.id);
 
     if (exclusiveIds.length > 0) {
+      // Check if already on an exclusive shelf (this would be a move)
+      const { data: existingEntry } = await supabase
+        .from(TABLES.BOOKSHELF_BOOKS)
+        .select("bookshelf_id")
+        .eq("user_book_id", userBook.id)
+        .in("bookshelf_id", exclusiveIds)
+        .single();
+
+      if (
+        existingEntry?.bookshelf_id &&
+        existingEntry.bookshelf_id !== shelfId
+      ) {
+        previousShelfId = existingEntry.bookshelf_id;
+        const prevShelf = exclusiveShelves.find(
+          (s) => s.id === previousShelfId
+        );
+        previousShelfName = prevShelf?.name || null;
+      }
+
       await supabase
         .from(TABLES.BOOKSHELF_BOOKS)
         .delete()
@@ -51,6 +73,29 @@ export async function addBookToShelf(supabase, userId, bookId, shelfId) {
     .single();
 
   if (error) throw error;
+
+  // 5. Fetch book data for activity snapshot
+  const { data: book } = await supabase
+    .from(TABLES.BOOKS)
+    .select("id, title, cover_url, isbn_13")
+    .eq("id", bookId)
+    .single();
+
+  const isMove = !!previousShelfId;
+  recordActivity(supabase, {
+    userId,
+    type: isMove ? "shelf_move" : "shelf_add",
+    bookId: book?.id,
+    shelfId: shelf.id,
+    fromShelfId: previousShelfId,
+    userBookId: userBook.id,
+    bookTitle: book?.title,
+    bookCoverUrl: book?.cover_url,
+    bookIsbn13: book?.isbn_13,
+    shelfName: shelf.name,
+    fromShelfName: previousShelfName
+  });
+
   return data;
 }
 

@@ -1,4 +1,5 @@
 import { TABLES } from "@/lib/supabase/types";
+import { recordActivity } from "@/lib/activities";
 
 function slugFromName(name) {
   return name
@@ -44,6 +45,14 @@ export async function createShelf(supabase, userId, { name, description }) {
     .single();
 
   if (error) throw error;
+
+  recordActivity(supabase, {
+    userId,
+    type: "shelf_create",
+    shelfId: data.id,
+    shelfName: data.name
+  });
+
   return data;
 }
 

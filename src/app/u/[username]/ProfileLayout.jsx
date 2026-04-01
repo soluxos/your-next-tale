@@ -8,8 +8,17 @@ import { Facehash } from "facehash";
 import TopNavigation from "@/components/navigation/TopNavigation";
 import ManageShelvesPanel from "@/components/shelves/ManageShelvesPanel";
 import { useAuth } from "@/components/providers/AuthProvider";
+import FollowButton from "@/components/profile/FollowButton";
 
-export default function ProfileLayout({ profile, shelves, isOwner, children }) {
+export default function ProfileLayout({
+  profile,
+  shelves,
+  isOwner,
+  currentUserId,
+  followCounts,
+  followStatus,
+  children
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const { profile: authProfile } = useAuth();
@@ -86,6 +95,39 @@ export default function ProfileLayout({ profile, shelves, isOwner, children }) {
               </p>
             )}
           </div>
+
+          {/* Follower / following counts */}
+          {followCounts && (
+            <div className="flex items-center gap-6">
+              <Link
+                href={`/u/${profile.username}/followers`}
+                className="font-departureMono uppercase text-[11px] hover:underline"
+              >
+                <span className="font-ppMondwest text-[18px]">
+                  {followCounts.followers}
+                </span>{" "}
+                <span className="text-textSecondary">Followers</span>
+              </Link>
+              <Link
+                href={`/u/${profile.username}/following`}
+                className="font-departureMono uppercase text-[11px] hover:underline"
+              >
+                <span className="font-ppMondwest text-[18px]">
+                  {followCounts.following}
+                </span>{" "}
+                <span className="text-textSecondary">Following</span>
+              </Link>
+            </div>
+          )}
+
+          {/* Follow button — only show to logged-in non-owners */}
+          {!isOwner && currentUserId && (
+            <FollowButton
+              targetUserId={profile.id}
+              isPrivate={profile.is_private}
+              initialStatus={followStatus || "none"}
+            />
+          )}
 
           {isOwner && (
             <div className="flex gap-2 items-center">

@@ -26,6 +26,7 @@ export default function TopNavigation() {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [pendingRequestCount, setPendingRequestCount] = useState(0);
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient();
@@ -34,18 +35,32 @@ export default function TopNavigation() {
     setMounted(true);
   }, []);
 
+  // Fetch pending follow request count for private profiles
+  useEffect(() => {
+    if (!user || !profile?.is_private) return;
+    supabase
+      .from("follows")
+      .select("*", { count: "exact", head: true })
+      .eq("following_id", user.id)
+      .eq("status", "pending")
+      .then(({ count }) => setPendingRequestCount(count || 0));
+  }, [user, profile]);
+
   const navItems = [
     { id: "discover", label: "Discover", href: "/" },
     {
       id: "profile",
       label: "My Profile",
-      href: username ? `/u/${encodeURIComponent(username)}` : "/account"
+      href: username ? `/u/${encodeURIComponent(username)}` : "/account",
+      authOnly: true
     },
+    { id: "feed", label: "Feed", href: "/feed", authOnly: true },
     { id: "admin", label: "Admin", href: "/admin", adminOnly: true }
   ];
 
   function getActiveItem() {
     if (pathname.startsWith("/admin")) return "admin";
+    if (pathname.startsWith("/feed")) return "feed";
     if (pathname.startsWith("/u/")) return "profile";
     if (pathname === "/") return "discover";
     return "";
@@ -60,7 +75,8 @@ export default function TopNavigation() {
 
   const visibleNavItems = navItems.filter((item) => {
     if (item.adminOnly) return isLoggedIn && isAdmin;
-    return isLoggedIn || item.id === "discover";
+    if (item.authOnly) return isLoggedIn;
+    return true;
   });
 
   return (
@@ -95,7 +111,7 @@ export default function TopNavigation() {
                   "px-4 py-2 font-departureMono uppercase text-[11px] rounded-[8px] transition-colors",
                   activeItem === item.id
                     ? "underline text-textPrimary"
-                    : "text-textSecondary hover:bg-[#f4f4f4] hover:text-textPrimary"
+                    : "text-textSecondary hover:underline hover:text-textPrimary"
                 )}
               >
                 {item.label}
@@ -197,6 +213,20 @@ export default function TopNavigation() {
                 >
                   Account Settings
                 </DropdownMenuItem>
+                {pendingRequestCount > 0 && (
+                  <DropdownMenuItem
+                    onClick={() => router.push("/account/follow-requests")}
+                    className="font-departureMono uppercase text-[11px] cursor-pointer"
+                  >
+                    Follow Requests
+                    <span
+                      className="ml-auto bg-[#1f1f1f] text-white text-[9px]
+                                     rounded-full w-5 h-5 flex items-center justify-center"
+                    >
+                      {pendingRequestCount}
+                    </span>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleSignOut}

@@ -1,4 +1,5 @@
 import { TABLES } from "@/lib/supabase/types";
+import { recordActivity } from "@/lib/activities";
 
 /**
  * Get or create a user_books row for a given user + book.
@@ -57,6 +58,49 @@ export async function updateUserBook(
     .single();
 
   if (error) throw error;
+
+  // Record rating/review activities as fire-and-forget
+  if (fields.rating !== undefined) {
+    // Fetch book data for snapshot
+    supabase
+      .from(TABLES.BOOKS)
+      .select("id, title, cover_url, isbn_13")
+      .eq("id", data.book_id)
+      .single()
+      .then(({ data: book }) => {
+        recordActivity(supabase, {
+          userId: data.user_id,
+          type: "rating",
+          bookId: data.book_id,
+          userBookId: data.id,
+          bookTitle: book?.title,
+          bookCoverUrl: book?.cover_url,
+          bookIsbn13: book?.isbn_13,
+          metadata: { rating: fields.rating }
+        });
+      });
+  }
+
+  if (fields.review !== undefined && fields.review?.trim()) {
+    supabase
+      .from(TABLES.BOOKS)
+      .select("id, title, cover_url, isbn_13")
+      .eq("id", data.book_id)
+      .single()
+      .then(({ data: book }) => {
+        recordActivity(supabase, {
+          userId: data.user_id,
+          type: "review",
+          bookId: data.book_id,
+          userBookId: data.id,
+          bookTitle: book?.title,
+          bookCoverUrl: book?.cover_url,
+          bookIsbn13: book?.isbn_13,
+          metadata: { review_snippet: fields.review.slice(0, 200) }
+        });
+      });
+  }
+
   return data;
 }
 

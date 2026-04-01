@@ -78,7 +78,7 @@ export default function RootLayout({ children }) {
         <div aria-hidden="true" className="scanlines-overlay z-100" />
         <AuthProvider>
           <TopNavigation />
-          <main className="mt-[69px]">{children}</main>
+          <main className="pt-[69px]">{children}</main>
         </AuthProvider>
         <Footer />
         <Script src="https://scripts.simpleanalyticscdn.com/latest.js" />

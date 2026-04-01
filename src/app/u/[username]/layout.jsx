@@ -2,6 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { TABLES } from "@/lib/supabase/types";
 import { redirect } from "next/navigation";
 import ProfileLayout from "./ProfileLayout";
+import { getFollowCounts, getFollowStatus } from "@/lib/follows";
 
 const DEFAULT_SHELVES = [
   { name: "Read", slug: "read", display_order: 0 },
@@ -87,11 +88,21 @@ export default async function UserLayout({ children, params }) {
       : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${profile.avatar_url}`;
   }
 
+  const [followCounts, followStatus] = await Promise.all([
+    getFollowCounts(supabase, profile.id),
+    user && !isOwner
+      ? getFollowStatus(supabase, user.id, profile.id)
+      : Promise.resolve("none")
+  ]);
+
   return (
     <ProfileLayout
       profile={{ ...profile, avatarUrl }}
       shelves={shelves}
       isOwner={isOwner}
+      currentUserId={user?.id || null}
+      followCounts={followCounts}
+      followStatus={followStatus}
     >
       {children}
     </ProfileLayout>
