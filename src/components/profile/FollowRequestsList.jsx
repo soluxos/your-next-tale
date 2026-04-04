@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { acceptFollowRequest, declineFollowRequest } from "@/lib/follows";
+import FacehashAvatar from "@/components/profile/FacehashAvatar";
 
 export default function FollowRequestsList({ initialRequests, currentUserId }) {
   const [requests, setRequests] = useState(initialRequests);
@@ -39,9 +40,6 @@ export default function FollowRequestsList({ initialRequests, currentUserId }) {
   return (
     <div className="space-y-2">
       {requests.map((req) => {
-        const avatarUrl = req.follower.avatar_url
-          ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${req.follower.avatar_url}`
-          : null;
         const isLoading = loading === req.follower.id;
 
         return (
@@ -49,22 +47,11 @@ export default function FollowRequestsList({ initialRequests, currentUserId }) {
             key={req.follower.id}
             className="flex items-center gap-3 p-3 border border-border rounded-[8px]"
           >
-            <div className="w-10 h-10 rounded-full bg-[#f4f4f4] shrink-0 overflow-hidden">
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  className="w-full h-full object-cover"
-                  alt=""
-                />
-              ) : (
-                <div
-                  className="w-full h-full flex items-center justify-center
-                                  font-departureMono text-[12px] text-textSecondary"
-                >
-                  {req.follower.username?.[0]?.toUpperCase()}
-                </div>
-              )}
-            </div>
+            <FacehashAvatar
+              name={req.follower.full_name || req.follower.username}
+              color={req.follower.facehash_color}
+              size={40}
+            />
             <div className="flex-1 min-w-0">
               <p className="font-ppMondwest text-[16px] truncate">
                 {req.follower.full_name || req.follower.username}

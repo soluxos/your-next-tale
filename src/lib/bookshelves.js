@@ -110,6 +110,18 @@ export async function renameShelf(supabase, shelfId, newName) {
 }
 
 /**
+ * Update the default_view for a shelf ('books' or 'reviews').
+ */
+export async function updateShelfDefaultView(supabase, shelfId, userId, view) {
+  const { error } = await supabase
+    .from("bookshelves")
+    .update({ default_view: view })
+    .eq("id", shelfId)
+    .eq("user_id", userId);
+  if (error) throw error;
+}
+
+/**
  * Bulk update display_order for shelves.
  * @param {string[]} orderedShelfIds - shelf IDs in desired display order
  */

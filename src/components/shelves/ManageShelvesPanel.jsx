@@ -13,7 +13,8 @@ import {
   createShelf,
   renameShelf,
   deleteShelf,
-  updateShelfOrder
+  updateShelfOrder,
+  updateShelfDefaultView
 } from "@/lib/bookshelves";
 
 export default function ManageShelvesPanel({
@@ -152,6 +153,19 @@ export default function ManageShelvesPanel({
       setCreateError(e.message || "Failed to create shelf.");
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleSetDefaultView = async (shelfId, view) => {
+    try {
+      await updateShelfDefaultView(supabase, shelfId, userId, view);
+      const next = localShelves.map((s) =>
+        s.id === shelfId ? { ...s, default_view: view } : s
+      );
+      setLocalShelves(next);
+      onShelvesUpdated(next);
+    } catch (e) {
+      console.error("Failed to set default view:", e);
     }
   };
 
@@ -297,6 +311,29 @@ export default function ManageShelvesPanel({
                       <path d="M9 6V4h6v2" />
                     </svg>
                   </button>
+                </div>
+              )}
+
+              {/* Default view toggle — all shelves, when not in confirm-delete state */}
+              {confirmDeleteId !== shelf.id && editingId !== shelf.id && (
+                <div className="flex items-center gap-1 shrink-0 border-l border-border pl-2 ml-1">
+                  {["books", "reviews"].map((v) => (
+                    <button
+                      key={v}
+                      onClick={() => handleSetDefaultView(shelf.id, v)}
+                      className={`
+                        font-departureMono uppercase text-[8px] px-2 h-[22px] rounded-[4px]
+                        transition-colors
+                        ${
+                          (shelf.default_view || "books") === v
+                            ? "bg-[#1f1f1f] text-white"
+                            : "bg-[#f4f4f4] text-textSecondary hover:bg-[#e8e8e8]"
+                        }
+                      `}
+                    >
+                      {v}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>

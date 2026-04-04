@@ -91,7 +91,7 @@ export async function getFollowers(supabase, userId) {
   const ids = follows.map((r) => r.follower_id);
   const { data: profiles, error: profilesError } = await supabase
     .from("profiles")
-    .select("id, username, full_name, avatar_url, is_private")
+    .select("id, username, full_name, avatar_url, is_private, facehash_color")
     .in("id", ids);
   if (profilesError) throw profilesError;
   return profiles || [];
@@ -112,7 +112,7 @@ export async function getFollowing(supabase, userId) {
   const ids = follows.map((r) => r.following_id);
   const { data: profiles, error: profilesError } = await supabase
     .from("profiles")
-    .select("id, username, full_name, avatar_url, is_private")
+    .select("id, username, full_name, avatar_url, is_private, facehash_color")
     .in("id", ids);
   if (profilesError) throw profilesError;
   return profiles || [];
@@ -134,7 +134,7 @@ export async function getPendingRequests(supabase, userId) {
   const ids = follows.map((r) => r.follower_id);
   const { data: profiles, error: profilesError } = await supabase
     .from("profiles")
-    .select("id, username, full_name, avatar_url")
+    .select("id, username, full_name, avatar_url, facehash_color")
     .in("id", ids);
   if (profilesError) throw profilesError;
 

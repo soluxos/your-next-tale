@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { Facehash } from "facehash";
+import FacehashAvatar from "@/components/profile/FacehashAvatar";
 
 export default function FeedClient({ initialGroups }) {
   if (!initialGroups.length) {
@@ -33,30 +33,11 @@ function FeedGroup({ group }) {
         href={`/u/${user?.username}`}
         className="flex items-center gap-3 p-4 hover:bg-[#f4f4f4] transition-colors"
       >
-        <Facehash
-          name={user?.full_name || user?.username || "user"}
+        <FacehashAvatar
+          name={user?.full_name || user?.username}
+          color={user?.facehash_color}
           size={32}
-          variant="solid"
-          enableBlink
-          className="rounded-full text-black shrink-0"
-          colors={
-            user?.facehash_color
-              ? [user.facehash_color]
-              : [
-                  "oklch(0.7 0.24 0)",
-                  "oklch(0.7 0.24 30)",
-                  "oklch(0.7 0.24 60)",
-                  "oklch(0.7 0.24 90)",
-                  "oklch(0.7 0.24 120)",
-                  "oklch(0.7 0.24 150)",
-                  "oklch(0.7 0.24 180)",
-                  "oklch(0.7 0.24 210)",
-                  "oklch(0.7 0.24 240)",
-                  "oklch(0.7 0.24 270)",
-                  "oklch(0.7 0.24 300)",
-                  "oklch(0.7 0.24 330)"
-                ]
-          }
+          className="shrink-0"
         />
         <div>
           <span className="font-ppMondwest text-[16px]">

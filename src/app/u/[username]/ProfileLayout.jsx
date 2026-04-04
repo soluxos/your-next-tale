@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Facehash } from "facehash";
+import FacehashAvatar from "@/components/profile/FacehashAvatar";
 import TopNavigation from "@/components/navigation/TopNavigation";
 import ManageShelvesPanel from "@/components/shelves/ManageShelvesPanel";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -56,30 +57,10 @@ export default function ProfileLayout({
       {/* Profile header */}
       <div className="px-5 py-[120px]">
         <div className="max-w-4xl mx-auto flex flex-col items-center gap-4">
-          <Facehash
-            name={profile.full_name || profile.username || "user"}
+          <FacehashAvatar
+            name={profile.full_name || profile.username}
+            color={facehashColor}
             size={64}
-            variant="solid"
-            enableBlink
-            className="rounded-full text-black"
-            colors={
-              facehashColor
-                ? [facehashColor]
-                : [
-                    "oklch(0.7 0.24 0)",
-                    "oklch(0.7 0.24 30)",
-                    "oklch(0.7 0.24 60)",
-                    "oklch(0.7 0.24 90)",
-                    "oklch(0.7 0.24 120)",
-                    "oklch(0.7 0.24 150)",
-                    "oklch(0.7 0.24 180)",
-                    "oklch(0.7 0.24 210)",
-                    "oklch(0.7 0.24 240)",
-                    "oklch(0.7 0.24 270)",
-                    "oklch(0.7 0.24 300)",
-                    "oklch(0.7 0.24 330)"
-                  ]
-            }
           />
 
           <div className="min-w-0 flex-1 text-center">
@@ -170,27 +151,27 @@ export default function ProfileLayout({
 
       {/* Shelf tab navigation — hidden on followers/following sub-pages */}
       {activeSlug !== "followers" && activeSlug !== "following" && (
-      <div className="px-5">
-        <div className="max-w-4xl mx-auto">
-          <nav className="flex gap-1 overflow-x-auto no-scrollbar -mb-px items-center">
-            {tabs.map((tab) => (
-              <Link
-                key={tab.slug}
-                href={`/u/${encodeURIComponent(profile.username)}/${tab.slug}`}
-                prefetch={true}
-                className={cn(
-                  "px-3 py-2 font-departureMono uppercase text-[11px] whitespace-nowrap border-b-2 transition-colors",
-                  activeSlug === tab.slug
-                    ? "border-textPrimary text-textPrimary"
-                    : "border-transparent text-textSecondary hover:text-textPrimary hover:border-[#ddd]"
-                )}
-              >
-                {tab.name}
-              </Link>
-            ))}
-          </nav>
+        <div className="px-5">
+          <div className="max-w-4xl mx-auto">
+            <nav className="flex gap-1 overflow-x-auto no-scrollbar -mb-px items-center">
+              {tabs.map((tab) => (
+                <Link
+                  key={tab.slug}
+                  href={`/u/${encodeURIComponent(profile.username)}/${tab.slug}`}
+                  prefetch={true}
+                  className={cn(
+                    "px-3 py-2 font-departureMono uppercase text-[11px] whitespace-nowrap border-b-2 transition-colors",
+                    activeSlug === tab.slug
+                      ? "border-textPrimary text-textPrimary"
+                      : "border-transparent text-textSecondary hover:text-textPrimary hover:border-[#ddd]"
+                  )}
+                >
+                  {tab.name}
+                </Link>
+              ))}
+            </nav>
+          </div>
         </div>
-      </div>
       )}
 
       {/* Shelf content */}

@@ -1,10 +1,7 @@
 import Link from "next/link";
+import FacehashAvatar from "@/components/profile/FacehashAvatar";
 
 export default function UserListItem({ user }) {
-  const avatarUrl = user.avatar_url
-    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${user.avatar_url}`
-    : null;
-
   return (
     <Link
       href={`/u/${user.username}`}
@@ -12,22 +9,11 @@ export default function UserListItem({ user }) {
                  transition-colors border border-transparent hover:border-border"
     >
       {/* Avatar */}
-      <div className="w-10 h-10 rounded-full bg-[#f4f4f4] shrink-0 overflow-hidden">
-        {avatarUrl ? (
-          <img
-            src={avatarUrl}
-            alt={user.username}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div
-            className="w-full h-full flex items-center justify-center
-                          font-departureMono uppercase text-[12px] text-textSecondary"
-          >
-            {user.username?.[0]?.toUpperCase() || "?"}
-          </div>
-        )}
-      </div>
+      <FacehashAvatar
+        name={user.full_name || user.username}
+        color={user.facehash_color}
+        size={40}
+      />
 
       {/* Name and username */}
       <div className="flex-1 min-w-0">

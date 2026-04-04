@@ -40,11 +40,20 @@ export default async function UserLayout({ children, params }) {
   if (profile.is_private && !isOwner) redirect("/");
 
   // Fetch user shelves
-  let { data: shelves } = await supabase
+  let { data: shelves, error: shelvesError } = await supabase
     .from(TABLES.BOOKSHELVES)
-    .select("id, name, slug, is_default, is_exclusive")
+    .select("id, name, slug, is_default, is_exclusive, default_view")
     .eq("user_id", profile.id)
     .order("display_order", { ascending: true });
+
+  if (shelvesError) {
+    const { data: shelvesFallback } = await supabase
+      .from(TABLES.BOOKSHELVES)
+      .select("id, name, slug, is_default, is_exclusive")
+      .eq("user_id", profile.id)
+      .order("display_order", { ascending: true });
+    shelves = shelvesFallback;
+  }
 
   shelves = shelves || [];
 

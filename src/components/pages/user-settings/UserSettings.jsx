@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Camera, User, Mail, Globe, Lock, Bell, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Facehash } from "facehash";
+import FacehashAvatar from "@/components/profile/FacehashAvatar";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import {
@@ -195,30 +195,10 @@ export default function UserSettings({ user: serverUser }) {
                     <span>Profile Avatar</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Facehash
-                      name={fullName || username || "user"}
+                    <FacehashAvatar
+                      name={fullName || username}
+                      color={facehashColor}
                       size={48}
-                      variant="solid"
-                      enableBlink
-                      className="rounded-full text-black"
-                      colors={
-                        facehashColor
-                          ? [facehashColor]
-                          : [
-                              "oklch(0.7 0.24 0)",
-                              "oklch(0.7 0.24 30)",
-                              "oklch(0.7 0.24 60)",
-                              "oklch(0.7 0.24 90)",
-                              "oklch(0.7 0.24 120)",
-                              "oklch(0.7 0.24 150)",
-                              "oklch(0.7 0.24 180)",
-                              "oklch(0.7 0.24 210)",
-                              "oklch(0.7 0.24 240)",
-                              "oklch(0.7 0.24 270)",
-                              "oklch(0.7 0.24 300)",
-                              "oklch(0.7 0.24 330)"
-                            ]
-                      }
                     />
                     <p className="font-departureMono text-[10px] text-textSecondary">
                       Generated from your name
