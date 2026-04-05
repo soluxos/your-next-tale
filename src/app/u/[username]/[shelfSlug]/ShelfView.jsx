@@ -7,6 +7,7 @@ import AddBookDrawer from "@/components/shelves/AddBookDrawer";
 import BookDetailPanel from "@/components/shelves/BookDetailPanel";
 import ViewModeToggle from "@/components/shelves/ViewModeToggle";
 import ReviewCardOverlay from "@/components/shelves/ReviewCardOverlay";
+import ReviewModal from "@/components/shelves/ReviewModal";
 import { removeBookFromShelf } from "@/lib/shelfBooks";
 import { createClient } from "@/utils/supabase/client";
 import { TABLES } from "@/lib/supabase/types";
@@ -23,7 +24,8 @@ export default function ShelfView({
   userId,
   username,
   shelves = [],
-  defaultView = "books"
+  defaultView = "books",
+  profile = null
 }) {
   const cacheKey = shelfId || shelfSlug;
   const cached = booksCache.get(cacheKey);
@@ -36,6 +38,7 @@ export default function ShelfView({
   // Always start with defaultView to match the server render, then
   // correct to the sessionStorage preference after mount (avoids hydration mismatch).
   const [viewMode, setViewMode] = useState(defaultView);
+  const [reviewBook, setReviewBook] = useState(null);
   const supabase = createClient();
 
   // After mount, override with any stored preference for this shelf
@@ -207,6 +210,28 @@ export default function ShelfView({
       setSelectedBook(book);
     }
   };
+
+  const handleReviewCardClick = (bookId) => {
+    const book = books.find((b) => b.id === bookId);
+    if (book) {
+      setReviewBook(book);
+      window.history.pushState(
+        { reviewBookId: bookId },
+        "",
+        `/u/${username}/${shelfSlug}/review/${bookId}`
+      );
+    }
+  };
+
+  // Close the review modal when the user presses the browser back button
+  // (which pops the pushState entry we added above).
+  useEffect(() => {
+    function handlePopState() {
+      setReviewBook(null);
+    }
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   const handleDetailUpdate = (userBookId, updatedFields) => {
     setBooks((prev) => {
@@ -406,12 +431,44 @@ export default function ShelfView({
                       </div>
                       {/* Empty state message */}
                       <div className="flex-1 flex flex-col overflow-hidden relative">
-                        <div className="flex-1 flex flex-col items-center justify-center bg-[#d5d5d5] min-h-[220px] p-8">
-                          <p className="font-departureMono uppercase text-[10px] text-textPrimary pb-5">
-                            {viewMode === "reviews"
-                              ? "No reviews yet"
-                              : "No books on this shelf yet"}
-                          </p>
+                        <div className="flex-1 flex flex-row items-end gap-2 p-2 pt-4 bg-[#d5d5d5] min-h-[220px]">
+                          {isOwner && viewMode !== "reviews" && (
+                            <div
+                              className="cursor-pointer shrink-0"
+                              style={{ width: `calc((100% - ${(itemsPerRow - 1) * 8}px) / ${itemsPerRow})` }}
+                              onClick={() => setAddDrawerOpen(true)}
+                            >
+                              <div
+                                className="w-full z-10 bg-[#e0e0e0] border-2 border-dashed border-[#bbb] rounded-sm flex flex-col items-center justify-center gap-1 hover:border-textPrimary hover:bg-[#d8d8d8] transition-colors"
+                                style={{ aspectRatio: "2 / 3" }}
+                              >
+                                <p className="font-departureMono uppercase text-textPrimary text-xs">
+                                  Add book
+                                </p>
+                                <svg
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 16 16"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className="text-textPrimary"
+                                >
+                                  <line x1="8" y1="2" x2="8" y2="14" />
+                                  <line x1="2" y1="8" x2="14" y2="8" />
+                                </svg>
+                              </div>
+                            </div>
+                          )}
+                          {(!isOwner || viewMode === "reviews") && (
+                            <p className="font-departureMono uppercase text-[10px] text-textPrimary w-full text-center self-center pb-5">
+                              {viewMode === "reviews"
+                                ? "No reviews yet"
+                                : "No books on this shelf yet"}
+                            </p>
+                          )}
                         </div>
                         <div className="h-[40px] w-full bg-[#f5f5f5] shrink-0 absolute bottom-0 left-0 z-[1]" />
                       </div>
@@ -552,10 +609,9 @@ export default function ShelfView({
                                   {viewMode === "reviews" && (
                                     <ReviewCardOverlay
                                       bookId={book.id}
-                                      username={username}
-                                      shelfSlug={shelfSlug}
                                       rating={book.userBook?.rating}
                                       review={book.userBook?.review}
+                                      onReviewClick={handleReviewCardClick}
                                     />
                                   )}
                                 </motion.div>
@@ -605,6 +661,36 @@ export default function ShelfView({
           shelfId={shelfId}
           onClose={() => setAddDrawerOpen(false)}
           onBookAdded={handleBookAdded}
+        />
+      )}
+
+      {/* Review Modal — reviews mode */}
+      {reviewBook && profile && (
+        <ReviewModal
+          userBook={{
+            id: reviewBook.userBook?.id,
+            rating: reviewBook.userBook?.rating,
+            review: reviewBook.userBook?.review,
+            book: {
+              id: reviewBook.id,
+              title: reviewBook.title,
+              authors: reviewBook.authors,
+              cover_url: reviewBook.cover_url,
+              isbn_13: reviewBook.isbn_13,
+              description: reviewBook.description
+            }
+          }}
+          profile={profile}
+          username={username}
+          shelfSlug={shelfSlug}
+          onClose={() => {
+            setReviewBook(null);
+            window.history.replaceState(
+              null,
+              "",
+              `/u/${username}/${shelfSlug}`
+            );
+          }}
         />
       )}
 

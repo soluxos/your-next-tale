@@ -89,7 +89,7 @@ export default function TopNavigation() {
         damping: 25,
         duration: 0.6
       }}
-      className="z-50 px-6 py-4 border-b border-border fixed top-0 left-0 right-0 bg-white"
+      className="z-[99] py-4 border-b border-border fixed top-0 left-0 right-0 bg-white"
     >
       <div className="max-w-full w-full px-5 mx-auto flex items-center justify-between">
         {/* Logo */}
@@ -108,7 +108,7 @@ export default function TopNavigation() {
                 href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
                 className={cn(
-                  "px-4 py-2 font-departureMono uppercase text-[11px] rounded-[8px] transition-colors",
+                  "px-4 py-2 font-satoshi text-[13px] rounded-[8px] transition-colors",
                   activeItem === item.id
                     ? "underline text-textPrimary"
                     : "text-textSecondary hover:underline hover:text-textPrimary"

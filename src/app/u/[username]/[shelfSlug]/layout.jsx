@@ -9,7 +9,7 @@ export default async function ShelfLayout({ children, modal, params }) {
 
   const { data: profile } = await supabase
     .from(TABLES.PROFILES)
-    .select("id, is_private")
+    .select("id, username, full_name, is_private, facehash_color")
     .eq("username", username)
     .single();
 
@@ -60,6 +60,7 @@ export default async function ShelfLayout({ children, modal, params }) {
         username={username}
         shelves={shelves || []}
         defaultView={defaultView}
+        profile={profile}
       />
       {children}
       {modal}

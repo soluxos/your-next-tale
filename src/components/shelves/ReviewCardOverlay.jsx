@@ -1,23 +1,20 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import StarRating from "@/components/ui/StarRating";
 
 const SNIPPET_LENGTH = 120;
 
 export default function ReviewCardOverlay({
   bookId,
-  username,
-  shelfSlug,
   rating,
-  review
+  review,
+  onReviewClick
 }) {
-  const router = useRouter();
   const hasContent = rating || review;
 
   function handleClick(e) {
     e.stopPropagation();
-    router.push(`/u/${username}/${shelfSlug}/review/${bookId}`);
+    onReviewClick(bookId);
   }
 
   if (!hasContent) return null;

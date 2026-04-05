@@ -98,6 +98,7 @@ export default {
       fontFamily: {
         departureMono: ["var(--font-departure-mono)", "monospace"],
         ppMondwest: ["var(--font-pp-mondwest)", "sans-serif"],
+        satoshi: ["var(--font-satoshi)", "sans-serif"],
         EB_Garamond: ["EB_Garamond", "serif"],
         inter: ["var(--font-inter)"],
         sans: ["var(--font-inter)"]

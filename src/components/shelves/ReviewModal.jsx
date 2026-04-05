@@ -12,7 +12,8 @@ export default function ReviewModal({
   profile,
   username,
   shelfSlug,
-  closeHref
+  closeHref,
+  onClose
 }) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(true);
@@ -23,9 +24,12 @@ export default function ReviewModal({
     : null;
 
   function close() {
-    if (closeHref) {
-      // Hide the modal without navigating — shelf behind stays untouched.
-      // Update the URL to the shelf path silently so the address bar is correct.
+    if (onClose) {
+      // Managed as client state — just call the parent callback.
+      setIsOpen(false);
+      onClose();
+    } else if (closeHref) {
+      // Direct URL load — hide the modal and silently update the URL.
       setIsOpen(false);
       window.history.replaceState(null, "", closeHref);
     } else {
@@ -38,7 +42,7 @@ export default function ReviewModal({
       if (e.key === "Escape") close();
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [closeHref]
+    [closeHref, onClose]
   );
 
   useEffect(() => {

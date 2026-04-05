@@ -2,8 +2,10 @@ import { createClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
 import ReviewModal from "@/components/shelves/ReviewModal";
 
-// ShelfView is always rendered by [shelfSlug]/layout.jsx above this page.
-// This page only needs to render the modal on top of it.
+// On a hard-refresh of the review URL, [shelfSlug]/layout.jsx renders ShelfView
+// as the background. This page only needs to supply the ReviewModal on top of it.
+// Normal in-app navigation never reaches this page — the modal is opened as
+// client-side state in ShelfView via window.history.pushState.
 
 export async function generateMetadata({ params }) {
   const { username } = await params;
