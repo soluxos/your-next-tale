@@ -5,9 +5,9 @@ import { AnimatePresence, motion } from "motion/react";
 import Book from "@/components/book/book";
 import AddBookDrawer from "@/components/shelves/AddBookDrawer";
 import BookDetailPanel from "@/components/shelves/BookDetailPanel";
+import BookReviewModal from "@/components/shelves/BookReviewModal";
 import ViewModeToggle from "@/components/shelves/ViewModeToggle";
 import ReviewCardOverlay from "@/components/shelves/ReviewCardOverlay";
-import ReviewModal from "@/components/shelves/ReviewModal";
 import { removeBookFromShelf } from "@/lib/shelfBooks";
 import { createClient } from "@/utils/supabase/client";
 import { TABLES } from "@/lib/supabase/types";
@@ -204,7 +204,8 @@ export default function ShelfView({
   };
 
   const handleBookClick = (book) => {
-    if (isOwner && book.userBook) {
+    // Open for both owner (editable) and visitor (read-only), as long as there's a userBook record
+    if (book.userBook) {
       setSelectedBook(book);
     }
   };
@@ -433,7 +434,9 @@ export default function ShelfView({
                           {isOwner && viewMode !== "reviews" && (
                             <div
                               className="cursor-pointer shrink-0"
-                              style={{ width: `calc((100% - ${(itemsPerRow - 1) * 8}px) / ${itemsPerRow})` }}
+                              style={{
+                                width: `calc((100% - ${(itemsPerRow - 1) * 8}px) / ${itemsPerRow})`
+                              }}
                               onClick={() => setAddDrawerOpen(true)}
                             >
                               <div
@@ -565,11 +568,6 @@ export default function ShelfView({
                                     ease: "easeOut"
                                   }}
                                   className="w-full relative group cursor-pointer"
-                                  onClick={
-                                    viewMode === "books"
-                                      ? () => handleBookClick(book)
-                                      : undefined
-                                  }
                                 >
                                   <div
                                     className={
@@ -578,14 +576,21 @@ export default function ShelfView({
                                         : undefined
                                     }
                                   >
+                                    {/* Books mode: Book opens its own BookDrawer normally */}
                                     <Book book={book} {...book} />
                                   </div>
-                                  {/* BOOKS MODE: pencil icon for owner */}
+                                  {/* BOOKS MODE: pencil icon for owner — opens editable review modal */}
                                   {viewMode === "books" &&
                                     isOwner &&
                                     book.userBook && (
-                                      <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                        <div className="w-6 h-6 rounded-full bg-white/90 border border-border flex items-center justify-center shadow-sm">
+                                      <div
+                                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedBook(book);
+                                        }}
+                                      >
+                                        <div className="w-6 h-6 rounded-full bg-white/90 border border-border flex items-center justify-center shadow-sm cursor-pointer hover:bg-white transition-colors">
                                           <svg
                                             width="12"
                                             height="12"
@@ -662,25 +667,17 @@ export default function ShelfView({
         />
       )}
 
-      {/* Review Modal — reviews mode */}
-      {reviewBook && profile && (
-        <ReviewModal
-          userBook={{
-            id: reviewBook.userBook?.id,
-            rating: reviewBook.userBook?.rating,
-            review: reviewBook.userBook?.review,
-            book: {
-              id: reviewBook.id,
-              title: reviewBook.title,
-              authors: reviewBook.authors,
-              cover_url: reviewBook.cover_url,
-              isbn_13: reviewBook.isbn_13,
-              description: reviewBook.description
-            }
-          }}
+      {/* Review modal — reviews mode (owner: editable, visitor: read-only) */}
+      {reviewBook && (
+        <BookReviewModal
+          book={reviewBook}
+          userBook={reviewBook.userBook}
           profile={profile}
           username={username}
-          shelfSlug={shelfSlug}
+          isOwner={isOwner}
+          userId={userId}
+          shelves={shelves}
+          currentShelfId={reviewBook.bookshelf_id || shelfId}
           onClose={() => {
             setReviewBook(null);
             window.history.replaceState(
@@ -689,18 +686,21 @@ export default function ShelfView({
               `/u/${username}/${shelfSlug}`
             );
           }}
+          onUpdate={handleDetailUpdate}
+          onShelfMove={handleShelfMove}
+          onRemove={isOwner ? handleRemoveBook : undefined}
         />
       )}
 
-      {/* Book Detail Panel — books mode only */}
+      {/* Book Review Modal — books mode */}
       {viewMode === "books" && selectedBook && (
-        <BookDetailPanel
+        <BookReviewModal
           book={selectedBook}
           userBook={selectedBook.userBook}
+          isOwner={isOwner}
           userId={userId}
           shelves={shelves}
           currentShelfId={selectedBook.bookshelf_id || shelfId}
-          readOnly={!isOwner}
           onClose={() => setSelectedBook(null)}
           onUpdate={handleDetailUpdate}
           onShelfMove={handleShelfMove}

@@ -39,7 +39,10 @@ export default function ProfileLayout({
 
   // Compute shelf props for ShelfView (used when on a shelf page)
   const isShelfPage = activeSlug !== "followers" && activeSlug !== "following";
-  const activeShelf = activeSlug === "all" ? null : localShelves.find((s) => s.slug === activeSlug);
+  const activeShelf =
+    activeSlug === "all"
+      ? null
+      : localShelves.find((s) => s.slug === activeSlug);
   const shelfId = activeShelf?.id || null;
   const shelfName = activeShelf?.name || "All Books";
   const defaultView = activeShelf?.default_view || "books";
