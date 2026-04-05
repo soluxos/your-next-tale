@@ -30,9 +30,9 @@ const VaulDrawer = forwardRef(
     return (
       <Drawer.Root direction="right" open={open} onOpenChange={setOpen}>
         <Drawer.Portal>
-          <Drawer.Overlay className="fixed inset-0 bg-black/40 z-50" />
+          <Drawer.Overlay className="fixed inset-0 bg-black/40 z-[100]" />
           <Drawer.Content
-            className="right-0 top-0 bottom-0 fixed z-50 outline-none w-[480px] max-w-full flex h-full" // Add h-full here
+            className="right-0 top-0 bottom-0 fixed z-[100] outline-none w-[480px] max-w-full flex h-full" // Add h-full here
             style={{ "--initial-transform": "calc(100% + 8px)" }}
           >
             <section className="drawer-container bg-white w-[480px] h-full flex flex-row">

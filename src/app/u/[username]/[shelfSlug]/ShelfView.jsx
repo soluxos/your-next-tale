@@ -36,22 +36,20 @@ export default function ShelfView({
   const [addDrawerOpen, setAddDrawerOpen] = useState(false);
   const [selectedBook, setSelectedBook] = useState(null);
   // Always start with defaultView to match the server render, then
-  // correct to the sessionStorage preference after mount (avoids hydration mismatch).
+  // correct to the user's persisted preference after mount.
   const [viewMode, setViewMode] = useState(defaultView);
   const [reviewBook, setReviewBook] = useState(null);
   const supabase = createClient();
 
-  // After mount, override with any stored preference for this shelf
+  // On mount, restore the last view mode the user chose (global, not per-shelf)
   useEffect(() => {
-    const stored = sessionStorage.getItem(`shelf-view-${shelfId || shelfSlug}`);
-    if (stored && stored !== defaultView) {
-      setViewMode(stored);
-    }
-  }, [shelfId, shelfSlug, defaultView]);
+    const stored = sessionStorage.getItem("view-mode");
+    if (stored) setViewMode(stored);
+  }, []); // run once on mount only — ShelfView now stays mounted across shelf navigations
 
   function handleModeChange(mode) {
     setViewMode(mode);
-    sessionStorage.setItem(`shelf-view-${shelfId || shelfSlug}`, mode);
+    sessionStorage.setItem("view-mode", mode);
     // Close any open detail panel when switching modes
     setSelectedBook(null);
   }

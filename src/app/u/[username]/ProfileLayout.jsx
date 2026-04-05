@@ -4,9 +4,9 @@ import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { Facehash } from "facehash";
 import FacehashAvatar from "@/components/profile/FacehashAvatar";
 import TopNavigation from "@/components/navigation/TopNavigation";
+import ShelfView from "@/app/u/[username]/[shelfSlug]/ShelfView";
 import ManageShelvesPanel from "@/components/shelves/ManageShelvesPanel";
 import { useAuth } from "@/components/providers/AuthProvider";
 import FollowButton from "@/components/profile/FollowButton";
@@ -36,6 +36,15 @@ export default function ProfileLayout({
   const segments = pathname.split("/");
   // /u/[username]/[shelfSlug] → segments[3]
   const activeSlug = segments[3] || "all";
+
+  // Compute shelf props for ShelfView (used when on a shelf page)
+  const isShelfPage = activeSlug !== "followers" && activeSlug !== "following";
+  const activeShelf = activeSlug === "all" ? null : localShelves.find((s) => s.slug === activeSlug);
+  const shelfId = activeShelf?.id || null;
+  const shelfName = activeShelf?.name || "All Books";
+  const defaultView = activeShelf?.default_view || "books";
+  // Pass live facehash colour so ReviewModal reflects any in-session colour change
+  const profileWithLiveColor = { ...profile, facehash_color: facehashColor };
 
   // Build tab list: "All" virtual shelf + real shelves
   const tabs = [
@@ -175,7 +184,25 @@ export default function ProfileLayout({
       )}
 
       {/* Shelf content */}
-      <div>{children}</div>
+      {isShelfPage ? (
+        <>
+          <ShelfView
+            shelfSlug={activeSlug}
+            shelfId={shelfId}
+            shelfName={shelfName}
+            isOwner={isOwner}
+            userId={profile.id}
+            username={profile.username}
+            shelves={localShelves}
+            defaultView={defaultView}
+            profile={profileWithLiveColor}
+          />
+          {/* children carries the @modal slot (e.g. ReviewModal on direct load) */}
+          {children}
+        </>
+      ) : (
+        <div>{children}</div>
+      )}
 
       {/* Manage Shelves Panel */}
       {isOwner && (
