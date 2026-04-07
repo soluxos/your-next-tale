@@ -95,7 +95,6 @@ export default function BookReviewModal({
 }) {
   const supabase = createClient();
   const [isOpen, setIsOpen] = useState(true);
-  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const coverUrl = book.cover_url
     ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/books/${book.cover_url}`
@@ -363,210 +362,170 @@ export default function BookReviewModal({
                 </>
               )}
 
-              {/* ── Owner: expandable reading details ── */}
+              {/* ── Owner: reading details ── */}
               {isOwner && (
                 <div className="mt-5 border-t border-border pt-4">
-                  <button
-                    onClick={() => setDetailsOpen((o) => !o)}
-                    className="flex items-center gap-1.5 font-departureMono uppercase text-[10px]
-                               text-textSecondary hover:text-textPrimary transition-colors w-full text-left"
-                  >
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className={`transition-transform duration-200 ${detailsOpen ? "rotate-90" : ""}`}
-                    >
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
-                    Reading details
-                  </button>
+                  <div className="space-y-4">
+                    {/* Shelf */}
+                    {shelves.length > 0 && (
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <label className="font-departureMono uppercase text-[10px] text-textSecondary">
+                            Shelf
+                          </label>
+                          <SavedPulse visible={saved("shelf")} />
+                        </div>
+                        <select
+                          className="w-full border border-border rounded-[8px] px-3 h-9
+                                           font-departureMono text-[12px] bg-transparent
+                                           focus:outline-none focus:ring-1 focus:ring-textPrimary"
+                          value={selectedShelfId}
+                          onChange={(e) => handleShelfChange(e.target.value)}
+                        >
+                          <option value="">Select a shelf...</option>
+                          {shelves.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
 
-                  <AnimatePresence>
-                    {detailsOpen && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.18, ease: "easeInOut" }}
-                        className="overflow-hidden"
-                      >
-                        <div className="pt-4 space-y-4">
-                          {/* Shelf */}
-                          {shelves.length > 0 && (
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <label className="font-departureMono uppercase text-[10px] text-textSecondary">
-                                  Shelf
-                                </label>
-                                <SavedPulse visible={saved("shelf")} />
-                              </div>
-                              <select
-                                className="w-full border border-border rounded-[8px] px-3 h-9
+                    {/* Progress */}
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <label className="font-departureMono uppercase text-[10px] text-textSecondary">
+                          Progress
+                        </label>
+                        <SavedPulse
+                          visible={
+                            saved("progress_pages") || saved("progress_percent")
+                          }
+                        />
+                      </div>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="number"
+                          min={0}
+                          max={book.page_count || undefined}
+                          value={progressPages}
+                          onChange={(e) => handlePagesChange(e.target.value)}
+                          placeholder="Pages"
+                          className="w-24 border border-border rounded-[8px] px-3 h-9
                                            font-departureMono text-[12px] bg-transparent
                                            focus:outline-none focus:ring-1 focus:ring-textPrimary"
-                                value={selectedShelfId}
-                                onChange={(e) =>
-                                  handleShelfChange(e.target.value)
-                                }
-                              >
-                                <option value="">Select a shelf...</option>
-                                {shelves.map((s) => (
-                                  <option key={s.id} value={s.id}>
-                                    {s.name}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                          )}
+                        />
+                        <span className="font-departureMono uppercase text-[10px] text-textSecondary">
+                          / {book.page_count || "?"} pages
+                        </span>
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={progressPercent}
+                          onChange={(e) => handlePercentChange(e.target.value)}
+                          placeholder="%"
+                          className="w-20 border border-border rounded-[8px] px-3 h-9
+                                           font-departureMono text-[12px] bg-transparent
+                                           focus:outline-none focus:ring-1 focus:ring-textPrimary"
+                        />
+                        <span className="font-departureMono uppercase text-[10px] text-textSecondary">
+                          %
+                        </span>
+                      </div>
+                    </div>
 
-                          {/* Progress */}
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <label className="font-departureMono uppercase text-[10px] text-textSecondary">
-                                Progress
-                              </label>
-                              <SavedPulse
-                                visible={
-                                  saved("progress_pages") ||
-                                  saved("progress_percent")
-                                }
-                              />
-                            </div>
-                            <div className="flex gap-2 items-center">
-                              <input
-                                type="number"
-                                min={0}
-                                max={book.page_count || undefined}
-                                value={progressPages}
-                                onChange={(e) =>
-                                  handlePagesChange(e.target.value)
-                                }
-                                placeholder="Pages"
-                                className="w-24 border border-border rounded-[8px] px-3 h-9
+                    {/* Dates */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <label className="font-departureMono uppercase text-[10px] text-textSecondary">
+                            Started
+                          </label>
+                          <SavedPulse visible={saved("date_started")} />
+                        </div>
+                        <input
+                          type="date"
+                          value={dateStarted}
+                          onChange={(e) => {
+                            setDateStarted(e.target.value);
+                            save({
+                              date_started: e.target.value || null
+                            });
+                            onUpdate?.(userBook.id, {
+                              date_started: e.target.value || null
+                            });
+                          }}
+                          className="w-full border border-border rounded-[8px] px-3 h-9
                                            font-departureMono text-[12px] bg-transparent
                                            focus:outline-none focus:ring-1 focus:ring-textPrimary"
-                              />
-                              <span className="font-departureMono uppercase text-[10px] text-textSecondary">
-                                / {book.page_count || "?"} pages
-                              </span>
-                              <input
-                                type="number"
-                                min={0}
-                                max={100}
-                                value={progressPercent}
-                                onChange={(e) =>
-                                  handlePercentChange(e.target.value)
-                                }
-                                placeholder="%"
-                                className="w-20 border border-border rounded-[8px] px-3 h-9
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <label className="font-departureMono uppercase text-[10px] text-textSecondary">
+                            Finished
+                          </label>
+                          <SavedPulse visible={saved("date_finished")} />
+                        </div>
+                        <input
+                          type="date"
+                          value={dateFinished}
+                          onChange={(e) => {
+                            setDateFinished(e.target.value);
+                            save({
+                              date_finished: e.target.value || null
+                            });
+                            onUpdate?.(userBook.id, {
+                              date_finished: e.target.value || null
+                            });
+                          }}
+                          className="w-full border border-border rounded-[8px] px-3 h-9
                                            font-departureMono text-[12px] bg-transparent
                                            focus:outline-none focus:ring-1 focus:ring-textPrimary"
-                              />
-                              <span className="font-departureMono uppercase text-[10px] text-textSecondary">
-                                %
-                              </span>
-                            </div>
-                          </div>
+                        />
+                      </div>
+                    </div>
 
-                          {/* Dates */}
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <label className="font-departureMono uppercase text-[10px] text-textSecondary">
-                                  Started
-                                </label>
-                                <SavedPulse visible={saved("date_started")} />
-                              </div>
-                              <input
-                                type="date"
-                                value={dateStarted}
-                                onChange={(e) => {
-                                  setDateStarted(e.target.value);
-                                  save({
-                                    date_started: e.target.value || null
-                                  });
-                                  onUpdate?.(userBook.id, {
-                                    date_started: e.target.value || null
-                                  });
-                                }}
-                                className="w-full border border-border rounded-[8px] px-3 h-9
-                                           font-departureMono text-[12px] bg-transparent
-                                           focus:outline-none focus:ring-1 focus:ring-textPrimary"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <label className="font-departureMono uppercase text-[10px] text-textSecondary">
-                                  Finished
-                                </label>
-                                <SavedPulse visible={saved("date_finished")} />
-                              </div>
-                              <input
-                                type="date"
-                                value={dateFinished}
-                                onChange={(e) => {
-                                  setDateFinished(e.target.value);
-                                  save({
-                                    date_finished: e.target.value || null
-                                  });
-                                  onUpdate?.(userBook.id, {
-                                    date_finished: e.target.value || null
-                                  });
-                                }}
-                                className="w-full border border-border rounded-[8px] px-3 h-9
-                                           font-departureMono text-[12px] bg-transparent
-                                           focus:outline-none focus:ring-1 focus:ring-textPrimary"
-                              />
-                            </div>
-                          </div>
-
-                          {/* Remove */}
-                          {onRemove && (
-                            <div className="pt-2 border-t border-border">
-                              {confirmRemove ? (
-                                <div className="flex items-center gap-2">
-                                  <p className="font-departureMono uppercase text-[10px] text-red-600 flex-1">
-                                    Remove this book?
-                                  </p>
-                                  <button
-                                    onClick={handleRemove}
-                                    className="h-7 px-3 font-departureMono uppercase text-[10px]
+                    {/* Remove */}
+                    {onRemove && (
+                      <div className="pt-2 border-t border-border">
+                        {confirmRemove ? (
+                          <div className="flex items-center gap-2">
+                            <p className="font-departureMono uppercase text-[10px] text-red-600 flex-1">
+                              Remove this book?
+                            </p>
+                            <button
+                              onClick={handleRemove}
+                              className="h-7 px-3 font-departureMono uppercase text-[10px]
                                                bg-red-500 text-white rounded-[6px] hover:bg-red-600
                                                transition-colors"
-                                  >
-                                    Confirm
-                                  </button>
-                                  <button
-                                    onClick={() => setConfirmRemove(false)}
-                                    className="h-7 px-3 font-departureMono uppercase text-[10px]
+                            >
+                              Confirm
+                            </button>
+                            <button
+                              onClick={() => setConfirmRemove(false)}
+                              className="h-7 px-3 font-departureMono uppercase text-[10px]
                                                border border-border rounded-[6px] hover:bg-[#f4f4f4]
                                                transition-colors"
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              ) : (
-                                <button
-                                  onClick={() => setConfirmRemove(true)}
-                                  className="w-full font-departureMono uppercase text-[10px]
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmRemove(true)}
+                            className="w-full font-departureMono uppercase text-[10px]
                                              text-red-500 hover:text-red-600 py-2
                                              hover:bg-red-50 rounded-[8px] transition-colors"
-                                >
-                                  Remove from shelf
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </motion.div>
+                          >
+                            Remove from shelf
+                          </button>
+                        )}
+                      </div>
                     )}
-                  </AnimatePresence>
+                  </div>
                 </div>
               )}
             </div>

@@ -8,7 +8,8 @@ const AuthContext = createContext({
   user: null,
   profile: null,
   loading: true,
-  refreshProfile: async () => {}
+  refreshProfile: async () => {},
+  updateUISettings: async () => {}
 });
 
 export function AuthProvider({ children }) {
@@ -38,7 +39,7 @@ export function AuthProvider({ children }) {
 
     const { data: profileData } = await supabase
       .from("profiles")
-      .select("full_name, username, role, facehash_color")
+      .select("full_name, username, role, facehash_color, ui_settings")
       .eq("id", incomingUser.id)
       .single();
 
@@ -51,10 +52,20 @@ export function AuthProvider({ children }) {
     if (!currentUserIdRef.current) return;
     const { data: profileData } = await supabase
       .from("profiles")
-      .select("full_name, username, role, facehash_color")
+      .select("full_name, username, role, facehash_color, ui_settings")
       .eq("id", currentUserIdRef.current)
       .single();
     setProfile(profileData ?? null);
+  }
+
+  async function updateUISettings(patch) {
+    if (!currentUserIdRef.current) return;
+    const merged = { ...(profile?.ui_settings ?? {}), ...patch };
+    setProfile((prev) => (prev ? { ...prev, ui_settings: merged } : prev));
+    await supabase
+      .from("profiles")
+      .update({ ui_settings: merged })
+      .eq("id", currentUserIdRef.current);
   }
 
   // Mount: initial session + subscribe to client-side auth events
@@ -87,7 +98,9 @@ export function AuthProvider({ children }) {
   }, [pathname]);
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, refreshProfile }}>
+    <AuthContext.Provider
+      value={{ user, profile, loading, refreshProfile, updateUISettings }}
+    >
       {children}
     </AuthContext.Provider>
   );

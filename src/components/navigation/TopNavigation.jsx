@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function TopNavigation() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, updateUISettings } = useAuth();
   const isLoggedIn = !!user;
   const isAdmin = profile?.role === "admin";
   const fullName = profile?.full_name || "";
@@ -49,8 +49,8 @@ export default function TopNavigation() {
   const navItems = [
     { id: "discover", label: "Discover", href: "/" },
     {
-      id: "profile",
-      label: "My Profile",
+      id: "my-bookcase",
+      label: "My Bookcase",
       href: username ? `/u/${encodeURIComponent(username)}` : "/account",
       authOnly: true
     },
@@ -108,7 +108,7 @@ export default function TopNavigation() {
                 href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
                 className={cn(
-                  "px-4 py-2 font-satoshi text-[13px] rounded-[8px] transition-colors",
+                  "px-4 py-2 font-departureMono uppercase text-[12px] rounded-[8px] transition-colors",
                   activeItem === item.id
                     ? "underline text-textPrimary"
                     : "text-textSecondary hover:underline hover:text-textPrimary"
@@ -182,7 +182,7 @@ export default function TopNavigation() {
                   }
                 />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuContent align="end" className="w-48 z-[101]">
                 <div className="px-2 py-1.5">
                   <p className="font-departureMono uppercase text-[10px] text-textSecondary truncate">
                     {fullName || user?.email}
@@ -227,6 +227,41 @@ export default function TopNavigation() {
                     </span>
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuSeparator />
+                {/* Visual effects toggles */}
+                <div className="px-2 py-1.5">
+                  <p className="font-departureMono uppercase text-[9px] text-textSecondary mb-1.5 px-1">
+                    Effects
+                  </p>
+                  {[
+                    { key: "crt", label: "CRT Filter" },
+                    { key: "noise", label: "Noise" }
+                  ].map(({ key, label }) => {
+                    const on = profile?.ui_settings?.[key] ?? true;
+                    return (
+                      <div
+                        key={key}
+                        className="flex items-center justify-between px-1 py-1.5 rounded-[6px] hover:bg-[#f4f4f4] cursor-pointer"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          updateUISettings({ [key]: !on });
+                        }}
+                      >
+                        <span className="font-departureMono uppercase text-[11px]">
+                          {label}
+                        </span>
+                        <div
+                          className={`relative w-8 h-4 rounded-full transition-colors ${on ? "bg-[#1f1f1f]" : "bg-[#d0d0d0]"}`}
+                        >
+                          <div
+                            className={`absolute top-[1px] w-3.5 h-3.5 rounded-full bg-white shadow transition-transform ${on ? "translate-x-[18px]" : "translate-x-[1px]"}`}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleSignOut}

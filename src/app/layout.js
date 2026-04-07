@@ -6,6 +6,7 @@ import Script from "next/script";
 import TopNavigation from "@/components/navigation/TopNavigation";
 import Footer from "@/components/navigation/Footer";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import UIOverlays from "@/components/providers/UIOverlays";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -131,9 +132,8 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased text-foreground relative bg-white`}
       >
-        <div aria-hidden="true" className="noise-overlay z-[9999]" />
-        <div aria-hidden="true" className="scanlines-overlay z-[9999]" />
         <AuthProvider>
+          <UIOverlays />
           <TopNavigation />
           <main className="pt-[69px]">{children}</main>
         </AuthProvider>

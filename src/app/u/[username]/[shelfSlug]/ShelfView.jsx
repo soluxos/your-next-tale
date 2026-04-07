@@ -25,7 +25,8 @@ export default function ShelfView({
   username,
   shelves = [],
   defaultView = "books",
-  profile = null
+  profile = null,
+  viewMode: viewModeProp
 }) {
   const cacheKey = shelfId || shelfSlug;
   const cached = booksCache.get(cacheKey);
@@ -37,22 +38,17 @@ export default function ShelfView({
   const [selectedBook, setSelectedBook] = useState(null);
   // Always start with defaultView to match the server render, then
   // correct to the user's persisted preference after mount.
-  const [viewMode, setViewMode] = useState(defaultView);
+  const [viewMode, setViewMode] = useState(viewModeProp ?? defaultView);
   const [reviewBook, setReviewBook] = useState(null);
   const supabase = createClient();
 
-  // On mount, restore the last view mode the user chose (global, not per-shelf)
+  // Sync viewMode from parent (ProfileLayout manages the toggle)
   useEffect(() => {
-    const stored = sessionStorage.getItem("view-mode");
-    if (stored) setViewMode(stored);
-  }, []); // run once on mount only — ShelfView now stays mounted across shelf navigations
-
-  function handleModeChange(mode) {
-    setViewMode(mode);
-    sessionStorage.setItem("view-mode", mode);
-    // Close any open detail panel when switching modes
-    setSelectedBook(null);
-  }
+    if (viewModeProp !== undefined) {
+      setViewMode(viewModeProp);
+      setSelectedBook(null);
+    }
+  }, [viewModeProp]);
 
   // Fetch books client-side whenever the shelf changes.
   // This keeps the shelf chrome rendered on every tab navigation
@@ -291,11 +287,6 @@ export default function ShelfView({
 
   return (
     <>
-      {/* View mode toggle — above the shelf chrome */}
-      <div className="flex justify-end px-5 mb-2">
-        <ViewModeToggle mode={viewMode} onChange={handleModeChange} />
-      </div>
-
       <div className="flex px-5">
         <div className="grid grid-cols-[16px_auto_16px] pb-[88px] w-full relative">
           {/* Top shelf surface: left angle + center bar + right angle */}
