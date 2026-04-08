@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { useRouter } from "next/navigation";
 import Book from "@/components/book/book";
 import AddBookDrawer from "@/components/shelves/AddBookDrawer";
 import BookDetailPanel from "@/components/shelves/BookDetailPanel";
@@ -21,6 +22,7 @@ export default function ShelfView({
   shelfId,
   shelfSlug,
   isOwner,
+  isAdmin = false,
   userId,
   username,
   shelves = [],
@@ -28,6 +30,7 @@ export default function ShelfView({
   profile = null,
   viewMode: viewModeProp
 }) {
+  const router = useRouter();
   const cacheKey = shelfId || shelfSlug;
   const cached = booksCache.get(cacheKey);
 
@@ -287,7 +290,7 @@ export default function ShelfView({
 
   return (
     <>
-      <div className="flex px-5">
+      <div className="flex px-10">
         <div className="grid grid-cols-[16px_auto_16px] pb-[88px] w-full relative">
           {/* Top shelf surface: left angle + center bar + right angle */}
           <div className="col-span-3 flex h-[40px]">
@@ -683,21 +686,37 @@ export default function ShelfView({
         />
       )}
 
-      {/* Book Review Modal — books mode */}
-      {viewMode === "books" && selectedBook && (
-        <BookReviewModal
-          book={selectedBook}
-          userBook={selectedBook.userBook}
-          isOwner={isOwner}
-          userId={userId}
-          shelves={shelves}
-          currentShelfId={selectedBook.bookshelf_id || shelfId}
-          onClose={() => setSelectedBook(null)}
-          onUpdate={handleDetailUpdate}
-          onShelfMove={handleShelfMove}
-          onRemove={isOwner ? handleRemoveBook : undefined}
-        />
-      )}
+      {/* Book detail — books mode */}
+      {viewMode === "books" &&
+        selectedBook &&
+        (isAdmin ? (
+          <BookDetailPanel
+            book={selectedBook}
+            userBook={selectedBook.userBook}
+            isAdmin={isAdmin}
+            userId={userId}
+            shelves={shelves}
+            currentShelfId={selectedBook.bookshelf_id || shelfId}
+            onClose={() => setSelectedBook(null)}
+            onUpdate={handleDetailUpdate}
+            onShelfMove={handleShelfMove}
+            onRemove={isOwner ? handleRemoveBook : undefined}
+            onBookUpdated={() => router.refresh()}
+          />
+        ) : (
+          <BookReviewModal
+            book={selectedBook}
+            userBook={selectedBook.userBook}
+            isOwner={isOwner}
+            userId={userId}
+            shelves={shelves}
+            currentShelfId={selectedBook.bookshelf_id || shelfId}
+            onClose={() => setSelectedBook(null)}
+            onUpdate={handleDetailUpdate}
+            onShelfMove={handleShelfMove}
+            onRemove={isOwner ? handleRemoveBook : undefined}
+          />
+        ))}
     </>
   );
 }

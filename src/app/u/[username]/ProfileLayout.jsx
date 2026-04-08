@@ -16,6 +16,7 @@ export default function ProfileLayout({
   profile,
   shelves,
   isOwner,
+  isAdmin = false,
   currentUserId,
   followCounts,
   followStatus,
@@ -209,6 +210,7 @@ export default function ProfileLayout({
             shelfId={shelfId}
             shelfName={shelfName}
             isOwner={isOwner}
+            isAdmin={isAdmin}
             userId={profile.id}
             username={profile.username}
             shelves={localShelves}

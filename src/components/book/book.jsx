@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { motion } from "motion/react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { useAuth } from "@/components/providers/AuthProvider";
 import {
@@ -8,7 +9,7 @@ import {
   HoverCardTrigger,
   HoverCardContent
 } from "@/components/ui/hover-card";
-
+import { useAdminBookEdit } from "@/hooks/useAdminBookEdit";
 import BookPopover from "@/components/book/BookPopover.jsx";
 import BookDrawer from "@/components/book/BookDrawer.jsx";
 
@@ -19,11 +20,15 @@ const Book = (props) => {
   const [deleted, setDeleted] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const { book, onImageLoad, onDeleted } = props;
-  const { id, title, cover_url } = book;
+  const { book: initialBook, onImageLoad, onDeleted } = props;
+  const [currentBook, setCurrentBook] = useState(initialBook);
+  const { id, title, cover_url } = currentBook;
 
   const { profile } = useAuth();
   const isAdmin = profile?.role === "admin";
+  const router = useRouter();
+
+  const adminEdit = useAdminBookEdit(currentBook);
 
   const drawerRef = useRef();
 
@@ -60,6 +65,7 @@ const Book = (props) => {
     }
     // Reset hover state when the drawer is closed
     setIsHovered(false);
+    adminEdit.exitEditMode();
   };
 
   const handleDelete = async () => {
@@ -91,12 +97,23 @@ const Book = (props) => {
       {mounted && (
         <BookDrawer
           ref={drawerRef}
-          book={book}
+          book={currentBook}
           coverUrl={coverUrl}
           onClose={closeDrawer}
           isAdmin={isAdmin}
           onDelete={handleDelete}
           deleting={deleting}
+          adminEdit={adminEdit}
+          onBookUpdated={(updatedBook) => {
+            setCurrentBook(updatedBook);
+            if (updatedBook.cover_url) {
+              const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+              setCoverUrl(
+                `${supabaseUrl}/storage/v1/object/public/books/${updatedBook.cover_url}`
+              );
+            }
+            router.refresh();
+          }}
         />
       )}
 
@@ -146,7 +163,7 @@ const Book = (props) => {
             onMouseLeave={handleMouseLeave}
           >
             <BookPopover
-              book={book}
+              book={currentBook}
               onOpenDrawer={openDrawer}
               isAdmin={isAdmin}
               onDelete={handleDelete}

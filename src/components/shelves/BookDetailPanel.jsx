@@ -15,6 +15,8 @@ import { updateUserBook } from "@/lib/userBooks";
 import { addBookToShelf } from "@/lib/shelfBooks";
 import BuyButton from "@/components/book/BuyButton";
 import { TABLES } from "@/lib/supabase/types";
+import { useAdminBookEdit } from "@/hooks/useAdminBookEdit";
+import AdminEditPanel from "@/components/admin/AdminEditPanel";
 
 function StarIcon({ filled, half }) {
   return (
@@ -43,7 +45,9 @@ export default function BookDetailPanel({
   onUpdate,
   onShelfMove,
   onRemove,
-  readOnly = false
+  readOnly = false,
+  isAdmin = false,
+  onBookUpdated
 }) {
   const supabase = createClient();
   const [fullBook, setFullBook] = useState(book);
@@ -66,6 +70,8 @@ export default function BookDetailPanel({
     }
   }, [book.id, book.isbn_13]);
 
+  const adminEdit = useAdminBookEdit(fullBook);
+
   const [rating, setRating] = useState(userBook?.rating || 0);
   const [review, setReview] = useState(userBook?.review || "");
   const [progressPages, setProgressPages] = useState(
@@ -81,6 +87,14 @@ export default function BookDetailPanel({
   const [selectedShelfId, setSelectedShelfId] = useState(currentShelfId || "");
   const [savedField, setSavedField] = useState(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
+
+  function handleClose() {
+    if (adminEdit.isEditing && adminEdit.dirtyFields.size > 0) {
+      if (!window.confirm("Discard unsaved changes and close?")) return;
+    }
+    adminEdit.exitEditMode();
+    onClose();
+  }
 
   const coverSrc = fullBook.cover_url
     ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/books/${fullBook.cover_url}`
@@ -182,271 +196,316 @@ export default function BookDetailPanel({
   }
 
   return (
-    <Sheet open onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle className="font-ppMondwest text-xl">
-            {fullBook.title}
-          </SheetTitle>
-          <SheetDescription className="font-departureMono uppercase text-[10px] text-textSecondary">
-            {fullBook.authors?.join(", ")}
-          </SheetDescription>
-        </SheetHeader>
-
-        <div className="mt-4 space-y-6">
-          {/* Cover */}
-          {coverSrc && (
-            <div className="flex justify-center">
-              <img
-                src={coverSrc}
-                alt={fullBook.title}
-                className="w-32 h-auto rounded-sm shadow-md"
-              />
-            </div>
-          )}
-
-          {/* Buy button */}
-          <BuyButton
-            isbn_13={fullBook.isbn_13}
-            title={fullBook.title}
-            authors={fullBook.authors}
-            className="w-full"
+    <Sheet open onOpenChange={(open) => !open && handleClose()}>
+      <SheetContent
+        side="right"
+        className={`w-full sm:max-w-md ${
+          adminEdit.isEditing
+            ? "p-0 flex flex-col overflow-hidden"
+            : "overflow-y-auto"
+        }`}
+      >
+        {adminEdit.isEditing ? (
+          <AdminEditPanel
+            book={fullBook}
+            {...adminEdit}
+            onCancel={() => {
+              if (adminEdit.dirtyFields.size > 0) {
+                if (!window.confirm("Discard unsaved changes?")) return;
+              }
+              adminEdit.exitEditMode();
+            }}
+            save={async () => {
+              const ok = await adminEdit.save();
+              if (ok) onBookUpdated?.();
+            }}
           />
-
-          {/* Genres */}
-          {Array.isArray(fullBook.genres) && fullBook.genres.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 justify-center">
-              {fullBook.genres.map((genre, i) => (
-                <span
-                  key={i}
-                  className="font-departureMono uppercase text-[9px] px-2 py-1 rounded-[6px] bg-[#f4f4f4] text-textSecondary"
-                >
-                  {genre}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {!readOnly && (
-            <>
-              {/* Shelf selector */}
-              {shelves.length > 0 && (
-                <div className="space-y-1">
-                  <label className="font-departureMono uppercase text-[10px] text-textSecondary">
-                    Shelf
-                    <SavedIndicator field="shelf" />
-                  </label>
-                  <select
-                    className="w-full border border-border rounded-[8px] px-3 h-9 font-departureMono text-[12px] bg-transparent focus:outline-none focus:ring-1 focus:ring-textPrimary"
-                    value={selectedShelfId}
-                    onChange={(e) => handleShelfChange(e.target.value)}
+        ) : (
+          <>
+            <SheetHeader>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <SheetTitle className="font-ppMondwest text-xl">
+                    {fullBook.title}
+                  </SheetTitle>
+                  <SheetDescription className="font-departureMono uppercase text-[10px] text-textSecondary">
+                    {fullBook.authors?.join(", ")}
+                  </SheetDescription>
+                </div>
+                {isAdmin && (
+                  <button
+                    onClick={adminEdit.enterEditMode}
+                    className="font-departureMono uppercase text-[9px] px-3 h-7
+                           border border-border rounded-[6px] text-textSecondary
+                           hover:border-[#1f1f1f] hover:text-textPrimary transition-colors shrink-0 mt-1"
                   >
-                    <option value="">Select a shelf...</option>
-                    {shelves.map((shelf) => (
-                      <option key={shelf.id} value={shelf.id}>
-                        {shelf.name}
-                      </option>
-                    ))}
-                  </select>
+                    Edit
+                  </button>
+                )}
+              </div>
+            </SheetHeader>
+
+            <div className="mt-4 space-y-6">
+              {/* Cover */}
+              {coverSrc && (
+                <div className="flex justify-center">
+                  <img
+                    src={coverSrc}
+                    alt={fullBook.title}
+                    className="w-32 h-auto rounded-sm shadow-md"
+                  />
                 </div>
               )}
 
-              {/* Rating */}
-              <div className="space-y-1">
-                <label className="font-departureMono uppercase text-[10px] text-textSecondary">
-                  Rating
-                  <SavedIndicator field="rating" />
-                </label>
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      onClick={() => handleRating(star)}
-                      className="transition-opacity hover:opacity-75"
+              {/* Buy button */}
+              <BuyButton
+                isbn_13={fullBook.isbn_13}
+                title={fullBook.title}
+                authors={fullBook.authors}
+                className="w-full"
+              />
+
+              {/* Genres */}
+              {Array.isArray(fullBook.genres) && fullBook.genres.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 justify-center">
+                  {fullBook.genres.map((genre, i) => (
+                    <span
+                      key={i}
+                      className="font-departureMono uppercase text-[9px] px-2 py-1 rounded-[6px] bg-[#f4f4f4] text-textSecondary"
                     >
-                      <StarIcon filled={star <= rating} />
-                    </button>
+                      {genre}
+                    </span>
                   ))}
                 </div>
-              </div>
+              )}
 
-              {/* Review */}
-              <div className="space-y-1">
-                <label className="font-departureMono uppercase text-[10px] text-textSecondary">
-                  Review
-                  <SavedIndicator field="review" />
-                </label>
-                <textarea
-                  className="w-full border border-border rounded-[8px] px-3 py-2 font-departureMono text-[12px] min-h-[80px] bg-transparent focus:outline-none focus:ring-1 focus:ring-textPrimary placeholder:text-textSecondary"
-                  value={review}
-                  onChange={(e) => setReview(e.target.value)}
-                  onBlur={handleReviewBlur}
-                  placeholder="Write your thoughts..."
-                />
-              </div>
-
-              {/* Reading progress */}
-              <div className="space-y-1">
-                <label className="font-departureMono uppercase text-[10px] text-textSecondary">
-                  Reading Progress
-                  <SavedIndicator field="progress_pages" />
-                  <SavedIndicator field="progress_percent" />
-                </label>
-                <div className="flex gap-2 items-center">
-                  <Input
-                    type="number"
-                    min={0}
-                    max={fullBook.page_count || undefined}
-                    value={progressPages}
-                    onChange={(e) => handlePagesChange(e.target.value)}
-                    placeholder="Pages"
-                    className="w-24 font-departureMono text-[12px]"
-                  />
-                  <span className="font-departureMono uppercase text-[10px] text-textSecondary">
-                    / {fullBook.page_count || "?"} pages
-                  </span>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={progressPercent}
-                    onChange={(e) => handlePercentChange(e.target.value)}
-                    placeholder="%"
-                    className="w-20 font-departureMono text-[12px]"
-                  />
-                  <span className="font-departureMono uppercase text-[10px] text-textSecondary">
-                    %
-                  </span>
-                </div>
-              </div>
-
-              {/* Dates */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="font-departureMono uppercase text-[10px] text-textSecondary">
-                    Date Started
-                    <SavedIndicator field="date_started" />
-                  </label>
-                  <Input
-                    type="date"
-                    value={dateStarted}
-                    onChange={(e) => {
-                      setDateStarted(e.target.value);
-                      save({ date_started: e.target.value || null });
-                      onUpdate?.(userBook.id, {
-                        date_started: e.target.value || null
-                      });
-                    }}
-                    className="font-departureMono text-[12px]"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-departureMono uppercase text-[10px] text-textSecondary">
-                    Date Finished
-                    <SavedIndicator field="date_finished" />
-                  </label>
-                  <Input
-                    type="date"
-                    value={dateFinished}
-                    onChange={(e) => {
-                      setDateFinished(e.target.value);
-                      save({ date_finished: e.target.value || null });
-                      onUpdate?.(userBook.id, {
-                        date_finished: e.target.value || null
-                      });
-                    }}
-                    className="font-departureMono text-[12px]"
-                  />
-                </div>
-              </div>
-
-              {/* Remove from shelf */}
-              {onRemove && (
-                <div className="pt-2 border-t border-border">
-                  {confirmRemove ? (
-                    <div className="flex items-center gap-2">
-                      <p className="font-departureMono uppercase text-[10px] text-red-600 flex-1">
-                        Remove this book?
-                      </p>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={handleRemove}
-                        className="font-departureMono uppercase text-[10px] rounded-[8px]"
+              {!readOnly && (
+                <>
+                  {/* Shelf selector */}
+                  {shelves.length > 0 && (
+                    <div className="space-y-1">
+                      <label className="font-departureMono uppercase text-[10px] text-textSecondary">
+                        Shelf
+                        <SavedIndicator field="shelf" />
+                      </label>
+                      <select
+                        className="w-full border border-border rounded-[8px] px-3 h-9 font-departureMono text-[12px] bg-transparent focus:outline-none focus:ring-1 focus:ring-textPrimary"
+                        value={selectedShelfId}
+                        onChange={(e) => handleShelfChange(e.target.value)}
                       >
-                        Confirm
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setConfirmRemove(false)}
-                        className="font-departureMono uppercase text-[10px] rounded-[8px]"
-                      >
-                        Cancel
-                      </Button>
+                        <option value="">Select a shelf...</option>
+                        {shelves.map((shelf) => (
+                          <option key={shelf.id} value={shelf.id}>
+                            {shelf.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setConfirmRemove(true)}
-                      className="font-departureMono uppercase text-[10px] text-red-500 hover:text-red-600 hover:bg-red-50 rounded-[8px] w-full"
-                    >
-                      Remove from shelf
-                    </Button>
+                  )}
+
+                  {/* Rating */}
+                  <div className="space-y-1">
+                    <label className="font-departureMono uppercase text-[10px] text-textSecondary">
+                      Rating
+                      <SavedIndicator field="rating" />
+                    </label>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          onClick={() => handleRating(star)}
+                          className="transition-opacity hover:opacity-75"
+                        >
+                          <StarIcon filled={star <= rating} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Review */}
+                  <div className="space-y-1">
+                    <label className="font-departureMono uppercase text-[10px] text-textSecondary">
+                      Review
+                      <SavedIndicator field="review" />
+                    </label>
+                    <textarea
+                      className="w-full border border-border rounded-[8px] px-3 py-2 font-departureMono text-[12px] min-h-[80px] bg-transparent focus:outline-none focus:ring-1 focus:ring-textPrimary placeholder:text-textSecondary"
+                      value={review}
+                      onChange={(e) => setReview(e.target.value)}
+                      onBlur={handleReviewBlur}
+                      placeholder="Write your thoughts..."
+                    />
+                  </div>
+
+                  {/* Reading progress */}
+                  <div className="space-y-1">
+                    <label className="font-departureMono uppercase text-[10px] text-textSecondary">
+                      Reading Progress
+                      <SavedIndicator field="progress_pages" />
+                      <SavedIndicator field="progress_percent" />
+                    </label>
+                    <div className="flex gap-2 items-center">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={fullBook.page_count || undefined}
+                        value={progressPages}
+                        onChange={(e) => handlePagesChange(e.target.value)}
+                        placeholder="Pages"
+                        className="w-24 font-departureMono text-[12px]"
+                      />
+                      <span className="font-departureMono uppercase text-[10px] text-textSecondary">
+                        / {fullBook.page_count || "?"} pages
+                      </span>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={progressPercent}
+                        onChange={(e) => handlePercentChange(e.target.value)}
+                        placeholder="%"
+                        className="w-20 font-departureMono text-[12px]"
+                      />
+                      <span className="font-departureMono uppercase text-[10px] text-textSecondary">
+                        %
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Dates */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="font-departureMono uppercase text-[10px] text-textSecondary">
+                        Date Started
+                        <SavedIndicator field="date_started" />
+                      </label>
+                      <Input
+                        type="date"
+                        value={dateStarted}
+                        onChange={(e) => {
+                          setDateStarted(e.target.value);
+                          save({ date_started: e.target.value || null });
+                          onUpdate?.(userBook.id, {
+                            date_started: e.target.value || null
+                          });
+                        }}
+                        className="font-departureMono text-[12px]"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="font-departureMono uppercase text-[10px] text-textSecondary">
+                        Date Finished
+                        <SavedIndicator field="date_finished" />
+                      </label>
+                      <Input
+                        type="date"
+                        value={dateFinished}
+                        onChange={(e) => {
+                          setDateFinished(e.target.value);
+                          save({ date_finished: e.target.value || null });
+                          onUpdate?.(userBook.id, {
+                            date_finished: e.target.value || null
+                          });
+                        }}
+                        className="font-departureMono text-[12px]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Remove from shelf */}
+                  {onRemove && (
+                    <div className="pt-2 border-t border-border">
+                      {confirmRemove ? (
+                        <div className="flex items-center gap-2">
+                          <p className="font-departureMono uppercase text-[10px] text-red-600 flex-1">
+                            Remove this book?
+                          </p>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={handleRemove}
+                            className="font-departureMono uppercase text-[10px] rounded-[8px]"
+                          >
+                            Confirm
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setConfirmRemove(false)}
+                            className="font-departureMono uppercase text-[10px] rounded-[8px]"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setConfirmRemove(true)}
+                          className="font-departureMono uppercase text-[10px] text-red-500 hover:text-red-600 hover:bg-red-50 rounded-[8px] w-full"
+                        >
+                          Remove from shelf
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Read-only display */}
+              {readOnly && userBook && (
+                <div className="space-y-4">
+                  {userBook.rating > 0 && (
+                    <div className="space-y-1">
+                      <label className="font-departureMono uppercase text-[10px] text-textSecondary">
+                        Rating
+                      </label>
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <StarIcon
+                            key={star}
+                            filled={star <= userBook.rating}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {userBook.review && (
+                    <div className="space-y-1">
+                      <label className="font-departureMono uppercase text-[10px] text-textSecondary">
+                        Review
+                      </label>
+                      <p className="text-sm text-textPrimary">
+                        {userBook.review}
+                      </p>
+                    </div>
+                  )}
+                  {(userBook.progress_percent > 0 ||
+                    userBook.progress_pages > 0) && (
+                    <div className="space-y-1">
+                      <label className="font-departureMono uppercase text-[10px] text-textSecondary">
+                        Progress
+                      </label>
+                      <div className="w-full h-2 bg-[#e0e0e0] rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-textPrimary rounded-full transition-all"
+                          style={{
+                            width: `${Math.min(userBook.progress_percent || 0, 100)}%`
+                          }}
+                        />
+                      </div>
+                      <p className="font-departureMono uppercase text-[10px] text-textSecondary">
+                        {userBook.progress_percent}%
+                        {userBook.progress_pages > 0 &&
+                          ` · ${userBook.progress_pages} pages`}
+                      </p>
+                    </div>
                   )}
                 </div>
               )}
-            </>
-          )}
-
-          {/* Read-only display */}
-          {readOnly && userBook && (
-            <div className="space-y-4">
-              {userBook.rating > 0 && (
-                <div className="space-y-1">
-                  <label className="font-departureMono uppercase text-[10px] text-textSecondary">
-                    Rating
-                  </label>
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <StarIcon key={star} filled={star <= userBook.rating} />
-                    ))}
-                  </div>
-                </div>
-              )}
-              {userBook.review && (
-                <div className="space-y-1">
-                  <label className="font-departureMono uppercase text-[10px] text-textSecondary">
-                    Review
-                  </label>
-                  <p className="text-sm text-textPrimary">{userBook.review}</p>
-                </div>
-              )}
-              {(userBook.progress_percent > 0 ||
-                userBook.progress_pages > 0) && (
-                <div className="space-y-1">
-                  <label className="font-departureMono uppercase text-[10px] text-textSecondary">
-                    Progress
-                  </label>
-                  <div className="w-full h-2 bg-[#e0e0e0] rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-textPrimary rounded-full transition-all"
-                      style={{
-                        width: `${Math.min(userBook.progress_percent || 0, 100)}%`
-                      }}
-                    />
-                  </div>
-                  <p className="font-departureMono uppercase text-[10px] text-textSecondary">
-                    {userBook.progress_percent}%
-                    {userBook.progress_pages > 0 &&
-                      ` · ${userBook.progress_pages} pages`}
-                  </p>
-                </div>
-              )}
             </div>
-          )}
-        </div>
+          </>
+        )}
       </SheetContent>
     </Sheet>
   );

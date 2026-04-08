@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/components/providers/AuthProvider";
+import CRTOverlay from "@/components/providers/CRTOverlay";
 
 export default function UIOverlays() {
   const { profile } = useAuth();
@@ -13,9 +14,7 @@ export default function UIOverlays() {
       {showNoise && (
         <div aria-hidden="true" className="noise-overlay z-[9999]" />
       )}
-      {showCrt && (
-        <div aria-hidden="true" className="scanlines-overlay z-[9999]" />
-      )}
+      {showCrt && <CRTOverlay />}
     </>
   );
 }

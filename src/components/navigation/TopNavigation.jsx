@@ -91,7 +91,7 @@ export default function TopNavigation() {
       }}
       className="z-[99] py-4 border-b border-border fixed top-0 left-0 right-0 bg-white"
     >
-      <div className="max-w-full w-full px-5 mx-auto flex items-center justify-between">
+      <div className="max-w-full w-full px-10 mx-auto flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3">
           <span className="font-ppMondwest text-[18px] text-textPrimary">
@@ -110,7 +110,7 @@ export default function TopNavigation() {
                 className={cn(
                   "px-4 py-2 font-departureMono uppercase text-[12px] rounded-[8px] transition-colors",
                   activeItem === item.id
-                    ? "underline text-textPrimary"
+                    ? "text-textPrimary"
                     : "text-textSecondary hover:underline hover:text-textPrimary"
                 )}
               >

@@ -3,6 +3,117 @@ import { createAdminClient } from "@/utils/supabase/admin";
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 
+export async function PATCH(request, { params }) {
+  const { id } = await params;
+  const supabase = await createClient();
+
+  // Auth check — admin only
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  if (!user)
+    return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const body = await request.json();
+  const {
+    cover_url_remote, // remote URL to download and re-upload
+    ...fields // all other editable fields
+  } = body;
+
+  // Validate allowed fields — only update what we explicitly permit
+  const ALLOWED = [
+    "title",
+    "authors",
+    "description",
+    "isbn_13",
+    "isbn_10",
+    "publisher",
+    "published_date",
+    "page_count",
+    "language",
+    "genres",
+    "source",
+    "is_incomplete",
+    "hardcover_id",
+    "bookshop_affiliate_link"
+  ];
+  const sanitised = {};
+  for (const key of ALLOWED) {
+    if (key in fields) sanitised[key] = fields[key];
+  }
+
+  // Handle cover re-upload if a remote URL was provided
+  if (cover_url_remote) {
+    try {
+      const coverRes = await fetch(cover_url_remote);
+      if (!coverRes.ok)
+        throw new Error(`Cover fetch failed: ${coverRes.status}`);
+
+      const contentType = coverRes.headers.get("content-type") || "image/jpeg";
+      const buffer = Buffer.from(await coverRes.arrayBuffer());
+
+      if (buffer.length < 500)
+        throw new Error("Cover image too small — likely a placeholder");
+
+      const ext = contentType.includes("png") ? ".png" : ".jpg";
+      const identifier = sanitised.isbn_13 || fields.isbn_13 || id;
+      const filename = `${identifier}-${Date.now()}${ext}`;
+
+      // Use service-role admin client for storage upload
+      let adminClient;
+      try {
+        adminClient = createAdminClient();
+      } catch (e) {
+        throw new Error("Admin client init failed: " + e.message);
+      }
+
+      const { error: uploadError } = await adminClient.storage
+        .from("books")
+        .upload(filename, buffer, { contentType, upsert: false });
+
+      if (uploadError) throw uploadError;
+      sanitised.cover_url = filename;
+    } catch (e) {
+      return NextResponse.json(
+        { error: `Cover upload failed: ${e.message}` },
+        { status: 422 }
+      );
+    }
+  }
+
+  sanitised.last_synced_at = new Date().toISOString();
+
+  // If all major fields now present, mark complete
+  if (sanitised.title && sanitised.description && sanitised.cover_url) {
+    sanitised.is_incomplete = false;
+  }
+
+  const { data: updated, error } = await supabase
+    .from("books")
+    .update(sanitised)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
+
+  revalidatePath("/books");
+  revalidatePath(`/books/${updated.slug || id}`);
+
+  return NextResponse.json({ book: updated });
+}
+
 export async function DELETE(request, { params }) {
   const { id } = await params;
 

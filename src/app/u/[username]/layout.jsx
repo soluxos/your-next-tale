@@ -104,11 +104,23 @@ export default async function UserLayout({ children, params }) {
       : Promise.resolve("none")
   ]);
 
+  // Determine if the logged-in viewer is an admin
+  let isAdmin = false;
+  if (user) {
+    const { data: viewerProfile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    isAdmin = viewerProfile?.role === "admin";
+  }
+
   return (
     <ProfileLayout
       profile={{ ...profile, avatarUrl }}
       shelves={shelves}
       isOwner={isOwner}
+      isAdmin={isAdmin}
       currentUserId={user?.id || null}
       followCounts={followCounts}
       followStatus={followStatus}
