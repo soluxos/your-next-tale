@@ -49,7 +49,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4 py-12">
+    <div className="bg-white flex flex-col items-center justify-start px-4 py-[120px]">
       {/* Brand */}
       <div className="mb-8 text-center">
         <p className="font-ppMondwest text-[#0c0c0c] text-[24px] leading-none mb-2">
@@ -186,7 +186,7 @@ export default function SignupPage() {
 
               <div className="mt-4 text-center">
                 <p className="font-departureMono uppercase text-[11px] text-textSecondary">
-                  Already have an account?
+                  Already have an account?{" "}
                   <Link
                     href="/login"
                     className="text-textPrimary underline underline-offset-2 hover:opacity-70 transition-opacity"
