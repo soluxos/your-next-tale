@@ -94,8 +94,8 @@ export default function TopNavigation() {
       <div className="max-w-full w-full px-10 mx-auto flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <img src="/logo.svg" alt="logo" className="w-auto" />
-          <span className="font-ppMondwest text-[18px] text-textPrimary">
+          <img src="/new-logo.svg" alt="logo" className="w-auto h-5" />
+          <span className="font-ppMondwest text-[20px] text-black">
             Your next tale
           </span>
         </Link>

@@ -1,15 +1,19 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import Book from "@/components/book/book";
 import AddBookDrawer from "@/components/shelves/AddBookDrawer";
 import BookDetailPanel from "@/components/shelves/BookDetailPanel";
 import BookReviewModal from "@/components/shelves/BookReviewModal";
-import ViewModeToggle from "@/components/shelves/ViewModeToggle";
 import ReviewCardOverlay from "@/components/shelves/ReviewCardOverlay";
+import ShelfToolbar from "@/components/shelves/ShelfToolbar";
 import { removeBookFromShelf } from "@/lib/shelfBooks";
+import { sortShelfBooks } from "@/lib/shelfSort";
+import { filterShelfBooks, DEFAULT_FILTERS } from "@/lib/shelfFilter";
+import { useShelfDragDrop } from "@/hooks/useShelfDragDrop";
 import { createClient } from "@/utils/supabase/client";
 import { TABLES } from "@/lib/supabase/types";
 
@@ -27,8 +31,7 @@ export default function ShelfView({
   username,
   shelves = [],
   defaultView = "books",
-  profile = null,
-  viewMode: viewModeProp
+  profile = null
 }) {
   const router = useRouter();
   const cacheKey = shelfId || shelfSlug;
@@ -39,28 +42,76 @@ export default function ShelfView({
   const [itemsPerRow, setItemsPerRow] = useState(9);
   const [addDrawerOpen, setAddDrawerOpen] = useState(false);
   const [selectedBook, setSelectedBook] = useState(null);
-  // Always start with defaultView to match the server render, then
-  // correct to the user's persisted preference after mount.
-  const [viewMode, setViewMode] = useState(viewModeProp ?? defaultView);
   const [reviewBook, setReviewBook] = useState(null);
   const supabase = createClient();
 
-  // Sync viewMode from parent (ProfileLayout manages the toggle)
-  useEffect(() => {
-    if (viewModeProp !== undefined) {
-      setViewMode(viewModeProp);
-      setSelectedBook(null);
-    }
-  }, [viewModeProp]);
+  // View mode (books / reviews) — managed internally with sessionStorage
+  const [viewMode, setViewMode] = useState(() => {
+    if (typeof window === "undefined") return defaultView;
+    return sessionStorage.getItem("shelf-view-mode") || defaultView;
+  });
+
+  function handleViewModeChange(mode) {
+    setViewMode(mode);
+    sessionStorage.setItem("shelf-view-mode", mode);
+    setSelectedBook(null);
+  }
+
+  // Sort and filter state
+  const [sortKey, setSortKey] = useState("user");
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+
+  // Drag and drop — only for owner in user sort on a specific shelf
+  const dragEnabled =
+    isOwner && sortKey === "user" && shelfSlug !== "all" && !!shelfId;
+  const {
+    dragging,
+    liveBooks,
+    ghostPos,
+    ghostSize,
+    offsetRef,
+    draggedBook,
+    overIndex: dragOverIndex,
+    startDrag
+  } = useShelfDragDrop({
+    books,
+    setBooks,
+    shelfId,
+    enabled: dragEnabled
+  });
+
+  // Sort then filter pipeline
+  const processedBooks = useMemo(() => {
+    const sorted = sortShelfBooks(books, sortKey);
+    return filterShelfBooks(sorted, filters);
+  }, [books, sortKey, filters]);
+
+  // In reviews mode, further filter to books with rating or review
+  const displayBooks =
+    viewMode === "reviews"
+      ? processedBooks.filter((b) => b.user_book?.rating || b.user_book?.review)
+      : processedBooks;
+
+  // During drag render liveBooks (live-reordered); otherwise use sort+filter pipeline
+  const renderBooks = dragging ? liveBooks : displayBooks;
+
+  // Tag each item with its index in renderBooks so pointer handlers know which slot
+  const indexedRenderBooks = useMemo(
+    () => renderBooks.map((b, i) => ({ ...b, _gridIdx: i })),
+    [renderBooks]
+  );
+
+  // Cover URL for the floating ghost
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const ghostCoverUrl = draggedBook?.book?.cover_url
+    ? `${supabaseUrl}/storage/v1/object/public/books/${draggedBook.book.cover_url}`
+    : null;
 
   // Fetch books client-side whenever the shelf changes.
-  // This keeps the shelf chrome rendered on every tab navigation
-  // and only the book tiles briefly show loading placeholders.
   useEffect(() => {
     let cancelled = false;
 
     async function fetchBooks() {
-      // Only show the loading skeleton if we have nothing cached to display yet.
       const hasCached = booksCache.has(cacheKey);
       if (!hasCached) {
         setBooksLoading(true);
@@ -74,17 +125,21 @@ export default function ShelfView({
         const { data: userBooks } = await supabase
           .from(TABLES.USER_BOOKS)
           .select(
-            `id, book_id, rating, review, progress_pages, progress_percent,
+            `id, book_id, rating, review, created_at, progress_pages, progress_percent,
              date_started, date_finished, books (*)`
           )
           .eq("user_id", userId);
 
         result = (userBooks || []).map((ub) => ({
-          ...ub.books,
-          userBook: {
+          id: `all-${ub.id}`,
+          position: null,
+          bookshelf_id: null,
+          book: { ...ub.books },
+          user_book: {
             id: ub.id,
             rating: ub.rating,
             review: ub.review,
+            created_at: ub.created_at,
             progress_pages: ub.progress_pages,
             progress_percent: ub.progress_percent,
             date_started: ub.date_started,
@@ -95,23 +150,27 @@ export default function ShelfView({
         const { data: shelfBooks } = await supabase
           .from(TABLES.BOOKSHELF_BOOKS)
           .select(
-            `id, bookshelf_id,
-             user_books (id, book_id, rating, review, progress_pages,
+            `id, position, bookshelf_id,
+             user_books (id, book_id, rating, review, created_at, progress_pages,
                progress_percent, date_started, date_finished, books (*))`
           )
-          .eq("bookshelf_id", shelfId);
+          .eq("bookshelf_id", shelfId)
+          .order("position", { ascending: true, nullsFirst: false });
 
         result = (shelfBooks || [])
           .map((sb) => {
             const ub = sb.user_books;
             if (!ub?.books) return null;
             return {
-              ...ub.books,
+              id: sb.id,
+              position: sb.position,
               bookshelf_id: sb.bookshelf_id,
-              userBook: {
+              book: { ...ub.books },
+              user_book: {
                 id: ub.id,
                 rating: ub.rating,
                 review: ub.review,
+                created_at: ub.created_at,
                 progress_pages: ub.progress_pages,
                 progress_percent: ub.progress_percent,
                 date_started: ub.date_started,
@@ -151,12 +210,11 @@ export default function ShelfView({
 
   const chunkBooks = (bookList, perRow) => {
     const rows = [];
-    // If owner, prepend an "add" placeholder
     const items = isOwner
       ? [{ id: "__add__", isAddTile: true }, ...bookList]
       : [...bookList];
 
-    const minItems = perRow * 1; // At least 1 row
+    const minItems = perRow * 1;
     while (items.length < minItems) {
       items.push({ id: `placeholder-${items.length}`, placeholder: true });
     }
@@ -165,7 +223,6 @@ export default function ShelfView({
       rows.push(items.slice(i, i + perRow));
     }
 
-    // Pad last row
     const lastRow = rows[rows.length - 1];
     while (lastRow && lastRow.length < perRow) {
       lastRow.push({
@@ -178,12 +235,14 @@ export default function ShelfView({
   };
 
   const handleBookAdded = (added) => {
-    // Support both shapes: { book, userBook } (new) and plain book (legacy)
     const book = added?.book || added;
     const userBook = added?.userBook || null;
     const newEntry = {
-      ...book,
-      userBook: userBook
+      id: `new-${Date.now()}`,
+      position: null,
+      bookshelf_id: shelfId,
+      book: { ...book },
+      user_book: userBook
         ? {
             id: userBook.id,
             rating: userBook.rating,
@@ -202,17 +261,10 @@ export default function ShelfView({
     });
   };
 
-  const handleBookClick = (book) => {
-    // Open for both owner (editable) and visitor (read-only), as long as there's a userBook record
-    if (book.userBook) {
-      setSelectedBook(book);
-    }
-  };
-
   const handleReviewCardClick = (bookId) => {
-    const book = books.find((b) => b.id === bookId);
-    if (book) {
-      setReviewBook(book);
+    const shelfBook = books.find((b) => b.book.id === bookId);
+    if (shelfBook) {
+      setReviewBook(shelfBook);
       window.history.pushState(
         { reviewBookId: bookId },
         "",
@@ -221,8 +273,6 @@ export default function ShelfView({
     }
   };
 
-  // Close the review modal when the user presses the browser back button
-  // (which pops the pushState entry we added above).
   useEffect(() => {
     function handlePopState() {
       setReviewBook(null);
@@ -234,8 +284,8 @@ export default function ShelfView({
   const handleDetailUpdate = (userBookId, updatedFields) => {
     setBooks((prev) => {
       const next = prev.map((b) =>
-        b.userBook?.id === userBookId
-          ? { ...b, userBook: { ...b.userBook, ...updatedFields } }
+        b.user_book?.id === userBookId
+          ? { ...b, user_book: { ...b.user_book, ...updatedFields } }
           : b
       );
       booksCache.set(cacheKey, next);
@@ -245,13 +295,13 @@ export default function ShelfView({
 
   const handleRemoveBook = async (userBookId) => {
     if (!userBookId) return;
-    const book = books.find((b) => b.userBook?.id === userBookId);
-    const targetShelfId = book?.bookshelf_id || shelfId;
+    const shelfBook = books.find((b) => b.user_book?.id === userBookId);
+    const targetShelfId = shelfBook?.bookshelf_id || shelfId;
     if (!targetShelfId) return;
     try {
       await removeBookFromShelf(supabase, userBookId, targetShelfId);
       setBooks((prev) => {
-        const next = prev.filter((b) => b.userBook?.id !== userBookId);
+        const next = prev.filter((b) => b.user_book?.id !== userBookId);
         booksCache.set(cacheKey, next);
         return next;
       });
@@ -262,10 +312,9 @@ export default function ShelfView({
   };
 
   const handleShelfMove = (userBookId, newShelfId, newShelfName) => {
-    // If the book moved to a different shelf, remove it from the current view
     if (newShelfId !== shelfId && shelfSlug !== "all") {
       setBooks((prev) => {
-        const next = prev.filter((b) => b.userBook?.id !== userBookId);
+        const next = prev.filter((b) => b.user_book?.id !== userBookId);
         booksCache.set(cacheKey, next);
         return next;
       });
@@ -273,23 +322,29 @@ export default function ShelfView({
     }
   };
 
-  const rows = chunkBooks(books, itemsPerRow);
+  const rows = chunkBooks(indexedRenderBooks, itemsPerRow);
   const isEmpty = books.length === 0;
-
-  // In reviews mode, only show books that have a rating or review
-  const displayBooks =
-    viewMode === "reviews"
-      ? books.filter((b) => b.userBook?.rating || b.userBook?.review)
-      : books;
-
-  const reviewRows = chunkBooks(displayBooks, itemsPerRow);
-  const reviewEmpty = viewMode === "reviews" && displayBooks.length === 0;
-
-  const activeRows = viewMode === "reviews" ? reviewRows : rows;
-  const activeIsEmpty = viewMode === "reviews" ? reviewEmpty : isEmpty;
+  const filteredEmpty = !isEmpty && renderBooks.length === 0;
+  const activeIsEmpty = isEmpty || filteredEmpty;
 
   return (
     <>
+      {/* Sort / Filter / View toolbar */}
+      {!booksLoading && books.length > 0 && (
+        <div className="px-10">
+          <div className="max-w-4xl mx-auto pt-4 pb-2">
+            <ShelfToolbar
+              sortKey={sortKey}
+              onSortChange={setSortKey}
+              viewMode={viewMode}
+              onViewModeChange={handleViewModeChange}
+              filters={filters}
+              onFiltersChange={setFilters}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="flex px-10">
         <div className="grid grid-cols-[16px_auto_16px] pb-[88px] w-full relative">
           {/* Top shelf surface: left angle + center bar + right angle */}
@@ -343,7 +398,6 @@ export default function ShelfView({
             <div id="grid-container" className="grid">
               <AnimatePresence mode="popLayout">
                 {booksLoading ? (
-                  /* Shelf chrome with pulsing placeholder tiles while books load */
                   <React.Fragment>
                     <div className="row flex flex-row items-stretch bg-[#F4F4F4] overflow-hidden">
                       <div className="flex flex-col shrink-0 w-[40px]">
@@ -402,7 +456,6 @@ export default function ShelfView({
                 ) : activeIsEmpty ? (
                   <React.Fragment>
                     <div className="flex flex-row items-stretch bg-[#F4F4F4] overflow-hidden">
-                      {/* Left inner shelf panel */}
                       <div className="flex flex-col shrink-0 w-[40px]">
                         <div className="flex-1 bg-[#E6E6E6]" />
                         <svg
@@ -422,10 +475,20 @@ export default function ShelfView({
                           />
                         </svg>
                       </div>
-                      {/* Empty state message */}
                       <div className="flex-1 flex flex-col overflow-hidden relative">
                         <div className="flex-1 flex flex-row items-end gap-2 p-2 pt-4 bg-[#d5d5d5] min-h-[220px]">
-                          {isOwner && viewMode !== "reviews" && (
+                          {filteredEmpty ? (
+                            <div className="w-full text-center self-center pb-5">
+                              <p className="font-ppMondwest text-[18px] text-textPrimary mb-1">
+                                {viewMode === "reviews"
+                                  ? "No reviews match"
+                                  : "No books match"}
+                              </p>
+                              <p className="font-departureMono uppercase text-[9px] text-textSecondary">
+                                Try adjusting your filters
+                              </p>
+                            </div>
+                          ) : isOwner && viewMode !== "reviews" ? (
                             <div
                               className="cursor-pointer shrink-0"
                               style={{
@@ -456,8 +519,7 @@ export default function ShelfView({
                                 </svg>
                               </div>
                             </div>
-                          )}
-                          {(!isOwner || viewMode === "reviews") && (
+                          ) : (
                             <p className="font-departureMono uppercase text-[10px] text-textPrimary w-full text-center self-center pb-5">
                               {viewMode === "reviews"
                                 ? "No reviews yet"
@@ -467,7 +529,6 @@ export default function ShelfView({
                         </div>
                         <div className="h-[40px] w-full bg-[#f5f5f5] shrink-0 absolute bottom-0 left-0 z-[1]" />
                       </div>
-                      {/* Right inner shelf panel */}
                       <div className="flex flex-col shrink-0 w-[40px]">
                         <div className="flex-1 bg-[#E0E0E0]" />
                         <svg
@@ -491,10 +552,9 @@ export default function ShelfView({
                     <div className="h-4 flex w-full border-t border-b border-[#ddd] bg-[#F4F4F4]" />
                   </React.Fragment>
                 ) : (
-                  activeRows.map((row, rowIndex) => (
+                  rows.map((row, rowIndex) => (
                     <React.Fragment key={rowIndex}>
                       <div className="row flex flex-row items-stretch bg-[#F4F4F4] overflow-hidden">
-                        {/* Left inner shelf panel */}
                         <div className="flex flex-col shrink-0 w-[40px]">
                           <div className="flex-1 bg-[#E6E6E6]" />
                           <svg
@@ -515,73 +575,153 @@ export default function ShelfView({
                           </svg>
                         </div>
 
-                        {/* Books grid */}
                         <div className="flex-1 flex flex-col overflow-hidden relative">
                           <div className="flex-1 grid grid-cols-2 xs:grid-cols-4 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-2 p-2 pb-2 pt-4 items-end overflow-hidden bg-[#d5d5d5]">
-                            {row.map((book) =>
-                              book.isAddTile ? (
-                                <div
-                                  key="__add__"
-                                  className="w-full relative z-10 cursor-pointer"
-                                  onClick={() => setAddDrawerOpen(true)}
-                                >
+                            {row.map((item) => {
+                              if (item.isAddTile) {
+                                return (
                                   <div
-                                    className="w-full z-10 bg-[#e0e0e0] border-2 border-dashed border-[#bbb] rounded-sm flex flex-col items-center justify-center gap-1 hover:border-textPrimary hover:bg-[#d8d8d8] transition-colors"
-                                    style={{ aspectRatio: "2 / 3" }}
+                                    key="__add__"
+                                    className="w-full relative z-10 cursor-pointer"
+                                    onClick={() => setAddDrawerOpen(true)}
                                   >
-                                    <p className="font-departureMono uppercase text-textPrimary text-xs">
-                                      Add book
-                                    </p>
-                                    <svg
-                                      width="16"
-                                      height="16"
-                                      viewBox="0 0 16 16"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeWidth="2"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      className="text-textPrimary"
+                                    <div
+                                      className="w-full z-10 bg-[#e0e0e0] border-2 border-dashed border-[#bbb] rounded-sm flex flex-col items-center justify-center gap-1 hover:border-textPrimary hover:bg-[#d8d8d8] transition-colors"
+                                      style={{ aspectRatio: "2 / 3" }}
                                     >
-                                      <line x1="8" y1="2" x2="8" y2="14" />
-                                      <line x1="2" y1="8" x2="14" y2="8" />
-                                    </svg>
+                                      <p className="font-departureMono uppercase text-textPrimary text-xs">
+                                        Add book
+                                      </p>
+                                      <svg
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 16 16"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className="text-textPrimary"
+                                      >
+                                        <line x1="8" y1="2" x2="8" y2="14" />
+                                        <line x1="2" y1="8" x2="14" y2="8" />
+                                      </svg>
+                                    </div>
                                   </div>
-                                </div>
-                              ) : book.placeholder ? (
-                                <div key={book.id} className="w-full" />
-                              ) : (
+                                );
+                              }
+
+                              if (item.placeholder) {
+                                return <div key={item.id} className="w-full" />;
+                              }
+
+                              const bookIdx = item._gridIdx;
+                              // The dragged book is invisible in the grid — the floating ghost represents it
+                              const isBeingDragged =
+                                dragging && draggedBook?.id === item.id;
+
+                              return (
                                 <motion.div
-                                  key={book.id}
-                                  layout
-                                  initial={{ opacity: 0, scale: 0.95 }}
+                                  key={item.id}
+                                  layout="position"
+                                  initial={isBeingDragged ? false : { opacity: 0, scale: 0.95 }}
                                   animate={{ opacity: 1, scale: 1 }}
-                                  exit={{ opacity: 0, scale: 0.9 }}
-                                  transition={{
-                                    duration: 0.18,
-                                    ease: "easeOut"
+                                  exit={isBeingDragged ? false : { opacity: 0, scale: 0.9 }}
+                                  transition={
+                                    dragging
+                                      ? {
+                                          layout: { duration: 0 },
+                                          opacity: { duration: 0 },
+                                          scale: { duration: 0 }
+                                        }
+                                      : {
+                                          layout: {
+                                            type: "spring",
+                                            stiffness: 300,
+                                            damping: 28
+                                          },
+                                          opacity: { duration: 0.18 },
+                                          scale: { duration: 0.18 }
+                                        }
+                                  }
+                                  data-drag-idx={
+                                    dragEnabled ? bookIdx : undefined
+                                  }
+                                  onPointerDown={
+                                    dragEnabled
+                                      ? (e) => startDrag(e, bookIdx)
+                                      : undefined
+                                  }
+                                  onDragStart={(e) => e.preventDefault()}
+                                  style={{
+                                    touchAction: dragEnabled
+                                      ? "none"
+                                      : undefined
                                   }}
-                                  className="w-full relative group cursor-pointer"
+                                  className={`w-full z-10 relative group select-none ${
+                                    dragEnabled
+                                      ? "cursor-grab active:cursor-grabbing"
+                                      : "cursor-pointer"
+                                  }`}
                                 >
-                                  <div
-                                    className={
-                                      viewMode === "reviews"
-                                        ? "pointer-events-none"
-                                        : undefined
-                                    }
-                                  >
-                                    {/* Books mode: Book opens its own BookDrawer normally */}
-                                    <Book book={book} {...book} />
-                                  </div>
-                                  {/* BOOKS MODE: pencil icon for owner — opens editable review modal */}
+                                  {isBeingDragged ? (
+                                    // Shadow drop-zone — shows where the book will land
+                                    <div
+                                      style={{
+                                        aspectRatio: "2 / 3",
+                                        borderRadius: 4,
+                                        background: "rgba(0,0,0,0.07)",
+                                        boxShadow:
+                                          "inset 0 2px 12px rgba(0,0,0,0.18)",
+                                        border: "2px dashed rgba(0,0,0,0.13)"
+                                      }}
+                                    />
+                                  ) : (
+                                    <div
+                                      className={
+                                        viewMode === "reviews"
+                                          ? "pointer-events-none"
+                                          : undefined
+                                      }
+                                    >
+                                      <Book
+                                        book={item.book}
+                                        disableHover={dragging}
+                                      />
+                                    </div>
+                                  )}
+
+                                  {/* Drag handle indicator (owner + user sort) */}
+                                  {dragEnabled && (
+                                    <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                      <div className="w-6 h-6 rounded-full bg-black/50 flex items-center justify-center">
+                                        <svg
+                                          width="10"
+                                          height="10"
+                                          viewBox="0 0 24 24"
+                                          fill="white"
+                                        >
+                                          <circle cx="9" cy="7" r="1.5" />
+                                          <circle cx="15" cy="7" r="1.5" />
+                                          <circle cx="9" cy="12" r="1.5" />
+                                          <circle cx="15" cy="12" r="1.5" />
+                                          <circle cx="9" cy="17" r="1.5" />
+                                          <circle cx="15" cy="17" r="1.5" />
+                                        </svg>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* BOOKS MODE: pencil icon for owner */}
                                   {viewMode === "books" &&
                                     isOwner &&
-                                    book.userBook && (
+                                    item.user_book &&
+                                    !dragEnabled && (
                                       <div
                                         className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          setSelectedBook(book);
+                                          setSelectedBook(item);
                                         }}
                                       >
                                         <div className="w-6 h-6 rounded-full bg-white/90 border border-border flex items-center justify-center shadow-sm cursor-pointer hover:bg-white transition-colors">
@@ -602,24 +742,23 @@ export default function ShelfView({
                                         </div>
                                       </div>
                                     )}
+
                                   {/* REVIEWS MODE: review card overlay */}
                                   {viewMode === "reviews" && (
                                     <ReviewCardOverlay
-                                      bookId={book.id}
-                                      rating={book.userBook?.rating}
-                                      review={book.userBook?.review}
+                                      bookId={item.book.id}
+                                      rating={item.user_book?.rating}
+                                      review={item.user_book?.review}
                                       onReviewClick={handleReviewCardClick}
                                     />
                                   )}
                                 </motion.div>
-                              )
-                            )}
+                              );
+                            })}
                           </div>
-                          {/* Bottom bar */}
                           <div className="h-[40px] w-full bg-[#f5f5f5] shrink-0 absolute bottom-0 left-0" />
                         </div>
 
-                        {/* Right inner shelf panel */}
                         <div className="flex flex-col shrink-0 w-[40px]">
                           <div className="flex-1 bg-[#E0E0E0]" />
                           <svg
@@ -651,6 +790,65 @@ export default function ShelfView({
         </div>
       </div>
 
+      {/* Floating ghost — cover image that follows the cursor while dragging */}
+      {dragging &&
+        ghostPos &&
+        draggedBook &&
+        createPortal(
+          <div
+            style={{
+              position: "fixed",
+              left: ghostPos.x - offsetRef.current.x,
+              top: ghostPos.y - offsetRef.current.y,
+              width: ghostSize.w,
+              height: ghostSize.h,
+              pointerEvents: "none",
+              zIndex: 9999,
+              opacity: 0.92,
+              transform: "rotate(2deg) scale(1.05)",
+              filter: "drop-shadow(0 8px 24px rgba(0,0,0,0.4))"
+            }}
+          >
+            {ghostCoverUrl ? (
+              <img
+                src={ghostCoverUrl}
+                alt=""
+                draggable={false}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  borderRadius: 4
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  background: "#bbb",
+                  borderRadius: 4,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 4
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 9,
+                    textAlign: "center",
+                    fontFamily: "monospace"
+                  }}
+                >
+                  {draggedBook.book.title}
+                </span>
+              </div>
+            )}
+          </div>,
+          document.body
+        )}
+
       {/* Add Book Drawer */}
       {isOwner && addDrawerOpen && (
         <AddBookDrawer
@@ -661,11 +859,11 @@ export default function ShelfView({
         />
       )}
 
-      {/* Review modal — reviews mode (owner: editable, visitor: read-only) */}
+      {/* Review modal — reviews mode */}
       {reviewBook && (
         <BookReviewModal
-          book={reviewBook}
-          userBook={reviewBook.userBook}
+          book={reviewBook.book}
+          userBook={reviewBook.user_book}
           profile={profile}
           username={username}
           isOwner={isOwner}
@@ -691,8 +889,8 @@ export default function ShelfView({
         selectedBook &&
         (isAdmin ? (
           <BookDetailPanel
-            book={selectedBook}
-            userBook={selectedBook.userBook}
+            book={selectedBook.book}
+            userBook={selectedBook.user_book}
             isAdmin={isAdmin}
             userId={userId}
             shelves={shelves}
@@ -705,8 +903,8 @@ export default function ShelfView({
           />
         ) : (
           <BookReviewModal
-            book={selectedBook}
-            userBook={selectedBook.userBook}
+            book={selectedBook.book}
+            userBook={selectedBook.user_book}
             isOwner={isOwner}
             userId={userId}
             shelves={shelves}

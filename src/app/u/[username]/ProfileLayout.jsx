@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import FacehashAvatar from "@/components/profile/FacehashAvatar";
 import TopNavigation from "@/components/navigation/TopNavigation";
 import ShelfView from "@/app/u/[username]/[shelfSlug]/ShelfView";
-import ViewModeToggle from "@/components/shelves/ViewModeToggle";
 import ManageShelvesPanel from "@/components/shelves/ManageShelvesPanel";
 import { useAuth } from "@/components/providers/AuthProvider";
 import FollowButton from "@/components/profile/FollowButton";
@@ -27,17 +26,6 @@ export default function ProfileLayout({
   const { profile: authProfile } = useAuth();
   const [localShelves, setLocalShelves] = useState(shelves);
   const [manageShelvesOpen, setManageShelvesOpen] = useState(false);
-  const [viewMode, setViewMode] = useState("books");
-
-  useEffect(() => {
-    const stored = sessionStorage.getItem("view-mode");
-    if (stored) setViewMode(stored);
-  }, []);
-
-  function handleViewModeChange(mode) {
-    setViewMode(mode);
-    sessionStorage.setItem("view-mode", mode);
-  }
 
   // When viewing own profile, use the live auth context colour so it updates
   // immediately after saving without needing a full page refresh.
@@ -177,7 +165,7 @@ export default function ProfileLayout({
       {/* Shelf tab navigation — hidden on followers/following sub-pages */}
       {activeSlug !== "followers" && activeSlug !== "following" && (
         <div className="px-5">
-          <div className="max-w-4xl mx-auto flex items-center justify-between border-b border-border">
+          <div className="max-w-4xl mx-auto flex items-center border-b border-border">
             <nav className="flex gap-1 overflow-x-auto no-scrollbar -mb-px items-center flex-1">
               {tabs.map((tab) => (
                 <Link
@@ -195,9 +183,6 @@ export default function ProfileLayout({
                 </Link>
               ))}
             </nav>
-            <div className="shrink-0 pb-[2px]">
-              <ViewModeToggle mode={viewMode} onChange={handleViewModeChange} />
-            </div>
           </div>
         </div>
       )}
@@ -216,7 +201,6 @@ export default function ProfileLayout({
             shelves={localShelves}
             defaultView={defaultView}
             profile={profileWithLiveColor}
-            viewMode={viewMode}
           />
           {/* children carries the @modal slot (e.g. ReviewModal on direct load) */}
           {children}

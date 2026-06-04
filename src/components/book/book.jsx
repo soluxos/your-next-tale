@@ -20,7 +20,7 @@ const Book = (props) => {
   const [deleted, setDeleted] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const { book: initialBook, onImageLoad, onDeleted } = props;
+  const { book: initialBook, onImageLoad, onDeleted, disableHover } = props;
   const [currentBook, setCurrentBook] = useState(initialBook);
   const { id, title, cover_url } = currentBook;
 
@@ -83,7 +83,7 @@ const Book = (props) => {
   };
 
   const handleMouseEnter = () => {
-    setIsHovered(true);
+    if (!disableHover) setIsHovered(true);
   };
 
   const handleMouseLeave = () => {
@@ -122,7 +122,9 @@ const Book = (props) => {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        <HoverCard>
+        <HoverCard
+          {...(disableHover ? { openDelay: 999999, closeDelay: 0 } : {})}
+        >
           <HoverCardTrigger asChild>
             <div
               className="relative transition-all duration-200 ease-in-out cursor-pointer"
@@ -141,10 +143,15 @@ const Book = (props) => {
                     <img
                       src={coverUrl}
                       alt={`${title} cover`}
+                      draggable={false}
                       className={`w-full h-auto transform transition-all duration-200 ease-in-out rounded-sm ${
                         imageLoaded ? "opacity-100" : "opacity-0"
                       } ${imageLoaded ? "" : "absolute top-0 left-0"} ${
-                        isHovered ? "-translate-y-2" : "hover:-translate-y-2"
+                        disableHover
+                          ? ""
+                          : isHovered
+                            ? "-translate-y-2"
+                            : "hover:-translate-y-2"
                       }`}
                       onLoad={handleImageLoad}
                       loading="lazy"
