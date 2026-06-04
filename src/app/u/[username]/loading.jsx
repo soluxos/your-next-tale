@@ -1,6 +1,6 @@
 export default function ProfileLoading() {
   return (
-    <div className="grid grid-cols-[16px_auto_16px]">
+    <div className="ProfileLoading grid grid-cols-[16px_auto_16px]">
       <div className="w-4 border border-border" />
       <div className="flex-1 p-8 space-y-6">
         {/* Profile header skeleton */}

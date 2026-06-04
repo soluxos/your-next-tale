@@ -17,7 +17,7 @@ export default async function FeedPage() {
   const groups = await getFeed(supabase, user.id);
 
   return (
-    <div className="flex flex-col items-start justify-center">
+    <div className="FeedPage flex flex-col items-start justify-center">
       <div className="max-w-2xl mx-auto w-full p-4 md:p-8">
         <div className="mb-8">
           <h1 className="font-ppMondwest text-[32px]">Feed</h1>

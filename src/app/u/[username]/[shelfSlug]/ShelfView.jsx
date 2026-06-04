@@ -9,7 +9,6 @@ import AddBookDrawer from "@/components/shelves/AddBookDrawer";
 import BookDetailPanel from "@/components/shelves/BookDetailPanel";
 import BookReviewModal from "@/components/shelves/BookReviewModal";
 import ReviewCardOverlay from "@/components/shelves/ReviewCardOverlay";
-import ShelfToolbar from "@/components/shelves/ShelfToolbar";
 import { removeBookFromShelf } from "@/lib/shelfBooks";
 import { sortShelfBooks } from "@/lib/shelfSort";
 import { filterShelfBooks, DEFAULT_FILTERS } from "@/lib/shelfFilter";
@@ -31,7 +30,13 @@ export default function ShelfView({
   username,
   shelves = [],
   defaultView = "books",
-  profile = null
+  profile = null,
+  sortKey = "user",
+  onSortChange,
+  viewMode: viewModeProp,
+  onViewModeChange,
+  filters: filtersProp,
+  onFiltersChange
 }) {
   const router = useRouter();
   const cacheKey = shelfId || shelfSlug;
@@ -45,21 +50,14 @@ export default function ShelfView({
   const [reviewBook, setReviewBook] = useState(null);
   const supabase = createClient();
 
-  // View mode (books / reviews) — managed internally with sessionStorage
-  const [viewMode, setViewMode] = useState(() => {
-    if (typeof window === "undefined") return defaultView;
-    return sessionStorage.getItem("shelf-view-mode") || defaultView;
-  });
+  // Use props if provided, else fall back to local state (standalone usage)
+  const viewMode = viewModeProp ?? defaultView;
+  const filters = filtersProp ?? DEFAULT_FILTERS;
 
   function handleViewModeChange(mode) {
-    setViewMode(mode);
-    sessionStorage.setItem("shelf-view-mode", mode);
+    onViewModeChange?.(mode);
     setSelectedBook(null);
   }
-
-  // Sort and filter state
-  const [sortKey, setSortKey] = useState("user");
-  const [filters, setFilters] = useState(DEFAULT_FILTERS);
 
   // Drag and drop — only for owner in user sort on a specific shelf
   const dragEnabled =
@@ -329,23 +327,7 @@ export default function ShelfView({
 
   return (
     <>
-      {/* Sort / Filter / View toolbar */}
-      {!booksLoading && books.length > 0 && (
-        <div className="px-10">
-          <div className="max-w-4xl mx-auto pt-4 pb-2">
-            <ShelfToolbar
-              sortKey={sortKey}
-              onSortChange={setSortKey}
-              viewMode={viewMode}
-              onViewModeChange={handleViewModeChange}
-              filters={filters}
-              onFiltersChange={setFilters}
-            />
-          </div>
-        </div>
-      )}
-
-      <div className="flex px-10">
+      <div className="ShelfView flex px-10">
         <div className="grid grid-cols-[16px_auto_16px] pb-[88px] w-full relative">
           {/* Top shelf surface: left angle + center bar + right angle */}
           <div className="col-span-3 flex h-[40px]">
@@ -624,9 +606,17 @@ export default function ShelfView({
                                 <motion.div
                                   key={item.id}
                                   layout="position"
-                                  initial={isBeingDragged ? false : { opacity: 0, scale: 0.95 }}
+                                  initial={
+                                    isBeingDragged
+                                      ? false
+                                      : { opacity: 0, scale: 0.95 }
+                                  }
                                   animate={{ opacity: 1, scale: 1 }}
-                                  exit={isBeingDragged ? false : { opacity: 0, scale: 0.9 }}
+                                  exit={
+                                    isBeingDragged
+                                      ? false
+                                      : { opacity: 0, scale: 0.9 }
+                                  }
                                   transition={
                                     dragging
                                       ? {

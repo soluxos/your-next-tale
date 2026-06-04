@@ -58,7 +58,7 @@ export default function BookUpload({ url, onUpload }) {
   };
 
   return (
-    <div className="w-full">
+    <div className="BookUpload w-full">
       <div className="bg-transparent flex flex-col items-start gap-4">
         {bookUrl && (
           <img

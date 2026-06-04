@@ -27,12 +27,19 @@ export default function TopNavigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [pendingRequestCount, setPendingRequestCount] = useState(0);
+  const [scrolled, setScrolled] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient();
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 0);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   // Fetch pending follow request count for private profiles
@@ -89,7 +96,10 @@ export default function TopNavigation() {
         damping: 25,
         duration: 0.6
       }}
-      className="z-[99] py-4 border-b border-border fixed top-0 left-0 right-0 bg-white"
+      className={cn(
+        "TopNavigation z-[99] py-4 fixed top-0 left-0 right-0 bg-white transition-[border-color,box-shadow] duration-300",
+        scrolled ? "border-b border-border" : "border-b border-transparent"
+      )}
     >
       <div className="max-w-full w-full px-10 mx-auto flex items-center justify-between">
         {/* Logo */}

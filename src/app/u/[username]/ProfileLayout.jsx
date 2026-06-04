@@ -8,6 +8,8 @@ import FacehashAvatar from "@/components/profile/FacehashAvatar";
 import TopNavigation from "@/components/navigation/TopNavigation";
 import ShelfView from "@/app/u/[username]/[shelfSlug]/ShelfView";
 import ManageShelvesPanel from "@/components/shelves/ManageShelvesPanel";
+import ShelfToolbar from "@/components/shelves/ShelfToolbar";
+import { DEFAULT_FILTERS } from "@/lib/shelfFilter";
 import { useAuth } from "@/components/providers/AuthProvider";
 import FollowButton from "@/components/profile/FollowButton";
 
@@ -26,6 +28,21 @@ export default function ProfileLayout({
   const { profile: authProfile } = useAuth();
   const [localShelves, setLocalShelves] = useState(shelves);
   const [manageShelvesOpen, setManageShelvesOpen] = useState(false);
+
+  // Toolbar state — lifted here so tabs + toolbar can share one row
+  const [sortKey, setSortKey] = useState("user");
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [viewMode, setViewMode] = useState("books");
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem("shelf-view-mode");
+    if (stored) setViewMode(stored);
+  }, []);
+
+  function handleViewModeChange(mode) {
+    setViewMode(mode);
+    sessionStorage.setItem("shelf-view-mode", mode);
+  }
 
   // When viewing own profile, use the live auth context colour so it updates
   // immediately after saving without needing a full page refresh.
@@ -66,7 +83,7 @@ export default function ProfileLayout({
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="ProfileLayout min-h-screen bg-white">
       {/* Profile header */}
       <div className="px-5 py-[120px]">
         <div className="max-w-4xl mx-auto flex flex-col items-center gap-4">
@@ -165,8 +182,8 @@ export default function ProfileLayout({
       {/* Shelf tab navigation — hidden on followers/following sub-pages */}
       {activeSlug !== "followers" && activeSlug !== "following" && (
         <div className="px-5">
-          <div className="max-w-4xl mx-auto flex items-center border-b border-border">
-            <nav className="flex gap-1 overflow-x-auto no-scrollbar -mb-px items-center flex-1">
+          <div className="w-full flex px-20 items-center justify-between mb-[-2px]">
+            <nav className="flex gap-1 overflow-x-auto no-scrollbar -mb-px items-center shrink-0">
               {tabs.map((tab) => (
                 <Link
                   key={tab.slug}
@@ -183,6 +200,17 @@ export default function ProfileLayout({
                 </Link>
               ))}
             </nav>
+            <div className="flex-1" />
+            <div className="-mb-px pb-2">
+              <ShelfToolbar
+                sortKey={sortKey}
+                onSortChange={setSortKey}
+                viewMode={viewMode}
+                onViewModeChange={handleViewModeChange}
+                filters={filters}
+                onFiltersChange={setFilters}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -201,6 +229,12 @@ export default function ProfileLayout({
             shelves={localShelves}
             defaultView={defaultView}
             profile={profileWithLiveColor}
+            sortKey={sortKey}
+            onSortChange={setSortKey}
+            viewMode={viewMode}
+            onViewModeChange={handleViewModeChange}
+            filters={filters}
+            onFiltersChange={setFilters}
           />
           {/* children carries the @modal slot (e.g. ReviewModal on direct load) */}
           {children}

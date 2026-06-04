@@ -23,7 +23,7 @@ export default async function AdminDashboard() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="AdminDashboard space-y-8">
       <div>
         <p className="font-departureMono uppercase text-[10px] text-textSecondary">
           Overview

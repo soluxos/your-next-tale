@@ -18,7 +18,7 @@ export default function AdminNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-col gap-1">
+    <nav className="AdminNav flex flex-col gap-1">
       {navLinks.map((link) => (
         <Link
           key={link.href}

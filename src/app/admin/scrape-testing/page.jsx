@@ -37,7 +37,7 @@ const ScrapeBookPage = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="ScrapeBookPage space-y-6">
       <div>
         <p className="font-departureMono uppercase text-[10px] text-textSecondary">
           Scraper

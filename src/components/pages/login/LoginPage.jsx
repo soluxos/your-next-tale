@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { login } from "@/app/login/actions";
 import { Button } from "@/components/ui/button";
@@ -14,9 +14,24 @@ import {
   CardTitle
 } from "@/components/ui/card";
 
+const RAMSAY_LINES = [
+  "Sign in. NOW.",
+  "That reading list is RAW.",
+  "Get in there.",
+  "Don't just stand there.",
+  "Finally, some taste."
+];
+
 export default function LoginPage({ message }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [ramsayLine, setRamsayLine] = useState("");
+
+  useEffect(() => {
+    setRamsayLine(
+      RAMSAY_LINES[Math.floor(Math.random() * RAMSAY_LINES.length)]
+    );
+  }, []);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState(
@@ -50,20 +65,22 @@ export default function LoginPage({ message }) {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4 py-12">
+    <div className="LoginPage min-h-[75vh] bg-white flex flex-col items-center justify-start px-4 py-12">
       {/* Brand */}
-      <div className="mb-8 text-center">
-        <p className="font-ppMondwest text-[#0c0c0c] text-[24px] leading-none mb-2">
-          Your next tale
-        </p>
-        <p className="font-departureMono uppercase text-textSecondary text-[11px]">
-          Curated fantasy & sci-fi books
-        </p>
+      <div className="mb-8 text-center flex flex-col items-center gap-2 pt-10">
+        <img src="/new-logo.svg" alt="logo" className="w-auto h-5" />
+        <div className="flex flex-col items-center gap-0">
+          <p className="font-ppMondwest text-[#0c0c0c] text-[20px] leading-none mb-2">
+            Your next tale
+          </p>
+          <p className="font-departureMono uppercase text-[10px] text-textSecondary">
+            Build your bookshelf. Discover your next read.
+          </p>
+        </div>
       </div>
-
       <Card className="w-full max-w-[380px] shadow-sm border-border">
         <CardHeader className="p-6 pb-0">
-          <CardTitle className="text-xl font-ppMondwest text-textPrimary">
+          <CardTitle className="text-xl font-ppMondwest">
             Welcome back
           </CardTitle>
           <CardDescription className="font-departureMono uppercase text-[11px] text-textSecondary mt-2">
@@ -158,7 +175,7 @@ export default function LoginPage({ message }) {
 
       {/* Footer */}
       <p className="mt-6 font-departureMono uppercase text-[10px] text-textSecondary">
-        Discover new fantasy and sci-fi novels
+        {ramsayLine}
       </p>
     </div>
   );

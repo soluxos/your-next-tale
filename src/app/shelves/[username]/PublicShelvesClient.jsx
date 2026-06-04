@@ -7,7 +7,7 @@ export default function PublicShelvesClient({ username, shelves }) {
   const [selectedBook, setSelectedBook] = useState(null);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="PublicShelvesClient min-h-screen bg-background">
       <div className="max-w-5xl mx-auto p-6 pt-28 space-y-10">
         <h1 className="text-2xl font-semibold tracking-tight">
           {username}&apos;s Bookshelves

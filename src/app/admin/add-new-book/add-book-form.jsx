@@ -185,7 +185,7 @@ const AddBookForm = () => {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row">
+    <div className="AddBookForm flex flex-col lg:flex-row">
       {/* Left panel — Browse & Discover */}
       <div className="flex-1 p-8 overflow-y-auto flex flex-col gap-6">
         <div className="flex flex-col gap-2">

@@ -21,7 +21,7 @@ export default function Preview() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#0c0c0c] flex flex-col items-center justify-center px-4 relative overflow-hidden rounded-none">
+    <div className="Preview min-h-screen w-full bg-[#0c0c0c] flex flex-col items-center justify-center px-4 relative overflow-hidden rounded-none">
       {/* Scanline overlay */}
       <div
         className="pointer-events-none fixed inset-0 z-50"

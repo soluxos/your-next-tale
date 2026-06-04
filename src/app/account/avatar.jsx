@@ -47,7 +47,7 @@ export default function Avatar({ uid, url, size, onUpload }) {
   };
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="Avatar flex items-center gap-4">
       <div
         className="rounded-full overflow-hidden bg-[#f4f4f4] border border-border shrink-0 flex items-center justify-center"
         style={{ width: size, height: size }}

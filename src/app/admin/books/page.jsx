@@ -72,7 +72,7 @@ export default function AdminBooksPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="AdminBooksPage space-y-6">
       <div>
         <p className="font-departureMono uppercase text-[10px] text-textSecondary">
           Library

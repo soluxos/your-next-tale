@@ -1,6 +1,6 @@
 export default function ComponentsPage() {
   return (
-    <div className="space-y-12 max-w-4xl">
+    <div className="ComponentsPage space-y-12 max-w-4xl">
       {/* Page header */}
       <div className="mb-8">
         <h1 className="font-ppMondwest text-textPrimary text-[32px]">

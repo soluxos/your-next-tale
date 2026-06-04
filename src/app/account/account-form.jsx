@@ -64,7 +64,7 @@ export default function AccountForm({ user }) {
   }
 
   return (
-    <div className="min-h-screen bg-white p-6 pt-32 max-w-xl mx-auto space-y-6">
+    <div className="AccountForm min-h-screen bg-white p-6 pt-32 max-w-xl mx-auto space-y-6">
       <div className="mb-2">
         <h1 className="font-ppMondwest text-[24px] text-textPrimary">Account Settings</h1>
         <p className="font-departureMono uppercase text-[10px] text-textSecondary mt-1">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signup } from "@/app/login/actions";
@@ -15,6 +15,14 @@ import {
   CardTitle
 } from "@/components/ui/card";
 
+const RAMSAY_LINES = [
+  "Sign up. NOW.",
+  "Your shelf won't fill itself.",
+  "Stop lurking. Create an account.",
+  "An empty bookshelf is a disgrace.",
+  "Get in here and start reading."
+];
+
 export default function SignupPage() {
   const searchParams = useSearchParams();
   const emailConfirmation = searchParams.get("message") === "check-email";
@@ -24,6 +32,13 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [ramsayLine, setRamsayLine] = useState("");
+
+  useEffect(() => {
+    setRamsayLine(
+      RAMSAY_LINES[Math.floor(Math.random() * RAMSAY_LINES.length)]
+    );
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,15 +64,18 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="bg-white flex flex-col items-center justify-start px-4 py-[120px]">
+    <div className="SignupPage min-h-[75vh] bg-white flex flex-col items-center justify-start px-4 py-12">
       {/* Brand */}
-      <div className="mb-8 text-center">
-        <p className="font-ppMondwest text-[#0c0c0c] text-[24px] leading-none mb-2">
-          Your next tale
-        </p>
-        <p className="font-departureMono uppercase text-textSecondary text-[11px]">
-          Curated fantasy & sci-fi books
-        </p>
+      <div className="mb-8 text-center flex flex-col items-center gap-2 pt-10">
+        <img src="/new-logo.svg" alt="logo" className="w-auto h-5" />
+        <div className="flex flex-col items-center gap-0">
+          <p className="font-ppMondwest text-[#0c0c0c] text-[20px] leading-none mb-2">
+            Your next tale
+          </p>
+          <p className="font-departureMono uppercase text-[10px] text-textSecondary">
+            Build your bookshelf. Discover your next read.
+          </p>
+        </div>
       </div>
 
       <Card className="w-full max-w-[380px] shadow-sm border-border">
@@ -86,7 +104,7 @@ export default function SignupPage() {
         ) : (
           <>
             <CardHeader className="p-6 pb-0">
-              <CardTitle className="text-xl font-ppMondwest text-textPrimary">
+              <CardTitle className="text-xl font-ppMondwest">
                 Create an account
               </CardTitle>
               <CardDescription className="font-departureMono uppercase text-[11px] text-textSecondary mt-2">
@@ -202,7 +220,7 @@ export default function SignupPage() {
 
       {/* Footer */}
       <p className="mt-6 font-departureMono uppercase text-[10px] text-textSecondary">
-        Discover new fantasy and sci-fi novels
+        {ramsayLine}
       </p>
     </div>
   );

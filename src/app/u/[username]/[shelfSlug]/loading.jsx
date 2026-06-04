@@ -1,6 +1,6 @@
 export default function ShelfLoading() {
   return (
-    <div className="flex px-5">
+    <div className="ShelfLoading flex px-5">
       <div className="grid grid-cols-[16px_auto_16px] pb-[88px] w-full relative">
         {/* Top shelf surface */}
         <div className="col-span-3 flex h-[40px]">

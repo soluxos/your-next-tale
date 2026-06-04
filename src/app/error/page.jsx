@@ -1,6 +1,6 @@
 export default function ErrorPage() {
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4">
+    <div className="ErrorPage min-h-screen bg-white flex flex-col items-center justify-center px-4">
       <p className="font-departureMono uppercase text-[10px] text-textSecondary mb-2">
         Error
       </p>

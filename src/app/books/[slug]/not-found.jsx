@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-bookLightDark to-bookLightLight">
+    <div className="NotFound min-h-screen flex items-center justify-center bg-gradient-to-b from-bookLightDark to-bookLightLight">
       <div className="text-center p-8 max-w-md">
         <h1 className="text-4xl font-ppMondwest text-textPrimary mb-2">
           Book Not Found

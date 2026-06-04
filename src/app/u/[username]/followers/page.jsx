@@ -44,7 +44,7 @@ export default async function FollowersPage({ params }) {
   }
 
   return (
-    <div className="grid grid-cols-[16px_auto_16px]">
+    <div className="FollowersPage grid grid-cols-[16px_auto_16px]">
       <div className="w-4 border border-border" />
       <div className="max-w-2xl mx-auto w-full p-4 md:p-8">
         <div className="flex items-center gap-3 mb-6">

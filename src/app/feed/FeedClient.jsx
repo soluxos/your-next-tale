@@ -15,7 +15,7 @@ export default function FeedClient({ initialGroups }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="FeedClient space-y-6">
       {initialGroups.map((group, i) => (
         <FeedGroup key={i} group={group} />
       ))}

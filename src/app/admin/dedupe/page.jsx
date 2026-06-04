@@ -29,7 +29,7 @@ export default function DedupePage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="DedupePage space-y-8">
       <div>
         <p className="font-departureMono uppercase text-[10px] text-textSecondary">
           Maintenance

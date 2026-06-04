@@ -90,7 +90,7 @@ export default function BooksPage() {
   const rows = chunkBooks(books, itemsPerRow);
 
   return (
-    <div className="grid grid-cols-[16px_auto_16px]">
+    <div className="BooksPage grid grid-cols-[16px_auto_16px]">
       <div className="w-4 h-full border border-solid border-border"></div>
       <div className="flex-1 flex-col w-full h-full">
         <div className="left-border w-full h-4 border-1 border-border border flex border-r-0 border-l-0"></div>

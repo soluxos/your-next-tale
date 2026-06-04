@@ -86,7 +86,7 @@ export default function BookshelvesClient({ shelves: initialShelves, userId }) {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="BookshelvesClient min-h-screen bg-background">
       <div className="max-w-4xl mx-auto p-6 pt-28 space-y-8">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">

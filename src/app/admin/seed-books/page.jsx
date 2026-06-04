@@ -64,7 +64,7 @@ export default function SeedBooksPage() {
   const totalTerms = selectedLabels.length;
 
   return (
-    <div className="space-y-8">
+    <div className="SeedBooksPage space-y-8">
       <div>
         <p className="font-departureMono uppercase text-[10px] text-textSecondary">
           Multi-Source Seeder

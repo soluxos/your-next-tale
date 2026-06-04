@@ -24,7 +24,7 @@ export default function ShelfViewClient({
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="ShelfViewClient min-h-screen bg-background">
       <div className="max-w-4xl mx-auto p-6 pt-28 space-y-6">
         <div className="flex items-center gap-4">
           <Button asChild variant="outline" size="sm">
