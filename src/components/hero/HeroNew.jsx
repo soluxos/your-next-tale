@@ -3,8 +3,12 @@
 import Link from "next/link";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/components/providers/AuthProvider";
 
 export default function HeroNew() {
+  const { user, profile } = useAuth();
+  const isLoggedIn = !!user;
+  const username = profile?.username;
   return (
     <div className="HeroNew relative w-full bg-white flex flex-col items-center justify-center pt-36 pb-24 px-6">
       <div className="flex flex-col items-center gap-5 text-center max-w-[680px]">
@@ -148,19 +152,39 @@ export default function HeroNew() {
           }}
           className="flex flex-col sm:flex-row items-center gap-3 mt-1"
         >
-          <Button
-            asChild
-            className="h-11 px-6 text-[12px] font-departureMono uppercase tracking-wider"
-          >
-            <Link href="/register-interest">Get started</Link>
-          </Button>
-          <Button
-            asChild
-            variant="outline"
-            className="h-11 px-6 text-[12px] font-departureMono uppercase tracking-wider"
-          >
-            <Link href="/books">Browse books</Link>
-          </Button>
+          {isLoggedIn ? (
+            <>
+              <Button
+                asChild
+                className="h-11 px-6 text-[12px] font-departureMono uppercase tracking-wider"
+              >
+                <Link href={username ? `/u/${encodeURIComponent(username)}` : "/account"}>My Bookcase</Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="h-11 px-6 text-[12px] font-departureMono uppercase tracking-wider"
+              >
+                <Link href="/feed">Feed</Link>
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                asChild
+                className="h-11 px-6 text-[12px] font-departureMono uppercase tracking-wider"
+              >
+                <Link href="/get-started">Get Started</Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="h-11 px-6 text-[12px] font-departureMono uppercase tracking-wider"
+              >
+                <Link href="/login">Sign In</Link>
+              </Button>
+            </>
+          )}
         </motion.div>
       </div>
     </div>
