@@ -65,8 +65,9 @@ export default function ShelfView({
   const {
     dragging,
     liveBooks,
-    ghostPos,
+    ghostPosRef,
     ghostSize,
+    ghostElRef,
     offsetRef,
     draggedBook,
     overIndex: dragOverIndex,
@@ -93,7 +94,7 @@ export default function ShelfView({
   // During drag render liveBooks (live-reordered); otherwise use sort+filter pipeline
   const renderBooks = dragging ? liveBooks : displayBooks;
 
-  // Tag each item with its index in renderBooks so pointer handlers know which slot
+  // Tag each item with its visual render index for data-drag-idx (drop target detection)
   const indexedRenderBooks = useMemo(
     () => renderBooks.map((b, i) => ({ ...b, _gridIdx: i })),
     [renderBooks]
@@ -237,7 +238,7 @@ export default function ShelfView({
     const userBook = added?.userBook || null;
     const newEntry = {
       id: `new-${Date.now()}`,
-      position: null,
+      position: 1,
       bookshelf_id: shelfId,
       book: { ...book },
       user_book: userBook
@@ -253,7 +254,12 @@ export default function ShelfView({
         : null
     };
     setBooks((prev) => {
-      const next = [newEntry, ...prev];
+      // Bump all existing positions by 1 so the new book sits at position 1
+      const bumped = prev.map((b) => ({
+        ...b,
+        position: b.position != null ? b.position + 1 : b.position
+      }));
+      const next = [newEntry, ...bumped];
       booksCache.set(cacheKey, next);
       return next;
     });
@@ -639,7 +645,7 @@ export default function ShelfView({
                                   }
                                   onPointerDown={
                                     dragEnabled
-                                      ? (e) => startDrag(e, bookIdx)
+                                      ? (e) => startDrag(e, item.id)
                                       : undefined
                                   }
                                   onDragStart={(e) => e.preventDefault()}
@@ -782,14 +788,18 @@ export default function ShelfView({
 
       {/* Floating ghost — cover image that follows the cursor while dragging */}
       {dragging &&
-        ghostPos &&
         draggedBook &&
         createPortal(
           <div
+            ref={ghostElRef}
             style={{
               position: "fixed",
-              left: ghostPos.x - offsetRef.current.x,
-              top: ghostPos.y - offsetRef.current.y,
+              left: ghostPosRef.current
+                ? ghostPosRef.current.x - offsetRef.current.x
+                : -9999,
+              top: ghostPosRef.current
+                ? ghostPosRef.current.y - offsetRef.current.y
+                : -9999,
               width: ghostSize.w,
               height: ghostSize.h,
               pointerEvents: "none",

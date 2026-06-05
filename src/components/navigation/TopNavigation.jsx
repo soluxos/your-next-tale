@@ -97,7 +97,7 @@ export default function TopNavigation() {
         duration: 0.6
       }}
       className={cn(
-        "TopNavigation z-[99] py-4 fixed top-0 left-0 right-0 bg-white transition-[border-color,box-shadow] duration-300",
+        "TopNavigation z-[50] py-4 fixed top-0 left-0 right-0 bg-white transition-[border-color,box-shadow] duration-300",
         scrolled ? "border-b border-border" : "border-b border-transparent"
       )}
     >

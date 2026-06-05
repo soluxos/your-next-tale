@@ -132,7 +132,7 @@ const VaulDrawer = forwardRef(
                   ) : (
                     <div className="drawer-content overflow-y-scroll flex flex-col h-full items-center justify-start">
                       <div className="content-container flex flex-col w-full max-w-full h-auto">
-                        <div className="flex flex-col items-center gap-4 w-full bg-[#F4F3FF] p-10">
+                        <div className="flex flex-col items-center gap-4 w-full bg-[#dddddd] p-10">
                           {coverUrl && (
                             <img
                               src={coverUrl}

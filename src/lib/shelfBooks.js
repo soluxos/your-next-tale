@@ -62,11 +62,29 @@ export async function addBookToShelf(supabase, userId, bookId, shelfId) {
     }
   }
 
-  // 4. Insert into bookshelf_books
+  // 4. Bump existing positions so the new book can take position 1
+  const { data: existingEntries } = await supabase
+    .from(TABLES.BOOKSHELF_BOOKS)
+    .select("id, position")
+    .eq("bookshelf_id", shelfId)
+    .not("position", "is", null);
+
+  if (existingEntries?.length) {
+    await Promise.all(
+      existingEntries.map((entry) =>
+        supabase
+          .from(TABLES.BOOKSHELF_BOOKS)
+          .update({ position: entry.position + 1 })
+          .eq("id", entry.id)
+      )
+    );
+  }
+
+  // 5. Insert into bookshelf_books at position 1
   const { data, error } = await supabase
     .from(TABLES.BOOKSHELF_BOOKS)
     .upsert(
-      { bookshelf_id: shelfId, user_book_id: userBook.id },
+      { bookshelf_id: shelfId, user_book_id: userBook.id, position: 1 },
       { onConflict: "bookshelf_id,user_book_id" }
     )
     .select()
@@ -74,7 +92,7 @@ export async function addBookToShelf(supabase, userId, bookId, shelfId) {
 
   if (error) throw error;
 
-  // 5. Fetch book data for activity snapshot
+  // 6. Fetch book data for activity snapshot
   const { data: book } = await supabase
     .from(TABLES.BOOKS)
     .select("id, title, cover_url, isbn_13")
