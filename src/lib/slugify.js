@@ -1,3 +1,5 @@
+import { selectAllBooks } from "@/lib/books/selectAllBooks";
+
 /**
  * Generates a URL-safe slug from book title and author
  * Example: "The Great Gatsby" by "F. Scott Fitzgerald" -> "the-great-gatsby-f-scott-fitzgerald"
@@ -12,24 +14,38 @@ export function generateBookSlug(title, author) {
     .trim();
 }
 
-/**
- * Extracts the book ID from a slug that might contain ID at the end
- * or searches the database for a book with matching title and author
- */
+// slug → book id for the whole catalogue, kept for a few minutes so a page's
+// metadata and body (and a build's pages) share one read. Only ids and
+// titles are held; the book itself is read fresh.
+const INDEX_TTL = 10 * 60 * 1000;
+const MISS_RETRY = 60 * 1000;
+let slugIndex = null;
+
+async function bookIdForSlug(slug, supabase) {
+  const age = slugIndex ? Date.now() - slugIndex.at : Infinity;
+  // A slug it doesn't know may be a book added since: look again, but at
+  // most once a minute, so links to books that don't exist stay cheap.
+  if (age > INDEX_TTL || (!slugIndex.map.has(slug) && age > MISS_RETRY)) {
+    // Oldest first: when two books share a slug, the one that had it first keeps it.
+    const { data, error } = await selectAllBooks(supabase, "id, title, authors", { order: "created_at" });
+    if (data && !error) {
+      const map = new Map();
+      for (const b of data) {
+        const key = generateBookSlug(b.title, b.authors?.[0]);
+        if (!map.has(key)) map.set(key, b.id);
+      }
+      slugIndex = { at: Date.now(), map };
+    } else if (!slugIndex) {
+      return null;
+    }
+  }
+  return slugIndex.map.get(slug) ?? null;
+}
+
+/** The book whose title and first author make this slug, or null. */
 export async function getBookFromSlug(slug, supabase) {
-  // First, try to find by exact slug match if we store slugs
-  // Otherwise, we'll need to search by reconstructing title and author
-
-  // For now, we'll fetch all books and find the matching one
-  const { data: books } = await supabase.from("books").select("*");
-
-  if (!books) return null;
-
-  // Find book where slug matches
-  const book = books.find((b) => {
-    const bookSlug = generateBookSlug(b.title, b.authors?.[0]);
-    return bookSlug === slug;
-  });
-
-  return book;
+  const id = await bookIdForSlug(slug, supabase);
+  if (!id) return null;
+  const { data } = await supabase.from("books").select("*").eq("id", id).maybeSingle();
+  return data || null;
 }

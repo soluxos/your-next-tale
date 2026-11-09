@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "backfill:shelves": "node -r dotenv/config src/scripts/backfillDefaultShelves.js"
+    "backfill:shelves": "node -r dotenv/config src/scripts/backfillDefaultShelves.js",
+    "import:catalogue": "tsx --tsconfig jsconfig.json src/scripts/importCatalogue.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -62,9 +63,11 @@
     "react-hook-form": "^7.55.0",
     "react-resizable-panels": "^2.1.7",
     "recharts": "^2.15.2",
+    "sharp": "^0.34.5",
     "sonner": "^2.0.3",
     "tailwind-merge": "^3.2.0",
     "tailwindcss-animate": "^1.0.7",
+    "tesseract.js": "^5.1.1",
     "uuid": "^11.1.0",
     "vaul": "^1.1.2",
     "zod": "^3.24.2"

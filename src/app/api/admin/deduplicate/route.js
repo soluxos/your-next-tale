@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
+import { selectAllBooks } from "@/lib/books/selectAllBooks";
 
 function normaliseKey(title, author) {
   const clean = (s) =>
@@ -42,12 +43,10 @@ export async function POST(request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Fetch all books
-  const { data: allBooks, error: fetchError } = await supabase
-    .from("books")
-    .select(
-      "id, isbn_13, isbn_10, title, authors, description, cover_url, is_incomplete"
-    );
+  const { data: allBooks, error: fetchError } = await selectAllBooks(
+    supabase,
+    "id, isbn_13, isbn_10, title, authors, description, cover_url, is_incomplete"
+  );
 
   if (fetchError) {
     return NextResponse.json({ error: fetchError.message }, { status: 500 });

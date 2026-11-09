@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# catalogue import: Open Library cache, run logs, previews
+/.catalogue-import/

@@ -6,6 +6,9 @@ import { normaliseLanguage, isEnglish } from "./normaliseLanguage";
 import { isEnglishIsbn, isNonEnglishIsbn } from "./isbnUtils";
 import { getBookshopLink } from "@/lib/bookshop";
 import { TABLES } from "@/lib/supabase/types";
+import { describeWork, sameWork, titlesCompatible } from "./sameBook";
+import { pickCover } from "./coverQuality";
+import { tidyTitle, tidyAuthors } from "@/lib/books/tidyText";
 
 const STALE_DAYS = 30;
 
@@ -190,7 +193,7 @@ export async function fetchBookSources(input) {
     gbTitleData?.cover_remote,
     olData?.cover_remote,
     isbnForCover
-      ? `https://covers.openlibrary.org/b/isbn/${isbnForCover}-L.jpg`
+      ? `https://covers.openlibrary.org/b/isbn/${isbnForCover}-L.jpg?default=false`
       : null
   ].filter(Boolean);
 
@@ -236,7 +239,44 @@ export async function fetchBookSources(input) {
   return { merged, sources, coverCandidates: uniqueCovers, isbn, inputTitle };
 }
 
-export async function fetchAndNormaliseBook(input, supabase) {
+/**
+ * Strict mode (library imports): only save a book an online source actually
+ * found — never one built from the caller's own title/author — and only if
+ * it is the book the caller asked for. This runs before anything is saved,
+ * so a wrong edition never lands in the catalogue. Same rule as the import's
+ * own check (lib/import/goodreads sameBookAs):
+ *  - same work (title + author), or
+ *  - an ISBN lookup found the caller's own ISBN and the titles agree —
+ *    unless `input.match === "work"` (the ISBN came from a title search,
+ *    not the caller), which needs the same work.
+ * The ISBN route needs a real ISBN hit: the merge also folds the caller's
+ * ISBNs in, so a title-search result would otherwise "match" its own input.
+ * Returns a reason string to reject, or null to accept.
+ */
+export function strictRejection(input, result) {
+  const found = result.sources.filter((s) => s.name !== "Search result");
+  if (!found.length) return "no online source has this book";
+  const p = input?.preview || {};
+  const wanted = describeWork({
+    title: p.title,
+    authors: p.authors?.length ? p.authors : p.author ? [p.author] : []
+  });
+  const got = describeWork(result.merged);
+  if (sameWork(wanted, got)) return null;
+  const foundByIsbn = found.some((s) =>
+    ["ISBNdb", "Open Library", "Google Books"].includes(s.name)
+  );
+  if (input?.match !== "work" && foundByIsbn) {
+    const m = result.merged;
+    const isbnMatch =
+      (p.isbn_13 && m.isbn_13 === p.isbn_13) ||
+      (p.isbn_10 && m.isbn_10 === p.isbn_10);
+    if (isbnMatch && titlesCompatible(wanted.core, got.core)) return null;
+  }
+  return `closest online match was a different book ("${result.merged.title}")`;
+}
+
+export async function fetchAndNormaliseBook(input, supabase, { strict = false } = {}) {
   // ── DB cache — only use if fully complete ──────────────────────────────────
   let quickIsbn = null;
   if (typeof input === "string") {
@@ -283,6 +323,14 @@ export async function fetchAndNormaliseBook(input, supabase) {
   const result = await fetchBookSources(input);
   if (!result) return null;
 
+  if (strict) {
+    const reason = strictRejection(input, result);
+    if (reason) {
+      console.warn(`[fetchAndNormalise] strict: not saving "${result.inputTitle}" — ${reason}`);
+      return null;
+    }
+  }
+
   const { merged, isbn, inputTitle } = result;
   const preview = typeof input === "string" ? null : input?.preview || null;
 
@@ -320,12 +368,15 @@ export async function fetchAndNormaliseBook(input, supabase) {
         )
       ];
 
-  let cover_url = null;
-  for (const url of coverOrder) {
-    if (!url) continue;
-    cover_url = await downloadAndUploadCover(url, isbnForCover, supabase);
-    if (cover_url) break;
-  }
+  // Every candidate is checked first, so placeholders, scans and spreads are
+  // never saved. A person's own pick wins unless it's rejected outright.
+  const picked = await pickCover(coverOrder, {
+    trustFirst: !!chosenCover,
+    log: (m) => console.log(`[fetchAndNormalise] ${m}`)
+  });
+  const cover_url = picked
+    ? await uploadCover(picked, isbnForCover, supabase)
+    : null;
 
   if (!cover_url) {
     console.warn(
@@ -360,8 +411,8 @@ export async function fetchAndNormaliseBook(input, supabase) {
   const bookData = {
     isbn_13: merged.isbn_13 || null,
     isbn_10: merged.isbn_10 || null,
-    title: merged.title,
-    authors: merged.authors || [],
+    title: tidyTitle(merged.title),
+    authors: tidyAuthors(merged.authors || []),
     description: description || null,
     cover_url,
     genres: genres.length > 0 ? genres : null,
@@ -377,6 +428,18 @@ export async function fetchAndNormaliseBook(input, supabase) {
       ? { hardcover_id: String(input.hardcover_id) }
       : {})
   };
+
+  // Strict mode never overwrites a catalogue row that already has this ISBN —
+  // hand back the existing row and let the caller decide if it's the book.
+  if (strict && (bookData.isbn_13 || bookData.isbn_10)) {
+    const { data: existing } = await supabase
+      .from(TABLES.BOOKS)
+      .select("*")
+      .eq(conflictColFor(bookData), bookData.isbn_13 || bookData.isbn_10)
+      .limit(1)
+      .maybeSingle();
+    if (existing) return existing;
+  }
 
   // ── Upsert ────────────────────────────────────────────────────────────────
   const conflictCol = bookData.isbn_13 ? "isbn_13" : "isbn_10";
@@ -427,7 +490,31 @@ export async function fetchAndNormaliseBook(input, supabase) {
   return upserted;
 }
 
+function conflictColFor(bookData) {
+  return bookData.isbn_13 ? "isbn_13" : "isbn_10";
+}
+
 // --------------- Merge ---------------
+
+// Titles a source uses before a book has a real one ("Dishonored Novel 3",
+// "Untitled", "TBA"). Another source's title wins over these.
+const PLACEHOLDER_TITLES = [
+  /^(?:tba|tbc|tbd|n\/a|unknown|untitled)$/i,
+  /\buntitled\b/i,
+  /\bto be (?:announced|confirmed)\b/i,
+  /\bworking title\b/i,
+  /\bnovel\s*#?\d+$/i,
+  /^(?:book|volume|vol\.?)\s*#?\d+$/i,
+  /^(?:a |the )?(?:new )?(?:book|novel) by\b/i,
+  // A series name and a number, before the book has a title: "The Bone Season #7".
+  /#\s*\d+(?:\.\d+)?\s*$/,
+  /\btitle\s*(?:tbc|tba|tbd|to come|to follow)\b/i,
+  /^\[[^\]]*\]$/
+];
+export function isPlaceholderTitle(title) {
+  const t = (title || "").trim();
+  return !t || PLACEHOLDER_TITLES.some((re) => re.test(t));
+}
 
 function mergeBookData(sources) {
   const valid = sources.filter(Boolean);
@@ -473,7 +560,10 @@ function mergeBookData(sources) {
   return {
     isbn_13: pick("isbn_13"),
     isbn_10: pick("isbn_10"),
-    title: pick("title"),
+    title:
+      valid
+        .map((src) => (typeof src.title === "string" ? src.title.trim() : ""))
+        .find((t) => t && !isPlaceholderTitle(t)) || pick("title"),
     authors: pickLargestArray("authors"),
     description: pickLongest("description"),
     cover_remote: pick("cover_remote"),
@@ -521,45 +611,50 @@ function normaliseDate(raw) {
 
 // --------------- Cover ---------------
 
-async function downloadAndUploadCover(remoteUrl, identifier, supabase) {
+export async function uploadCover({ buffer, assessment, url }, identifier, supabase) {
   try {
-    const response = await fetch(remoteUrl);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-    const contentType = response.headers.get("content-type") || "image/jpeg";
-    const ext = contentType.includes("png") ? ".png" : ".jpg";
-    const filename = `${identifier || crypto.randomUUID()}${ext}`;
-
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    // Skip tiny images (likely 1x1 placeholder pixels)
-    if (buffer.length < 1000) return null;
-
+    const filename = `${identifier || crypto.randomUUID()}${assessment.ext}`;
     const { error } = await supabase.storage
       .from("books")
-      .upload(filename, buffer, { contentType, upsert: true });
-
+      .upload(filename, buffer, { contentType: assessment.contentType, upsert: true });
     if (error) throw error;
     return filename;
   } catch (e) {
-    console.error("Cover download/upload failed:", remoteUrl, e.message);
+    console.error("Cover upload failed:", url, e.message);
     return null;
   }
 }
 
 // --------------- API Fetchers ---------------
 
+// ISBNdb allows about one request a second per key. Space our calls out and
+// retry a 429, so a busy moment (an import looking up a few books at once)
+// doesn't turn into "not found".
+const ISBNDB_GAP_MS = 1050;
+let isbndbNextSlot = 0;
+async function isbndbFetch(url, apiKey) {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const now = Date.now();
+    const wait = Math.max(0, isbndbNextSlot - now);
+    isbndbNextSlot = Math.max(now, isbndbNextSlot) + ISBNDB_GAP_MS;
+    if (wait) await new Promise((r) => setTimeout(r, wait));
+    const res = await fetch(url, {
+      headers: { Authorization: apiKey, Accept: "application/json" }
+    });
+    if (res.status !== 429) return res;
+    await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+  }
+  return { ok: false, status: 429 };
+}
+
 async function fetchFromIsbndb(isbn) {
   const apiKey = process.env.ISBNDB_API_KEY;
   if (!apiKey) return null;
 
   try {
-    const res = await fetch(
+    const res = await isbndbFetch(
       `https://api2.isbndb.com/book/${encodeURIComponent(isbn)}`,
-      {
-        headers: { Authorization: apiKey, Accept: "application/json" }
-      }
+      apiKey
     );
     if (!res.ok) return null;
 
@@ -582,11 +677,9 @@ async function fetchFromIsbndbByTitle(title, author) {
 
   try {
     const query = author ? `${title} ${author}` : title;
-    const res = await fetch(
+    const res = await isbndbFetch(
       `https://api2.isbndb.com/books/${encodeURIComponent(query)}?pageSize=10`,
-      {
-        headers: { Authorization: apiKey, Accept: "application/json" }
-      }
+      apiKey
     );
     if (!res.ok) return null;
 
