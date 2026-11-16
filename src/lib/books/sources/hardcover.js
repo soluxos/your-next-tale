@@ -41,7 +41,7 @@ export function cleanTitle(raw) {
     .trim();
 }
 
-async function hardcoverQuery(query, variables = {}) {
+export async function hardcoverQuery(query, variables = {}) {
   const token = process.env.HARDCOVER_API_TOKEN;
   if (!token) throw new Error("HARDCOVER_API_TOKEN is not set");
 

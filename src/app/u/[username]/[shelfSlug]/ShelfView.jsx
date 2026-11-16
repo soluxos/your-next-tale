@@ -1,24 +1,119 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useCallback, useEffect, useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { useRouter } from "next/navigation";
 import Book from "@/components/book/book";
-import AddBookDrawer from "@/components/shelves/AddBookDrawer";
-import BookDetailPanel from "@/components/shelves/BookDetailPanel";
+import {
+  Bookcase,
+  ContactShadow,
+  Shelf,
+  ShelfSkeleton,
+  chunkIntoShelves,
+  useBooksPerRow
+} from "@/components/bookcase/Bookcase";
 import BookReviewModal from "@/components/shelves/BookReviewModal";
-import ReviewCardOverlay from "@/components/shelves/ReviewCardOverlay";
-import { removeBookFromShelf } from "@/lib/shelfBooks";
+import ReviewList, { ReviewListSkeleton } from "@/components/shelves/ReviewList";
+import CoverProgress from "@/components/shelves/CoverProgress";
+import ShelfToolbar, { ActiveFilterChips, ViewToggle } from "@/components/shelves/ShelfToolbar";
+import { clearPanelFilters } from "@/components/shelves/FilterPopover";
+import { buildGenreIndex, filterByGenres, genreOptionsFor } from "@/components/shelves/shelfGenres";
 import { sortShelfBooks } from "@/lib/shelfSort";
-import { filterShelfBooks, DEFAULT_FILTERS } from "@/lib/shelfFilter";
+import {
+  filterShelfBooks,
+  hasActiveFilters,
+  DEFAULT_FILTERS
+} from "@/lib/shelfFilter";
 import { useShelfDragDrop } from "@/hooks/useShelfDragDrop";
 import { createClient } from "@/utils/supabase/client";
 import { TABLES } from "@/lib/supabase/types";
+import { useLibrary } from "@/components/providers/LibraryProvider";
+import { toast } from "sonner";
+
+// What each status shelf is for — shown under the shelf name and in its
+// empty state, so "Did Not Finish" never needs guessing.
+const SHELF_COPY = {
+  all: {
+    blurb: "Every book in your library",
+    emptyTitle: "Your bookcase is empty",
+    empty: "Search our catalogue and the web in one go — every book you add lands here."
+  },
+  read: {
+    blurb: "Books you’ve finished",
+    empty: "Finished a book? Add it here, give it a rating and note what you thought."
+  },
+  "currently-reading": {
+    blurb: "What you’re reading now — track your page as you go",
+    empty: "Add the book on your nightstand and keep track of your progress."
+  },
+  "want-to-read": {
+    blurb: "Your to-be-read pile",
+    empty: "Save books you’d like to read next. Spot one on Discover? Add it in one click."
+  },
+  "did-not-finish": {
+    blurb: "Books you started and set aside — no judgement",
+    emptyTitle: "No DNFs yet",
+    empty: "“Did not finish” is for books you put down part-way. Moving a book here keeps a record without counting it as read."
+  },
+  custom: {
+    blurb: "Your own shelf — a book can be on as many as you like",
+    empty: "Custom shelves work like tags: add books here alongside their reading status."
+  }
+};
+
+function AddSlot({ onClick, label, compact = false }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="group/add w-full rounded-[3px] border-2 border-dashed border-black/20 bg-white/35 hover:bg-white/70 hover:border-black/40 transition-colors flex flex-col items-center justify-center gap-2 text-textPrimary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+      style={{ aspectRatio: "2 / 3" }}
+    >
+      <span className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center group-hover/add:scale-105 transition-transform">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+          <path d="M8 2v12M2 8h12" />
+        </svg>
+      </span>
+      {!compact && <span className="label">Add book</span>}
+      {compact && <span className="label hidden sm:block">Add</span>}
+    </button>
+  );
+}
 
 // Module-level cache — survives client-side navigation within the same session.
 // Key: shelfId or shelfSlug. Value: books array from last successful fetch.
 const booksCache = new Map();
+const NO_BOOKS = [];
+
+// What a shelf needs per book. Descriptions are left out (they're about half
+// the payload); the popover and drawer fetch the one they show.
+const BOOK_COLUMNS =
+  "id, title, authors, cover_url, genres, page_count, published_date, publisher, isbn_13, isbn_10, language, created_at";
+const USER_BOOK_COLUMNS =
+  "id, book_id, rating, review, created_at, progress_pages, progress_percent, date_started, date_finished";
+const PAGE = 1000; // PostgREST's row cap — page past it rather than truncate
+
+async function fetchAllPages(build) {
+  const rows = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await build().range(from, from + PAGE - 1);
+    if (error) throw error;
+    rows.push(...(data || []));
+    if (!data || data.length < PAGE) return rows;
+  }
+}
+
+const toUserBook = (ub) => ({
+  id: ub.id,
+  rating: ub.rating,
+  review: ub.review,
+  created_at: ub.created_at,
+  progress_pages: ub.progress_pages,
+  progress_percent: ub.progress_percent,
+  date_started: ub.date_started,
+  date_finished: ub.date_finished
+});
 
 export default function ShelfView({
   shelfName,
@@ -36,18 +131,45 @@ export default function ShelfView({
   viewMode: viewModeProp,
   onViewModeChange,
   filters: filtersProp,
-  onFiltersChange
+  onFiltersChange,
+  knownCount
 }) {
-  const router = useRouter();
+  const library = useLibrary();
   const cacheKey = shelfId || shelfSlug;
   const cached = booksCache.get(cacheKey);
 
-  const [books, setBooks] = useState(cached || []);
-  const [booksLoading, setBooksLoading] = useState(!cached);
-  const [itemsPerRow, setItemsPerRow] = useState(9);
-  const [addDrawerOpen, setAddDrawerOpen] = useState(false);
+  // The books on screen and the shelf they belong to, kept together so a
+  // late answer for one shelf can never land on another. books: null while
+  // the shelf's first load is under way.
+  const [shelf, setShelf] = useState(() => ({ key: cacheKey, books: cached ?? null }));
+  const itemsPerRow = useBooksPerRow();
   const [selectedBook, setSelectedBook] = useState(null);
   const [reviewBook, setReviewBook] = useState(null);
+
+  // ShelfView stays mounted as you switch tabs, so a new shelf swaps in at
+  // once, before anything paints: its cached list if you've been here,
+  // otherwise placeholders. (Waiting for the fetch showed the last shelf's
+  // books under the new shelf's name until it landed.)
+  if (shelf.key !== cacheKey) {
+    setShelf({ key: cacheKey, books: cached ?? null });
+    setSelectedBook(null);
+  }
+  const current = shelf.key === cacheKey ? shelf.books : (cached ?? null);
+  const books = current ?? NO_BOOKS;
+  const booksLoading = current === null;
+
+  // Changes to the books on screen (drag and drop, adds and removals, rating
+  // edits) also update the cache, so coming back to this shelf shows them.
+  const setBooks = useCallback(
+    (update) =>
+      setShelf((s) => {
+        const next = typeof update === "function" ? update(s.books ?? NO_BOOKS) : update;
+        if (next === s.books) return s;
+        booksCache.set(s.key, next);
+        return { key: s.key, books: next };
+      }),
+    []
+  );
   const supabase = createClient();
 
   // Use props if provided, else fall back to local state (standalone usage)
@@ -59,9 +181,18 @@ export default function ShelfView({
     setSelectedBook(null);
   }
 
-  // Drag and drop — only for owner in user sort on a specific shelf
+  const openAddBook = () =>
+    library.openAddBook({ shelfId: shelfSlug === "all" ? null : shelfId });
+
+  // Drag and drop — owner, custom order, a real shelf, and nothing hidden by
+  // filters or the reviews view (otherwise drop positions don't line up).
   const dragEnabled =
-    isOwner && sortKey === "user" && shelfSlug !== "all" && !!shelfId;
+    isOwner &&
+    sortKey === "user" &&
+    shelfSlug !== "all" &&
+    !!shelfId &&
+    viewMode === "books" &&
+    !hasActiveFilters(filters);
   const {
     dragging,
     liveBooks,
@@ -79,17 +210,25 @@ export default function ShelfView({
     enabled: dragEnabled
   });
 
-  // Sort then filter pipeline
+  // Sort then filter pipeline. Genres are matched by whole word here (see
+  // shelfGenres); everything else by lib/shelfFilter.
+  const genreIndex = useMemo(() => buildGenreIndex(books), [books]);
   const processedBooks = useMemo(() => {
     const sorted = sortShelfBooks(books, sortKey);
-    return filterShelfBooks(sorted, filters);
-  }, [books, sortKey, filters]);
+    const rest = filterShelfBooks(sorted, { ...filters, genres: [] });
+    return filterByGenres(genreIndex, rest, filters.genres);
+  }, [books, sortKey, filters, genreIndex]);
 
-  // In reviews mode, further filter to books with rating or review
-  const displayBooks =
-    viewMode === "reviews"
-      ? processedBooks.filter((b) => b.user_book?.rating || b.user_book?.review)
-      : processedBooks;
+  // The Reviews view lists the books you've rated or written about
+  const reviewItems = useMemo(
+    () => processedBooks.filter((b) => b.user_book?.rating || b.user_book?.review?.trim()),
+    [processedBooks]
+  );
+  const displayBooks = viewMode === "reviews" ? reviewItems : processedBooks;
+
+  // Genre chips for the filter panel come from the books on this shelf, with
+  // how many of the current results carry each.
+  const genreOptions = useMemo(() => genreOptionsFor(genreIndex, processedBooks), [genreIndex, processedBooks]);
 
   // During drag render liveBooks (live-reordered); otherwise use sort+filter pipeline
   const renderBooks = dragging ? liveBooks : displayBooks;
@@ -106,85 +245,68 @@ export default function ShelfView({
     ? `${supabaseUrl}/storage/v1/object/public/books/${draggedBook.book.cover_url}`
     : null;
 
-  // Fetch books client-side whenever the shelf changes.
+  // Fetch the shelf's books (or refresh the cached list) whenever it changes.
   useEffect(() => {
     let cancelled = false;
 
     async function fetchBooks() {
-      const hasCached = booksCache.has(cacheKey);
-      if (!hasCached) {
-        setBooksLoading(true);
-        setBooks([]);
-      }
-      setSelectedBook(null);
-
       let result = [];
 
-      if (shelfSlug === "all") {
-        const { data: userBooks } = await supabase
-          .from(TABLES.USER_BOOKS)
-          .select(
-            `id, book_id, rating, review, created_at, progress_pages, progress_percent,
-             date_started, date_finished, books (*)`
-          )
-          .eq("user_id", userId);
-
-        result = (userBooks || []).map((ub) => ({
-          id: `all-${ub.id}`,
-          position: null,
-          bookshelf_id: null,
-          book: { ...ub.books },
-          user_book: {
-            id: ub.id,
-            rating: ub.rating,
-            review: ub.review,
-            created_at: ub.created_at,
-            progress_pages: ub.progress_pages,
-            progress_percent: ub.progress_percent,
-            date_started: ub.date_started,
-            date_finished: ub.date_finished
-          }
-        }));
-      } else if (shelfId) {
-        const { data: shelfBooks } = await supabase
-          .from(TABLES.BOOKSHELF_BOOKS)
-          .select(
-            `id, position, bookshelf_id,
-             user_books (id, book_id, rating, review, created_at, progress_pages,
-               progress_percent, date_started, date_finished, books (*))`
-          )
-          .eq("bookshelf_id", shelfId)
-          .order("position", { ascending: true, nullsFirst: false });
-
-        result = (shelfBooks || [])
-          .map((sb) => {
-            const ub = sb.user_books;
-            if (!ub?.books) return null;
-            return {
+      try {
+        if (shelfSlug === "all") {
+          const userBooks = await fetchAllPages(() =>
+            supabase
+              .from(TABLES.USER_BOOKS)
+              .select(`${USER_BOOK_COLUMNS}, books (${BOOK_COLUMNS})`)
+              .eq("user_id", userId)
+              .order("created_at", { ascending: false })
+          );
+          result = userBooks
+            .filter((ub) => ub.books)
+            .map((ub) => ({
+              id: `all-${ub.id}`,
+              position: null,
+              bookshelf_id: null,
+              book: { ...ub.books },
+              user_book: toUserBook(ub)
+            }));
+        } else if (shelfId) {
+          const shelfBooks = await fetchAllPages(() =>
+            supabase
+              .from(TABLES.BOOKSHELF_BOOKS)
+              .select(`id, position, bookshelf_id, user_books (${USER_BOOK_COLUMNS}, books (${BOOK_COLUMNS}))`)
+              .eq("bookshelf_id", shelfId)
+              .order("position", { ascending: true, nullsFirst: false })
+              .order("id", { ascending: true })
+          );
+          result = shelfBooks
+            .filter((sb) => sb.user_books?.books)
+            .map((sb) => ({
               id: sb.id,
               position: sb.position,
               bookshelf_id: sb.bookshelf_id,
-              book: { ...ub.books },
-              user_book: {
-                id: ub.id,
-                rating: ub.rating,
-                review: ub.review,
-                created_at: ub.created_at,
-                progress_pages: ub.progress_pages,
-                progress_percent: ub.progress_percent,
-                date_started: ub.date_started,
-                date_finished: ub.date_finished
-              }
-            };
-          })
-          .filter(Boolean);
+              book: { ...sb.user_books.books },
+              user_book: toUserBook(sb.user_books)
+            }));
+        }
+      } catch (e) {
+        console.error("Error loading shelf:", e);
+        if (!cancelled) {
+          // Stop the placeholders, but keep a cached list if there is one.
+          setShelf((s) => (s.key === cacheKey && s.books === null ? { key: cacheKey, books: [] } : s));
+          toast.error("Couldn’t load this shelf", { description: "Refresh to try again." });
+        }
+        return;
       }
 
-      if (!cancelled) {
-        booksCache.set(cacheKey, result);
-        setBooks(result);
-        setBooksLoading(false);
-      }
+      if (cancelled) return;
+      // A refresh that changed nothing keeps the cached list (same objects),
+      // so the covers don't all re-render with an identical copy.
+      const before = booksCache.get(cacheKey);
+      const next = before && JSON.stringify(before) === JSON.stringify(result) ? before : result;
+      booksCache.set(cacheKey, next);
+      // Only ever lands on the shelf it was fetched for.
+      setShelf((s) => (s.key !== cacheKey || s.books === next ? s : { key: cacheKey, books: next }));
     }
 
     fetchBooks();
@@ -193,77 +315,72 @@ export default function ShelfView({
     };
   }, [cacheKey, shelfSlug, shelfId, userId]);
 
-  useEffect(() => {
-    const handleResize = () => {
-      const width = window.innerWidth;
-      if (width >= 1024) setItemsPerRow(9);
-      else if (width >= 768) setItemsPerRow(6);
-      else if (width >= 480) setItemsPerRow(4);
-      else setItemsPerRow(2);
-    };
-
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
+  // The owner's "Add" tile comes first on the shelf, beside where a book you
+  // add lands in your own order.
   const chunkBooks = (bookList, perRow) => {
-    const rows = [];
-    const items = isOwner
-      ? [{ id: "__add__", isAddTile: true }, ...bookList]
-      : [...bookList];
-
-    const minItems = perRow * 1;
-    while (items.length < minItems) {
-      items.push({ id: `placeholder-${items.length}`, placeholder: true });
+    if (!(isOwner && viewMode === "books" && !hasActiveFilters(filters))) {
+      return chunkIntoShelves(bookList, perRow);
     }
-
-    for (let i = 0; i < items.length; i += perRow) {
-      rows.push(items.slice(i, i + perRow));
-    }
-
-    const lastRow = rows[rows.length - 1];
-    while (lastRow && lastRow.length < perRow) {
-      lastRow.push({
-        id: `placeholder-pad-${lastRow.length}`,
-        placeholder: true
-      });
-    }
-
-    return rows;
+    return chunkIntoShelves([{ id: "__add__", isAddTile: true }, ...bookList], perRow);
   };
 
-  const handleBookAdded = (added) => {
-    const book = added?.book || added;
-    const userBook = added?.userBook || null;
-    const newEntry = {
-      id: `new-${Date.now()}`,
-      position: 1,
-      bookshelf_id: shelfId,
-      book: { ...book },
-      user_book: userBook
-        ? {
-            id: userBook.id,
-            rating: userBook.rating,
-            review: userBook.review,
-            progress_pages: userBook.progress_pages,
-            progress_percent: userBook.progress_percent,
-            date_started: userBook.date_started,
-            date_finished: userBook.date_finished
+  // Keep this shelf in sync with adds / moves / removals made anywhere —
+  // the Add books drawer, Discover, a book page or the book modal.
+  useEffect(() => {
+    if (!isOwner) return;
+    return library.subscribe((ev) => {
+      // A rating, progress or date change: patch every cached shelf in place.
+      if (ev.type === "updated") {
+        const patch = (list) =>
+          list.map((b) =>
+            b.user_book?.id === ev.userBookId
+              ? { ...b, user_book: { ...b.user_book, ...ev.fields } }
+              : b
+          );
+        for (const [key, list] of booksCache) if (key !== cacheKey) booksCache.set(key, patch(list));
+        setBooks(patch);
+        return;
+      }
+
+      // Other shelves' cached lists are now stale; they refetch on visit.
+      for (const key of [...booksCache.keys()]) {
+        if (key !== cacheKey) booksCache.delete(key);
+      }
+
+      setBooks((prev) => {
+        let next = prev;
+        if (ev.type === "added") {
+          const leaves =
+            shelfSlug !== "all" && ev.removedShelfIds?.includes(shelfId);
+          const joins =
+            shelfSlug === "all" ? ev.isNewToLibrary : ev.shelfId === shelfId;
+          if (leaves) next = next.filter((b) => b.book.id !== ev.book.id);
+          if (joins && !next.some((b) => b.book.id === ev.book.id)) {
+            next = [
+              {
+                id:
+                  shelfSlug === "all"
+                    ? `all-${ev.userBook?.id || ev.book.id}`
+                    : ev.shelfBookId,
+                position: shelfSlug === "all" ? null : ev.position,
+                bookshelf_id: shelfSlug === "all" ? null : shelfId,
+                book: { ...ev.book },
+                user_book: ev.userBook ? toUserBook(ev.userBook) : null
+              },
+              ...next
+            ];
           }
-        : null
-    };
-    setBooks((prev) => {
-      // Bump all existing positions by 1 so the new book sits at position 1
-      const bumped = prev.map((b) => ({
-        ...b,
-        position: b.position != null ? b.position + 1 : b.position
-      }));
-      const next = [newEntry, ...bumped];
-      booksCache.set(cacheKey, next);
-      return next;
+        } else if (ev.type === "removed") {
+          const leaves =
+            shelfSlug === "all"
+              ? ev.libraryRemoved
+              : ev.shelfIds.includes(shelfId);
+          if (leaves) next = next.filter((b) => b.book.id !== ev.bookId);
+        }
+        return next;
+      });
     });
-  };
+  }, [isOwner, library.subscribe, cacheKey, shelfSlug, shelfId, setBooks]);
 
   const handleReviewCardClick = (bookId) => {
     const shelfBook = books.find((b) => b.book.id === bookId);
@@ -286,504 +403,309 @@ export default function ShelfView({
   }, []);
 
   const handleDetailUpdate = (userBookId, updatedFields) => {
-    setBooks((prev) => {
-      const next = prev.map((b) =>
-        b.user_book?.id === userBookId
-          ? { ...b, user_book: { ...b.user_book, ...updatedFields } }
-          : b
-      );
-      booksCache.set(cacheKey, next);
-      return next;
-    });
+    setBooks((prev) =>
+      prev.map((b) =>
+        b.user_book?.id === userBookId ? { ...b, user_book: { ...b.user_book, ...updatedFields } } : b
+      )
+    );
   };
 
-  const handleRemoveBook = async (userBookId) => {
-    if (!userBookId) return;
-    const shelfBook = books.find((b) => b.user_book?.id === userBookId);
-    const targetShelfId = shelfBook?.bookshelf_id || shelfId;
-    if (!targetShelfId) return;
-    try {
-      await removeBookFromShelf(supabase, userBookId, targetShelfId);
-      setBooks((prev) => {
-        const next = prev.filter((b) => b.user_book?.id !== userBookId);
-        booksCache.set(cacheKey, next);
-        return next;
+  // Two distinct ways to take a book away: off this custom shelf (the book
+  // stays in your library), or out of your library entirely.
+  const removeOptionsFor = (bookId) => {
+    if (!isOwner) return [];
+    const entry = library.getEntry(bookId);
+    if (!entry) return [];
+    const options = [];
+    const shelf = shelves.find((s) => s.id === shelfId);
+    if (shelf && !shelf.is_exclusive && entry.shelfIds.includes(shelfId) && entry.shelfIds.length > 1) {
+      options.push({
+        kind: "shelf",
+        label: `Remove from ${shelfName}`,
+        confirm: `Take it off ${shelfName}? It stays in your library with its rating and review.`,
+        action: () => runRemoval(() => library.removeFromShelf(entry, shelfId), `Removed from ${shelfName}`)
       });
+    }
+    options.push({
+      kind: "library",
+      label: "Remove from library",
+      confirm: "Remove this book from your library? Its rating, review, progress and dates are deleted too.",
+      action: () => runRemoval(() => library.removeFromLibrary(entry), "Removed from your library")
+    });
+    return options;
+  };
+
+  async function runRemoval(fn, message) {
+    try {
+      await fn();
       setSelectedBook(null);
+      toast.success(message);
     } catch (e) {
       console.error("Error removing book:", e);
+      toast.error("Couldn’t remove this book", { description: e.message || "Please try again." });
     }
-  };
+  }
 
-  const handleShelfMove = (userBookId, newShelfId, newShelfName) => {
-    if (newShelfId !== shelfId && shelfSlug !== "all") {
-      setBooks((prev) => {
-        const next = prev.filter((b) => b.user_book?.id !== userBookId);
-        booksCache.set(cacheKey, next);
-        return next;
-      });
-      setSelectedBook(null);
-    }
-  };
-
-  const rows = chunkBooks(indexedRenderBooks, itemsPerRow);
+  const rows = viewMode === "books" ? chunkBooks(indexedRenderBooks, itemsPerRow) : [];
   const isEmpty = books.length === 0;
+  const filtersOn = hasActiveFilters(filters);
+  const query = filters.query?.trim();
   const filteredEmpty = !isEmpty && renderBooks.length === 0;
-  const activeIsEmpty = isEmpty || filteredEmpty;
+  const copy = SHELF_COPY[shelfSlug] || SHELF_COPY.custom;
+  const total = books.length;
+  const shown = renderBooks.length;
+  const plural = (n) => `${n} ${n === 1 ? "book" : "books"}`;
+  const expected = typeof knownCount === "number" ? knownCount : null;
+
+  const subtitle = booksLoading
+    ? expected !== null
+      ? plural(expected)
+      : "Loading…"
+    : viewMode === "reviews"
+      ? `${shown} of ${plural(total)} rated or reviewed`
+      : filtersOn
+        ? `${shown} of ${plural(total)}`
+        : plural(total);
+
+  const clearSearch = () => onFiltersChange?.({ ...filters, query: "" });
+  const clearFilters = () => onFiltersChange?.(clearPanelFilters(filters));
+
+  // Shown when a search / filters leave nothing (both views)
+  const noMatches = (
+    <div className="w-full self-center text-center py-2 pb-6">
+      <p className="font-ppMondwest text-[20px] text-ink">
+        {query
+          ? `Nothing here matches “${query}”`
+          : viewMode === "reviews"
+            ? "No reviews match"
+            : "No books match"}
+      </p>
+      <p className="label text-textSecondary mt-2">
+        {query
+          ? shelfSlug === "all"
+            ? "Check the spelling, or search by author"
+            : "It may be on another shelf — try All books"
+          : "Try loosening your filters"}
+      </p>
+      <button type="button" onClick={query ? clearSearch : clearFilters} className="btn btn-secondary btn-sm mt-4">
+        {query ? "Clear search" : "Clear filters"}
+      </button>
+    </div>
+  );
 
   return (
     <>
-      <div className="ShelfView flex px-10">
-        <div className="grid grid-cols-[16px_auto_16px] pb-[88px] w-full relative">
-          {/* Top shelf surface: left angle + center bar + right angle */}
-          <div className="col-span-3 flex h-[40px]">
-            <div className="w-[40px] shrink-0 relative overflow-hidden">
-              <svg
-                width="40"
-                height="40"
-                viewBox="0 0 40 40"
-                aria-hidden="true"
-                style={{ display: "block" }}
-              >
-                <polygon points="0,40 40,40 40,0" fill="#F5F5F5" />
-                <line
-                  x1="0"
-                  y1="40"
-                  x2="40"
-                  y2="0"
-                  stroke="#dddddd"
-                  strokeWidth="1"
-                  vectorEffect="non-scaling-stroke"
-                />
-              </svg>
-            </div>
-            <div className="flex-1 bg-[#F5F5F5] border-t border-[#dddddd]" />
-            <div className="w-[40px] shrink-0 relative overflow-hidden">
-              <svg
-                width="40"
-                height="40"
-                viewBox="0 0 40 40"
-                aria-hidden="true"
-                style={{ display: "block" }}
-              >
-                <polygon points="0,0 0,40 40,40" fill="#F5F5F5" />
-                <line
-                  x1="0"
-                  y1="0"
-                  x2="40"
-                  y2="40"
-                  stroke="#dddddd"
-                  strokeWidth="1"
-                  vectorEffect="non-scaling-stroke"
-                />
-              </svg>
+      <div className="ShelfView page-x pb-24">
+        {/* Shelf heading + toolbar. On phones the view toggle shares the
+            count's row (so the shelf name keeps the full width) and the
+            toolbar is one 40px row: search + sort & filter. */}
+        <div className="pt-6 pb-4 md:pb-5 flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end md:justify-between md:gap-x-6">
+          <div className="min-w-0">
+            <h2 className="font-ppMondwest text-ink text-[26px] sm:text-[30px] leading-none truncate">
+              {shelfName}
+            </h2>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <p className="label text-textSecondary min-w-0" aria-live="polite">
+                {subtitle}
+                {isOwner && copy.blurb && viewMode === "books" && !filtersOn && (
+                  <span className="hidden sm:inline"> · {copy.blurb}</span>
+                )}
+              </p>
+              <ViewToggle mode={viewMode} onChange={handleViewModeChange} className="md:hidden" />
             </div>
           </div>
+          <ShelfToolbar
+            sortKey={sortKey}
+            onSortChange={onSortChange}
+            viewMode={viewMode}
+            onViewModeChange={handleViewModeChange}
+            filters={filters}
+            onFiltersChange={onFiltersChange}
+            genreOptions={genreOptions}
+            allowCustomOrder={shelfSlug !== "all"}
+            searchLabel={
+              shelfSlug === "all" ? (isOwner ? "Search your library" : "Search all books") : "Search this shelf"
+            }
+          />
+        </div>
 
-          <div className="w-4 h-full border border-solid border-border" />
-          <div className="flex-1 flex-col w-full h-full">
-            <div className="left-border w-full h-4 border-1 border-border border flex border-r-0 border-l-0" />
-            <div id="grid-container" className="grid">
-              <AnimatePresence mode="popLayout">
-                {booksLoading ? (
-                  <React.Fragment>
-                    <div className="row flex flex-row items-stretch bg-[#F4F4F4] overflow-hidden">
-                      <div className="flex flex-col shrink-0 w-[40px]">
-                        <div className="flex-1 bg-[#E6E6E6]" />
-                        <svg
-                          width="40"
-                          height="40"
-                          viewBox="0 0 40 40"
-                          aria-hidden="true"
-                          style={{ display: "block", flexShrink: 0 }}
-                        >
-                          <polygon
-                            points="0,0 40,0 0,40"
-                            style={{ fill: "#E6E6E6" }}
-                          />
-                          <polygon
-                            points="40,0 40,40 0,40"
-                            style={{ fill: "transparent" }}
-                          />
-                        </svg>
-                      </div>
-                      <div className="flex-1 flex flex-col overflow-hidden relative">
-                        <div className="flex-1 grid grid-cols-2 xs:grid-cols-4 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-2 p-2 pb-2 pt-4 items-end overflow-hidden bg-[#d5d5d5]">
-                          {Array.from({ length: itemsPerRow }).map((_, i) => (
-                            <div
-                              key={i}
-                              className="w-full relative z-10 animate-pulse bg-[#bbb] rounded-sm"
-                              style={{ aspectRatio: "2 / 3" }}
-                            />
-                          ))}
-                        </div>
-                        <div className="h-[40px] w-full bg-[#f5f5f5] shrink-0 absolute bottom-0 left-0 z-[1]" />
-                      </div>
-                      <div className="flex flex-col shrink-0 w-[40px]">
-                        <div className="flex-1 bg-[#E0E0E0]" />
-                        <svg
-                          width="40"
-                          height="40"
-                          viewBox="0 0 40 40"
-                          aria-hidden="true"
-                          style={{ display: "block", flexShrink: 0 }}
-                        >
-                          <polygon
-                            points="0,0 40,0 40,40"
-                            style={{ fill: "#E0E0E0" }}
-                          />
-                          <polygon
-                            points="0,0 0,40 40,40"
-                            style={{ fill: "transparent" }}
-                          />
-                        </svg>
-                      </div>
+        <ActiveFilterChips filters={filters} onChange={onFiltersChange} className="pb-4" />
+
+        {viewMode === "reviews" ? (
+          booksLoading ? (
+            <ReviewListSkeleton count={expected !== null ? Math.max(1, Math.min(expected, 4)) : 4} />
+          ) : renderBooks.length ? (
+            <ReviewList
+              items={renderBooks}
+              username={username}
+              shelfSlug={shelfSlug}
+              onOpen={handleReviewCardClick}
+            />
+          ) : (
+            <div className="card px-6 py-12 text-center">
+              {filtersOn ? (
+                noMatches
+              ) : (
+                <>
+                  <p className="font-ppMondwest text-[20px] text-ink">No reviews yet</p>
+                  <p className="label text-textSecondary mt-2">
+                    {isOwner
+                      ? isEmpty
+                        ? "Add books to this shelf, then rate or review them"
+                        : "Rate or review a book and it shows up here"
+                      : `Nothing on ${shelfName} has been rated or reviewed yet`}
+                  </p>
+                  {isOwner && !isEmpty && (
+                    <button type="button" onClick={() => handleViewModeChange("books")} className="btn btn-secondary btn-sm mt-4">
+                      Back to books
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          )
+        ) : (
+          <Bookcase base aria-busy={booksLoading}>
+            {booksLoading ? (
+              // Sized from the tab's known count: a 4-book shelf shows 4
+              // placeholders, and phones get a single shelf of them.
+              <ShelfSkeleton rows={2} count={expected ?? undefined} />
+            ) : isEmpty || filteredEmpty ? (
+              <Shelf grid={false} booksClassName="min-h-[220px] sm:min-h-[260px]">
+                {filteredEmpty ? (
+                  noMatches
+                ) : isOwner ? (
+                  <div className="w-full flex flex-col-reverse items-center gap-5 py-4 xs:flex-row xs:items-end xs:gap-6 xs:py-0">
+                    <div
+                      className="shrink-0"
+                      style={{
+                        width:
+                          itemsPerRow <= 3
+                            ? "38%"
+                            : `calc((100% - ${(itemsPerRow - 1) * 8}px) / ${itemsPerRow})`
+                      }}
+                    >
+                      <AddSlot onClick={openAddBook} label={`Add books to ${shelfName}`} />
                     </div>
-                    <div className="h-4 flex w-full border-t border-b border-[#ddd] bg-[#F4F4F4]" />
-                  </React.Fragment>
-                ) : activeIsEmpty ? (
-                  <React.Fragment>
-                    <div className="flex flex-row items-stretch bg-[#F4F4F4] overflow-hidden">
-                      <div className="flex flex-col shrink-0 w-[40px]">
-                        <div className="flex-1 bg-[#E6E6E6]" />
-                        <svg
-                          width="40"
-                          height="40"
-                          viewBox="0 0 40 40"
-                          aria-hidden="true"
-                          style={{ display: "block", flexShrink: 0 }}
-                        >
-                          <polygon
-                            points="0,0 40,0 0,40"
-                            style={{ fill: "#E6E6E6" }}
-                          />
-                          <polygon
-                            points="40,0 40,40 0,40"
-                            style={{ fill: "transparent" }}
-                          />
+                    <div className="text-center xs:text-left xs:self-center xs:pb-8 max-w-md">
+                      <p className="font-ppMondwest text-[22px] text-ink leading-tight">
+                        {copy.emptyTitle || `Nothing on ${shelfName} yet`}
+                      </p>
+                      <p className="font-ppMondwest text-[16px] text-textPrimary mt-2 leading-snug">
+                        {copy.empty}
+                      </p>
+                      <button type="button" onClick={openAddBook} className="btn btn-primary mt-4">
+                        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                          <path d="M8 2v12M2 8h12" />
                         </svg>
-                      </div>
-                      <div className="flex-1 flex flex-col overflow-hidden relative">
-                        <div className="flex-1 flex flex-row items-end gap-2 p-2 pt-4 bg-[#d5d5d5] min-h-[220px]">
-                          {filteredEmpty ? (
-                            <div className="w-full text-center self-center pb-5">
-                              <p className="font-ppMondwest text-[18px] text-textPrimary mb-1">
-                                {viewMode === "reviews"
-                                  ? "No reviews match"
-                                  : "No books match"}
-                              </p>
-                              <p className="font-departureMono uppercase text-[9px] text-textSecondary">
-                                Try adjusting your filters
-                              </p>
-                            </div>
-                          ) : isOwner && viewMode !== "reviews" ? (
+                        Add books
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="w-full self-center text-center pb-6 font-ppMondwest text-[18px] text-textPrimary">
+                    No books on this shelf yet
+                  </p>
+                )}
+              </Shelf>
+            ) : (
+              // Keyed by shelf too: another shelf's books replace these at
+              // once, instead of hundreds of covers animating out and in.
+              rows.map((row, rowIndex) => (
+                <Shelf key={`${cacheKey}:${rowIndex}`}>
+                  <AnimatePresence initial={false} mode="popLayout">
+                    {row.map((item) => {
+                      if (item.isAddTile) {
+                        return (
+                          <div key="__add__" className="w-full relative z-10">
+                            <AddSlot onClick={openAddBook} label={`Add books to ${shelfName}`} compact />
+                          </div>
+                        );
+                      }
+                      if (item.placeholder) return <div key={item.id} className="w-full" />;
+
+                      const bookIdx = item._gridIdx;
+                      const isBeingDragged = dragging && draggedBook?.id === item.id;
+
+                      return (
+                        <motion.div
+                          key={item.id}
+                          layout="position"
+                          initial={isBeingDragged ? false : { opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={isBeingDragged ? false : { opacity: 0, scale: 0.9 }}
+                          transition={
+                            dragging
+                              ? { layout: { duration: 0 }, opacity: { duration: 0 }, scale: { duration: 0 } }
+                              : {
+                                  layout: { type: "spring", stiffness: 300, damping: 28 },
+                                  opacity: { duration: 0.18 },
+                                  scale: { duration: 0.18 }
+                                }
+                          }
+                          data-drag-idx={dragEnabled ? bookIdx : undefined}
+                          onPointerDown={dragEnabled ? (e) => startDrag(e, item.id) : undefined}
+                          onDragStart={(e) => e.preventDefault()}
+                          style={{ touchAction: dragEnabled ? "none" : undefined }}
+                          className={`w-full z-10 relative group select-none ${
+                            dragEnabled ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
+                          }`}
+                        >
+                          {isBeingDragged ? (
                             <div
-                              className="cursor-pointer shrink-0"
                               style={{
-                                width: `calc((100% - ${(itemsPerRow - 1) * 8}px) / ${itemsPerRow})`
+                                aspectRatio: "2 / 3",
+                                borderRadius: 4,
+                                background: "rgba(0,0,0,0.07)",
+                                boxShadow: "inset 0 2px 12px rgba(0,0,0,0.18)",
+                                border: "2px dashed rgba(0,0,0,0.13)"
                               }}
-                              onClick={() => setAddDrawerOpen(true)}
-                            >
-                              <div
-                                className="w-full z-10 bg-[#e0e0e0] border-2 border-dashed border-[#bbb] rounded-sm flex flex-col items-center justify-center gap-1 hover:border-textPrimary hover:bg-[#d8d8d8] transition-colors"
-                                style={{ aspectRatio: "2 / 3" }}
-                              >
-                                <p className="font-departureMono uppercase text-textPrimary text-xs">
-                                  Add book
-                                </p>
-                                <svg
-                                  width="16"
-                                  height="16"
-                                  viewBox="0 0 16 16"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  className="text-textPrimary"
-                                >
-                                  <line x1="8" y1="2" x2="8" y2="14" />
-                                  <line x1="2" y1="8" x2="14" y2="8" />
+                            />
+                          ) : (
+                            <>
+                              <ContactShadow />
+                              <Book
+                                book={item.book}
+                                disableHover={dragging}
+                                onClick={
+                                  isOwner && item.user_book ? () => setSelectedBook(item) : undefined
+                                }
+                              />
+                            </>
+                          )}
+
+                          {/* Reading progress on Currently Reading */}
+                          {!isBeingDragged && shelfSlug === "currently-reading" && (
+                            <CoverProgress
+                              userBook={item.user_book}
+                              pageCount={item.book.page_count}
+                              showEmpty={isOwner}
+                            />
+                          )}
+
+                          {dragEnabled && (
+                            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
+                              <div className="w-6 h-6 rounded-full bg-black/55 flex items-center justify-center">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="white" aria-hidden="true">
+                                  <circle cx="9" cy="7" r="1.5" />
+                                  <circle cx="15" cy="7" r="1.5" />
+                                  <circle cx="9" cy="12" r="1.5" />
+                                  <circle cx="15" cy="12" r="1.5" />
+                                  <circle cx="9" cy="17" r="1.5" />
+                                  <circle cx="15" cy="17" r="1.5" />
                                 </svg>
                               </div>
                             </div>
-                          ) : (
-                            <p className="font-departureMono uppercase text-[10px] text-textPrimary w-full text-center self-center pb-5">
-                              {viewMode === "reviews"
-                                ? "No reviews yet"
-                                : "No books on this shelf yet"}
-                            </p>
                           )}
-                        </div>
-                        <div className="h-[40px] w-full bg-[#f5f5f5] shrink-0 absolute bottom-0 left-0 z-[1]" />
-                      </div>
-                      <div className="flex flex-col shrink-0 w-[40px]">
-                        <div className="flex-1 bg-[#E0E0E0]" />
-                        <svg
-                          width="40"
-                          height="40"
-                          viewBox="0 0 40 40"
-                          aria-hidden="true"
-                          style={{ display: "block", flexShrink: 0 }}
-                        >
-                          <polygon
-                            points="0,0 40,0 40,40"
-                            style={{ fill: "#E0E0E0" }}
-                          />
-                          <polygon
-                            points="0,0 0,40 40,40"
-                            style={{ fill: "transparent" }}
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                    <div className="h-4 flex w-full border-t border-b border-[#ddd] bg-[#F4F4F4]" />
-                  </React.Fragment>
-                ) : (
-                  rows.map((row, rowIndex) => (
-                    <React.Fragment key={rowIndex}>
-                      <div className="row flex flex-row items-stretch bg-[#F4F4F4] overflow-hidden">
-                        <div className="flex flex-col shrink-0 w-[40px]">
-                          <div className="flex-1 bg-[#E6E6E6]" />
-                          <svg
-                            width="40"
-                            height="40"
-                            viewBox="0 0 40 40"
-                            aria-hidden="true"
-                            style={{ display: "block", flexShrink: 0 }}
-                          >
-                            <polygon
-                              points="0,0 40,0 0,40"
-                              style={{ fill: "#E6E6E6" }}
-                            />
-                            <polygon
-                              points="40,0 40,40 0,40"
-                              style={{ fill: "transparent" }}
-                            />
-                          </svg>
-                        </div>
-
-                        <div className="flex-1 flex flex-col overflow-hidden relative">
-                          <div className="flex-1 grid grid-cols-2 xs:grid-cols-4 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-2 p-2 pb-2 pt-4 items-end overflow-hidden bg-[#d5d5d5]">
-                            {row.map((item) => {
-                              if (item.isAddTile) {
-                                return (
-                                  <div
-                                    key="__add__"
-                                    className="w-full relative z-10 cursor-pointer"
-                                    onClick={() => setAddDrawerOpen(true)}
-                                  >
-                                    <div
-                                      className="w-full z-10 bg-[#e0e0e0] border-2 border-dashed border-[#bbb] rounded-sm flex flex-col items-center justify-center gap-1 hover:border-textPrimary hover:bg-[#d8d8d8] transition-colors"
-                                      style={{ aspectRatio: "2 / 3" }}
-                                    >
-                                      <p className="font-departureMono uppercase text-textPrimary text-xs">
-                                        Add book
-                                      </p>
-                                      <svg
-                                        width="16"
-                                        height="16"
-                                        viewBox="0 0 16 16"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className="text-textPrimary"
-                                      >
-                                        <line x1="8" y1="2" x2="8" y2="14" />
-                                        <line x1="2" y1="8" x2="14" y2="8" />
-                                      </svg>
-                                    </div>
-                                  </div>
-                                );
-                              }
-
-                              if (item.placeholder) {
-                                return <div key={item.id} className="w-full" />;
-                              }
-
-                              const bookIdx = item._gridIdx;
-                              // The dragged book is invisible in the grid — the floating ghost represents it
-                              const isBeingDragged =
-                                dragging && draggedBook?.id === item.id;
-
-                              return (
-                                <motion.div
-                                  key={item.id}
-                                  layout="position"
-                                  initial={
-                                    isBeingDragged
-                                      ? false
-                                      : { opacity: 0, scale: 0.95 }
-                                  }
-                                  animate={{ opacity: 1, scale: 1 }}
-                                  exit={
-                                    isBeingDragged
-                                      ? false
-                                      : { opacity: 0, scale: 0.9 }
-                                  }
-                                  transition={
-                                    dragging
-                                      ? {
-                                          layout: { duration: 0 },
-                                          opacity: { duration: 0 },
-                                          scale: { duration: 0 }
-                                        }
-                                      : {
-                                          layout: {
-                                            type: "spring",
-                                            stiffness: 300,
-                                            damping: 28
-                                          },
-                                          opacity: { duration: 0.18 },
-                                          scale: { duration: 0.18 }
-                                        }
-                                  }
-                                  data-drag-idx={
-                                    dragEnabled ? bookIdx : undefined
-                                  }
-                                  onPointerDown={
-                                    dragEnabled
-                                      ? (e) => startDrag(e, item.id)
-                                      : undefined
-                                  }
-                                  onDragStart={(e) => e.preventDefault()}
-                                  style={{
-                                    touchAction: dragEnabled
-                                      ? "none"
-                                      : undefined
-                                  }}
-                                  className={`w-full z-10 relative group select-none ${
-                                    dragEnabled
-                                      ? "cursor-grab active:cursor-grabbing"
-                                      : "cursor-pointer"
-                                  }`}
-                                >
-                                  {isBeingDragged ? (
-                                    // Shadow drop-zone — shows where the book will land
-                                    <div
-                                      style={{
-                                        aspectRatio: "2 / 3",
-                                        borderRadius: 4,
-                                        background: "rgba(0,0,0,0.07)",
-                                        boxShadow:
-                                          "inset 0 2px 12px rgba(0,0,0,0.18)",
-                                        border: "2px dashed rgba(0,0,0,0.13)"
-                                      }}
-                                    />
-                                  ) : (
-                                    <div
-                                      className={
-                                        viewMode === "reviews"
-                                          ? "pointer-events-none"
-                                          : undefined
-                                      }
-                                    >
-                                      <Book
-                                        book={item.book}
-                                        disableHover={dragging}
-                                      />
-                                    </div>
-                                  )}
-
-                                  {/* Drag handle indicator (owner + user sort) */}
-                                  {dragEnabled && (
-                                    <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                      <div className="w-6 h-6 rounded-full bg-black/50 flex items-center justify-center">
-                                        <svg
-                                          width="10"
-                                          height="10"
-                                          viewBox="0 0 24 24"
-                                          fill="white"
-                                        >
-                                          <circle cx="9" cy="7" r="1.5" />
-                                          <circle cx="15" cy="7" r="1.5" />
-                                          <circle cx="9" cy="12" r="1.5" />
-                                          <circle cx="15" cy="12" r="1.5" />
-                                          <circle cx="9" cy="17" r="1.5" />
-                                          <circle cx="15" cy="17" r="1.5" />
-                                        </svg>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* BOOKS MODE: pencil icon for owner */}
-                                  {viewMode === "books" &&
-                                    isOwner &&
-                                    item.user_book &&
-                                    !dragEnabled && (
-                                      <div
-                                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setSelectedBook(item);
-                                        }}
-                                      >
-                                        <div className="w-6 h-6 rounded-full bg-white/90 border border-border flex items-center justify-center shadow-sm cursor-pointer hover:bg-white transition-colors">
-                                          <svg
-                                            width="12"
-                                            height="12"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth="2"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            className="text-textPrimary"
-                                          >
-                                            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                                            <path d="m15 5 4 4" />
-                                          </svg>
-                                        </div>
-                                      </div>
-                                    )}
-
-                                  {/* REVIEWS MODE: review card overlay */}
-                                  {viewMode === "reviews" && (
-                                    <ReviewCardOverlay
-                                      bookId={item.book.id}
-                                      rating={item.user_book?.rating}
-                                      review={item.user_book?.review}
-                                      onReviewClick={handleReviewCardClick}
-                                    />
-                                  )}
-                                </motion.div>
-                              );
-                            })}
-                          </div>
-                          <div className="h-[40px] w-full bg-[#f5f5f5] shrink-0 absolute bottom-0 left-0" />
-                        </div>
-
-                        <div className="flex flex-col shrink-0 w-[40px]">
-                          <div className="flex-1 bg-[#E0E0E0]" />
-                          <svg
-                            width="40"
-                            height="40"
-                            viewBox="0 0 40 40"
-                            aria-hidden="true"
-                            style={{ display: "block", flexShrink: 0 }}
-                          >
-                            <polygon
-                              points="0,0 40,0 40,40"
-                              style={{ fill: "#E0E0E0" }}
-                            />
-                            <polygon
-                              points="0,0 0,40 40,40"
-                              style={{ fill: "transparent" }}
-                            />
-                          </svg>
-                        </div>
-                      </div>
-                      <div className="h-4 flex w-full border-t border-b border-[#ddd] bg-[#F4F4F4]" />
-                    </React.Fragment>
-                  ))
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-          <div className="left-border w-4 h-full border border-solid border-border" />
-        </div>
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
+                </Shelf>
+              ))
+            )}
+          </Bookcase>
+        )}
       </div>
 
       {/* Floating ghost — cover image that follows the cursor while dragging */}
@@ -849,17 +771,7 @@ export default function ShelfView({
           document.body
         )}
 
-      {/* Add Book Drawer */}
-      {isOwner && addDrawerOpen && (
-        <AddBookDrawer
-          userId={userId}
-          shelfId={shelfId}
-          onClose={() => setAddDrawerOpen(false)}
-          onBookAdded={handleBookAdded}
-        />
-      )}
-
-      {/* Review modal — reviews mode */}
+      {/* Review modal — reviews mode (also opened from /review/[bookId] URLs) */}
       {reviewBook && (
         <BookReviewModal
           book={reviewBook.book}
@@ -867,9 +779,6 @@ export default function ShelfView({
           profile={profile}
           username={username}
           isOwner={isOwner}
-          userId={userId}
-          shelves={shelves}
-          currentShelfId={reviewBook.bookshelf_id || shelfId}
           onClose={() => {
             setReviewBook(null);
             window.history.replaceState(
@@ -879,42 +788,23 @@ export default function ShelfView({
             );
           }}
           onUpdate={handleDetailUpdate}
-          onShelfMove={handleShelfMove}
-          onRemove={isOwner ? handleRemoveBook : undefined}
+          removeOptions={removeOptionsFor(reviewBook.book.id)}
         />
       )}
 
-      {/* Book detail — books mode */}
-      {viewMode === "books" &&
-        selectedBook &&
-        (isAdmin ? (
-          <BookDetailPanel
-            book={selectedBook.book}
-            userBook={selectedBook.user_book}
-            isAdmin={isAdmin}
-            userId={userId}
-            shelves={shelves}
-            currentShelfId={selectedBook.bookshelf_id || shelfId}
-            onClose={() => setSelectedBook(null)}
-            onUpdate={handleDetailUpdate}
-            onShelfMove={handleShelfMove}
-            onRemove={isOwner ? handleRemoveBook : undefined}
-            onBookUpdated={() => router.refresh()}
-          />
-        ) : (
-          <BookReviewModal
-            book={selectedBook.book}
-            userBook={selectedBook.user_book}
-            isOwner={isOwner}
-            userId={userId}
-            shelves={shelves}
-            currentShelfId={selectedBook.bookshelf_id || shelfId}
-            onClose={() => setSelectedBook(null)}
-            onUpdate={handleDetailUpdate}
-            onShelfMove={handleShelfMove}
-            onRemove={isOwner ? handleRemoveBook : undefined}
-          />
-        ))}
+      {/* Owner clicked a book — rating, review, shelves, progress */}
+      {viewMode === "books" && selectedBook && (
+        <BookReviewModal
+          book={selectedBook.book}
+          userBook={selectedBook.user_book}
+          profile={profile}
+          username={username}
+          isOwner={isOwner}
+          onClose={() => setSelectedBook(null)}
+          onUpdate={handleDetailUpdate}
+          removeOptions={removeOptionsFor(selectedBook.book.id)}
+        />
+      )}
     </>
   );
 }

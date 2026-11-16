@@ -80,7 +80,9 @@ html {
 body {
   display: block;
   width: 100%;
-  height: 100%;
+  /* min-height, not height: a fixed-height body clamps the scroll position to
+     the top when a dialog locks scrolling, so the page jumped on every modal. */
+  min-height: 100%;
   background-color: #f9f9fb;
 }
 
@@ -264,13 +266,12 @@ label {
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 10vh; /* Adjusted to match the height of the book case */
+  height: 12vh;
   background: linear-gradient(
     to top,
-    rgba(0, 0, 0, 0.5),
-    rgba(0, 0, 0, 0.3) 50%,
-    rgba(0, 0, 0, 0.1) 75%,
-    rgba(0, 0, 0, 0) 100% /* Fully transparent at the top */
+    rgba(0, 0, 0, 0.16),
+    rgba(0, 0, 0, 0.06) 50%,
+    rgba(0, 0, 0, 0) 100%
   );
   pointer-events: none; /* Ensures it doesn't block interactions */
 }
@@ -309,7 +310,7 @@ label {
   inset: -25% -25% -25% -25%;
   pointer-events: none;
   z-index: 100;
-  opacity: 0.4;
+  opacity: 0.2;
   mix-blend-mode: multiply;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
   background-repeat: repeat;
@@ -318,3 +319,391 @@ label {
   transform: translateZ(0);
   animation: noiseShift 0.4s steps(2) infinite;
 }
+
+/* ───────────────────────── Bookcase ─────────────────────────
+   The 3D bookcase (src/components/bookcase/Bookcase.jsx). Seen from slightly
+   above: a top surface, two posts, and shelves with side walls, a back wall,
+   a floor and a front lip. Every surface is one flat tone, with the edges
+   drawn as lines: no shading inside a face. */
+.bookcase {
+  --case-post: 16px;
+  --case-depth: 40px;
+  --case-lip: 16px;
+  --case-gap: 8px;
+  --case-line: #d9d9d9;
+  --case-top: #f4f4f4;
+  --case-face: #f7f7f7;
+  --case-side-l: #e9e9e9;
+  --case-side-r: #e1e1e1;
+  --case-back: #d6d6d6;
+  --case-floor: #f1f1f1;
+  position: relative;
+  width: 100%;
+}
+@media (max-width: 479px) {
+  .bookcase {
+    --case-post: 8px;
+    --case-depth: 18px;
+    --case-lip: 10px;
+    --case-gap: 6px;
+  }
+}
+.bookcase-corner {
+  display: block;
+  flex-shrink: 0;
+  width: var(--case-depth);
+  height: var(--case-depth);
+}
+.bookcase-top {
+  display: flex;
+  height: var(--case-depth);
+}
+.bookcase-top-bar {
+  flex: 1;
+  background: var(--case-top);
+  border-top: 1px solid var(--case-line);
+}
+.bookcase-body {
+  display: grid;
+  grid-template-columns: var(--case-post) minmax(0, 1fr) var(--case-post);
+}
+.bookcase-post {
+  background: var(--case-face);
+  border: 1px solid var(--case-line);
+}
+/* The planks' front edges: one flat face, the same as the posts. */
+.bookcase-rail,
+.shelf-lip {
+  position: relative;
+  z-index: 1;
+  height: var(--case-lip);
+  background: var(--case-face);
+  border-top: 1px solid var(--case-line);
+  border-bottom: 1px solid var(--case-line);
+}
+.bookcase-base {
+  height: calc(var(--case-lip) * 2);
+  background: var(--case-floor);
+  border-bottom: 1px solid var(--case-line);
+}
+.shelf {
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  /* Shows through the side walls' cut corners — the floor's far corners */
+  background: var(--case-floor);
+}
+.shelf-side {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: var(--case-depth);
+}
+.shelf-side-left > .flex-1 {
+  background: var(--case-side-l);
+}
+.shelf-side-right > .flex-1 {
+  background: var(--case-side-r);
+}
+.shelf-bay {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  /* Back wall */
+  background: var(--case-back);
+}
+.shelf-floor {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: var(--case-depth);
+  background: var(--case-floor);
+  border-top: 1px solid var(--case-line);
+}
+.shelf-books,
+.shelf-books-free {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  padding: 16px var(--case-gap) var(--case-gap);
+}
+.shelf-books {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--case-gap);
+  align-items: end;
+}
+@media (min-width: 480px) {
+  .shelf-books { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (min-width: 768px) {
+  .shelf-books { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+@media (min-width: 1024px) {
+  .shelf-books { grid-template-columns: repeat(9, minmax(0, 1fr)); }
+}
+.shelf-books-free {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--case-gap);
+}
+
+/* A cover that reads as a physical book: spine crease, edge, contact shadow */
+/* Stand-in cover for books with no image (BookCover's TitleCard). Sizes
+   follow the card's own width, so it reads on a shelf and on a book page. */
+.title-card {
+  container-type: inline-size;
+  background-image: linear-gradient(
+    150deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0) 45%,
+    rgba(0, 0, 0, 0.14) 100%
+  );
+}
+.title-card__frame {
+  position: absolute;
+  inset: 7% 8%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7cqw;
+  padding: 10cqw 7cqw;
+  border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
+  border-radius: 2px;
+  text-align: center;
+}
+.title-card__rule {
+  width: 16cqw;
+  height: 1px;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+.title-card__title {
+  font-size: clamp(9px, 12.5cqw, 30px);
+  line-height: 1.08;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.title-card__author {
+  font-size: clamp(6px, 5.4cqw, 12px);
+  letter-spacing: 0.08em;
+  line-height: 1.3;
+  opacity: 0.8;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+@container (max-width: 64px) {
+  .title-card__author,
+  .title-card__rule {
+    display: none;
+  }
+  .title-card__frame {
+    inset: 6%;
+    padding: 6cqw;
+  }
+}
+
+.book-cover {
+  position: relative;
+  border-radius: 2px 3px 3px 2px;
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.12),
+    0 8px 14px -6px rgba(0, 0, 0, 0.45);
+}
+.book-cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.22) 0,
+    rgba(255, 255, 255, 0.18) 2.5%,
+    rgba(0, 0, 0, 0.08) 5%,
+    rgba(0, 0, 0, 0) 9%,
+    rgba(0, 0, 0, 0) 94%,
+    rgba(0, 0, 0, 0.08) 100%
+  );
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+/* ───────────────────────── Design system ─────────────────────────
+   One set of primitives for the hand-built UI. Mono labels are 11px —
+   Departure Mono's native size — so they render crisply and stay legible. */
+@layer components {
+  .label {
+    font-family: var(--font-departure-mono), monospace;
+    text-transform: uppercase;
+    font-size: 11px;
+    line-height: 1.35;
+    letter-spacing: 0.02em;
+  }
+  .label-lg {
+    font-family: var(--font-departure-mono), monospace;
+    text-transform: uppercase;
+    font-size: 12px;
+    line-height: 1.35;
+    letter-spacing: 0.02em;
+  }
+  .page-x {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  @media (min-width: 640px) {
+    .page-x { padding-left: 40px; padding-right: 40px; }
+  }
+
+  .focus-ring:focus-visible {
+    outline: 2px solid #1f1f1f;
+    outline-offset: 2px;
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-family: var(--font-departure-mono), monospace;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    transition: background-color 150ms, border-color 150ms, color 150ms, box-shadow 150ms, transform 150ms;
+    user-select: none;
+  }
+  .btn:active:not(:disabled) { transform: translateY(1px); }
+  .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+  .btn:focus-visible { outline: 2px solid #1f1f1f; outline-offset: 2px; }
+  .btn-sm { height: 32px; padding: 0 12px; gap: 6px; }
+  .btn-lg { height: 48px; padding: 0 20px; font-size: 12px; }
+  .btn-icon { width: 40px; padding: 0; }
+  .btn-sm.btn-icon { width: 32px; }
+  .btn-primary {
+    background: #1f1f1f;
+    color: #fff;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+  .btn-primary:hover:not(:disabled) { background: #383838; }
+  .btn-secondary {
+    background: #fff;
+    color: #2b2b2b;
+    border-color: #d6d6d6;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+  }
+  .btn-secondary:hover:not(:disabled) { background: #f6f6f6; border-color: #bdbdbd; }
+  .btn-ghost { background: transparent; color: #565656; }
+  .btn-ghost:hover:not(:disabled) { background: #f1f1f1; color: #1f1f1f; }
+  .btn-danger { background: #fff; color: #b42318; border-color: #f1c7c2; }
+  .btn-danger:hover:not(:disabled) { background: #fef3f2; }
+  .btn-danger-solid { background: #d92d20; color: #fff; }
+  .btn-danger-solid:hover:not(:disabled) { background: #b42318; }
+  .btn-shelved {
+    background: #eef6ef;
+    color: #25613a;
+    border-color: #c7e0cc;
+  }
+  .btn-shelved:hover:not(:disabled) { background: #e3f0e5; }
+
+  /* Chips — genres, shelf toggles, filters */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px solid #dcdcdc;
+    background: #fff;
+    color: #565656;
+    font-family: var(--font-departure-mono), monospace;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    transition: background-color 150ms, border-color 150ms, color 150ms;
+  }
+  button.chip:hover:not(:disabled), a.chip:hover { border-color: #9a9a9a; color: #1f1f1f; }
+  .chip:focus-visible { outline: 2px solid #1f1f1f; outline-offset: 2px; }
+  .chip[aria-pressed="true"],
+  .chip[aria-current="page"],
+  .chip[data-active="true"] {
+    background: #1f1f1f;
+    border-color: #1f1f1f;
+    color: #fff;
+  }
+  /* The hover rule above outranks the selected state; keep selected chips white on ink. */
+  button.chip[aria-pressed="true"]:hover:not(:disabled),
+  button.chip[data-active="true"]:hover:not(:disabled),
+  a.chip[aria-current="page"]:hover { border-color: #1f1f1f; color: #fff; }
+  .chip-lg { height: 36px; padding: 0 14px; }
+
+  /* Inputs */
+  .field {
+    height: 40px;
+    width: 100%;
+    padding: 0 12px;
+    border-radius: 8px;
+    border: 1px solid #d6d6d6;
+    background: #fff;
+    color: #1f1f1f;
+    font-family: var(--font-departure-mono), monospace;
+    font-size: 16px; /* 16px stops iOS zooming on focus */
+    transition: border-color 150ms, box-shadow 150ms;
+  }
+  @media (min-width: 640px) {
+    .field { font-size: 13px; }
+  }
+  .field::placeholder { color: #9a9a9a; }
+  .field:focus { outline: none; border-color: #1f1f1f; box-shadow: 0 0 0 3px rgba(31, 31, 31, 0.08); }
+
+  /* Surfaces */
+  .card {
+    background: #fff;
+    border: 1px solid #e2e2e2;
+    border-radius: 12px;
+  }
+  .card-hover { transition: border-color 150ms, box-shadow 150ms, transform 150ms; }
+  .card-hover:hover { border-color: #cfcfcf; box-shadow: 0 6px 20px -10px rgba(0, 0, 0, 0.25); }
+
+  /* Long-form reading text (descriptions, reviews) */
+  .prose-book {
+    font-family: var(--font-pp-mondwest), serif;
+    font-size: 17px;
+    line-height: 1.6;
+    color: #4a4a4a;
+  }
+  .prose-book > p + p { margin-top: 0.9em; }
+}
+
+/* One visible focus style everywhere keyboard focus lands */
+:where(a, button, [role="button"], [tabindex], summary):focus-visible {
+  outline: 2px solid #1f1f1f;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .noise-overlay,
+  .scanlines-overlay {
+    animation: none;
+  }
+}
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }

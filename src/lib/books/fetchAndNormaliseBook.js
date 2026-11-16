@@ -9,6 +9,7 @@ import { TABLES } from "@/lib/supabase/types";
 import { describeWork, sameWork, titlesCompatible } from "./sameBook";
 import { pickCover } from "./coverQuality";
 import { tidyTitle, tidyAuthors } from "@/lib/books/tidyText";
+import { publisherCasing } from "@/lib/books/titleCase";
 
 const STALE_DAYS = 30;
 
@@ -181,6 +182,22 @@ export async function fetchBookSources(input) {
 
   if (!merged.title && inputTitle) {
     merged.title = inputTitle;
+  }
+
+  // Open Library, and some of ISBNdb's older records, write titles the way
+  // libraries do: "The rose and the thorn". Whichever source's title won, it
+  // is stored in publisher casing, with the capitals the other sources (and
+  // the caller's own title, e.g. a Goodreads export's) give the same words.
+  if (merged.title) {
+    merged.title = publisherCasing(merged.title, [
+      isbndbData?.title,
+      gbIsbnData?.title,
+      gbTitleData?.title,
+      isbndbTitleData?.title,
+      fallbackData?.title,
+      inputTitle,
+      olData?.title
+    ]);
   }
 
   // ── 7. Build cover candidates list ────────────────────────────────────────

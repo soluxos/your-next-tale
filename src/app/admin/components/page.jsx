@@ -369,7 +369,7 @@ export default function ComponentsPage() {
             Sheet / Panel Header
           </h2>
           <p className="font-departureMono uppercase text-[10px] text-textSecondary mt-1">
-            Standard header pattern used in BookDetailPanel and AddBookDrawer
+            Standard header pattern used in AddBookDrawer
           </p>
         </div>
         <div className="bg-white rounded-[8px] p-6">

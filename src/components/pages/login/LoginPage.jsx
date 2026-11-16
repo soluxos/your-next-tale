@@ -1,63 +1,33 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useState } from "react";
 import { login } from "@/app/login/actions";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle
-} from "@/components/ui/card";
+import AuthShell, { AuthLink, Field, FormMessage } from "@/components/pages/auth/AuthShell";
+import PasswordInput from "@/components/pages/auth/PasswordInput";
+import { Spinner } from "@/components/ui/spinner";
 
-const RAMSAY_LINES = [
-  "Sign in. NOW.",
-  "That reading list is RAW.",
-  "Get in there.",
-  "Don't just stand there.",
-  "Finally, some taste."
-];
+const isRedirect = (err) =>
+  err?.message === "NEXT_REDIRECT" || err?.digest?.startsWith("NEXT_REDIRECT");
 
-export default function LoginPage({ message }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [ramsayLine, setRamsayLine] = useState("");
-
-  useEffect(() => {
-    setRamsayLine(
-      RAMSAY_LINES[Math.floor(Math.random() * RAMSAY_LINES.length)]
-    );
-  }, []);
+export default function LoginPage({ message, next, showcase }) {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState(
+  const notice =
     message === "check-email"
-      ? "Account created! Check your email to confirm your address before signing in."
-      : ""
-  );
+      ? "Account created — check your email and click the link to confirm it, then sign in here."
+      : message === "reset-sent"
+        ? "If that email has an account, a reset link is on its way."
+        : "";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMessage("");
-    setSuccessMessage("");
-    const formData = new FormData(e.target);
     try {
-      const result = await login(formData);
-      if (result?.error) {
-        setErrorMessage(result.error);
-      }
+      const result = await login(new FormData(e.currentTarget));
+      if (result?.error) setErrorMessage(friendly(result.error));
     } catch (err) {
-      if (
-        err?.message === "NEXT_REDIRECT" ||
-        err?.digest?.startsWith("NEXT_REDIRECT")
-      ) {
-        throw err;
-      }
+      if (isRedirect(err)) throw err;
       setErrorMessage("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
@@ -65,118 +35,59 @@ export default function LoginPage({ message }) {
   };
 
   return (
-    <div className="LoginPage min-h-[75vh] bg-white flex flex-col items-center justify-start px-4 py-12">
-      {/* Brand */}
-      <div className="mb-8 text-center flex flex-col items-center gap-2 pt-10">
-        <img src="/new-logo.svg" alt="logo" className="w-auto h-5" />
-        <div className="flex flex-col items-center gap-0">
-          <p className="font-ppMondwest text-[#0c0c0c] text-[20px] leading-none mb-2">
-            Your next tale
-          </p>
-          <p className="font-departureMono uppercase text-[10px] text-textSecondary">
-            Build your bookshelf. Discover your next read.
-          </p>
-        </div>
-      </div>
-      <Card className="w-full max-w-[380px] shadow-sm border-border">
-        <CardHeader className="p-6 pb-0">
-          <CardTitle className="text-xl font-ppMondwest">
-            Welcome back
-          </CardTitle>
-          <CardDescription className="font-departureMono uppercase text-[11px] text-textSecondary mt-2">
-            Sign in to your account to continue
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label
-                htmlFor="email"
-                className="font-departureMono uppercase text-[11px] text-textPrimary"
-              >
-                Email
-              </Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="h-9 bg-transparent border-border rounded-[8px] font-departureMono text-[12px] focus:outline-none focus:ring-1 focus:ring-textPrimary placeholder:text-textSecondary"
-                required
-                autoComplete="email"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label
-                  htmlFor="password"
-                  className="font-departureMono uppercase text-[10px] text-textSecondary"
-                >
-                  Password
-                </Label>
-                <a
-                  href="#"
-                  className="font-departureMono uppercase text-[10px] text-textSecondary hover:text-textPrimary transition-colors"
-                >
-                  Forgot password?
-                </a>
-              </div>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-9 bg-transparent border-border rounded-[8px] font-departureMono text-[12px] focus:outline-none focus:ring-1 focus:ring-textPrimary placeholder:text-textSecondary"
-                required
-                autoComplete="current-password"
-              />
-            </div>
-
-            {errorMessage && (
-              <p className="font-departureMono uppercase text-[10px] text-red-500">
-                {errorMessage}
-              </p>
-            )}
-            {successMessage && (
-              <p className="font-departureMono uppercase text-[10px] text-green-600">
-                {successMessage}
-              </p>
-            )}
-
-            <div className="pt-2">
-              <Button
-                type="submit"
-                className="w-full h-[44px] bg-[#1f1f1f] text-white hover:bg-[#353535] font-departureMono uppercase text-[11px] rounded-[8px] transition-colors"
-                disabled={isLoading}
-              >
-                {isLoading ? "Signing in..." : "Sign in"}
-              </Button>
-            </div>
-          </form>
-
-          <div className="mt-4 text-center">
-            <p className="font-departureMono uppercase text-[11px] text-textSecondary">
-              Don&apos;t have an account?{" "}
-              <Link
-                href="/get-started"
-                className="text-textPrimary underline underline-offset-2 hover:opacity-70 transition-opacity"
-              >
-                Get started
-              </Link>
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Footer */}
-      <p className="mt-6 font-departureMono uppercase text-[10px] text-textSecondary">
-        {ramsayLine}
-      </p>
-    </div>
+    <AuthShell
+      title="Welcome back"
+      subtitle={next ? "Sign in to save books to your shelves." : "Sign in to your bookcase."}
+      showcase={showcase}
+      footer={
+        <p className="font-ppMondwest text-[16px] text-textSecondary">
+          New here? <AuthLink href="/get-started">Create a free account</AuthLink>
+        </p>
+      }
+    >
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        {next && <input type="hidden" name="next" value={next} />}
+        <FormMessage tone="success">{notice}</FormMessage>
+        <Field id="email" label="Email">
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
+            autoComplete="email"
+            inputMode="email"
+            placeholder="you@example.com"
+            className="field w-full"
+          />
+        </Field>
+        <Field
+          id="password"
+          label="Password"
+          action={
+            <AuthLink href="/login/forgot">
+              <span className="label">Forgot password?</span>
+            </AuthLink>
+          }
+        >
+          <PasswordInput id="password" autoComplete="current-password" />
+        </Field>
+        <FormMessage>{errorMessage}</FormMessage>
+        <button type="submit" disabled={isLoading} className="btn btn-primary btn-lg w-full">
+          {isLoading ? (
+            <>
+              <Spinner /> Signing in…
+            </>
+          ) : (
+            "Sign in"
+          )}
+        </button>
+      </form>
+    </AuthShell>
   );
+}
+
+function friendly(error) {
+  if (/invalid login credentials/i.test(error)) return "That email and password don’t match. Check them and try again.";
+  if (/email not confirmed/i.test(error)) return "Please confirm your email first — check your inbox for the link we sent.";
+  return error;
 }

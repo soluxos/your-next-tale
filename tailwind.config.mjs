@@ -19,7 +19,21 @@ export default {
         bookLightDark: "#F0F0F0",
         bookLightLight: "#F8F8F8",
         textPrimary: "#565656",
-        textSecondary: "#757190",
+        // Muted text. Darkened (from #757190, then #6b6785) so 11px labels read
+        // comfortably on white and the paper-grain surfaces.
+        textSecondary: "#5d5976",
+        ink: "#1f1f1f",
+        paper: {
+          DEFAULT: "#ffffff",
+          2: "#f7f7f7",
+          3: "#efefef"
+        },
+        line: "#dddddd",
+        shelved: {
+          DEFAULT: "#25613a",
+          bg: "#eef6ef",
+          line: "#c7e0cc"
+        },
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))"

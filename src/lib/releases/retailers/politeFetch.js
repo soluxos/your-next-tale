@@ -8,19 +8,20 @@
 export const USER_AGENT = "YourNextTale/1.0 (+https://yournexttale.com; new-release listings)";
 
 // Paths we read, checked against each robots.txt (Nov 2026). Waterstones
-// disallows */sort/, */facet/, */format/, /search and /page/; Bookshop
-// disallows /search and account pages. Nothing here touches those.
+// disallows */sort/, */facet/, */format/, /search and /page/; Bookshop (US
+// and UK) disallows /search and account pages. Nothing here touches those.
 // Barnes & Noble isn't here: its site answers automated requests with a bot
 // check, so the only fair way in is a product feed from its affiliate scheme.
 const ALLOWED = {
   "www.waterstones.com": [/^\/category\/[a-z0-9/-]+$/, /^\/campaign\/[a-z0-9-]+$/, /^\/book\/(?:[^/]+\/){2,5}\d{13}$/],
   "bookshop.org": [/^\/lists\/[a-z0-9-]+$/],
+  "uk.bookshop.org": [/^\/lists\/[a-z0-9-]+$/],
   "openlibrary.org": [/^\/isbn\/\d{13}\.json$/, /^\/search\.json$/]
 };
 
 // Seconds between requests to one site. The shops get a slow pace: a weekly
 // run reads a handful of list pages and a few new books' pages, nothing more.
-const GAP_MS = { "www.waterstones.com": 5000, "bookshop.org": 3000 };
+const GAP_MS = { "www.waterstones.com": 5000, "bookshop.org": 3000, "uk.bookshop.org": 3000 };
 const DEFAULT_GAP_MS = 800;
 const nextSlot = new Map();
 

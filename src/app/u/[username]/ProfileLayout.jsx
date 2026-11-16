@@ -1,21 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 import FacehashAvatar from "@/components/profile/FacehashAvatar";
-import TopNavigation from "@/components/navigation/TopNavigation";
+import ProfileTabs from "@/components/profile/ProfileTabs";
 import ShelfView from "@/app/u/[username]/[shelfSlug]/ShelfView";
 import ManageShelvesPanel from "@/components/shelves/ManageShelvesPanel";
-import ShelfToolbar from "@/components/shelves/ShelfToolbar";
 import { DEFAULT_FILTERS } from "@/lib/shelfFilter";
 import { useAuth } from "@/components/providers/AuthProvider";
 import FollowButton from "@/components/profile/FollowButton";
+import ReaderStats from "@/components/profile/ReaderStats";
+import { useLibrary } from "@/components/providers/LibraryProvider";
+import { toast } from "sonner";
 
 export default function ProfileLayout({
   profile,
   shelves,
+  shelfCounts = {},
   isOwner,
   isAdmin = false,
   currentUserId,
@@ -26,23 +28,14 @@ export default function ProfileLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { profile: authProfile } = useAuth();
+  const library = useLibrary();
   const [localShelves, setLocalShelves] = useState(shelves);
   const [manageShelvesOpen, setManageShelvesOpen] = useState(false);
 
-  // Toolbar state — lifted here so tabs + toolbar can share one row
+  // Sort / filter / view state lives here, above ShelfView, so it survives
+  // the shelf re-rendering as you switch tabs.
   const [sortKey, setSortKey] = useState("user");
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
-  const [viewMode, setViewMode] = useState("books");
-
-  useEffect(() => {
-    const stored = sessionStorage.getItem("shelf-view-mode");
-    if (stored) setViewMode(stored);
-  }, []);
-
-  function handleViewModeChange(mode) {
-    setViewMode(mode);
-    sessionStorage.setItem("shelf-view-mode", mode);
-  }
 
   // When viewing own profile, use the live auth context colour so it updates
   // immediately after saving without needing a full page refresh.
@@ -64,155 +57,195 @@ export default function ProfileLayout({
   const shelfId = activeShelf?.id || null;
   const shelfName = activeShelf?.name || "All Books";
   const defaultView = activeShelf?.default_view || "books";
+
+  // Each shelf opens on its own "Opens on" setting (Manage shelves); toggling
+  // Books/Reviews applies to the shelf you're looking at until you switch tabs.
+  const [viewMode, setViewMode] = useState(defaultView);
+  const [viewModeFor, setViewModeFor] = useState(activeSlug);
+  if (viewModeFor !== activeSlug) {
+    setViewModeFor(activeSlug);
+    setViewMode(defaultView);
+  }
+  const handleViewModeChange = setViewMode;
   // Pass live facehash colour so ReviewModal reflects any in-session colour change
   const profileWithLiveColor = { ...profile, facehash_color: facehashColor };
 
-  // Build tab list: "All" virtual shelf + real shelves
-  const tabs = [
-    { slug: "all", name: "All Books" },
-    ...localShelves.map((s) => ({ slug: s.slug, name: s.name }))
+  // Owners see live counts (they change as you add books); visitors get the
+  // server-rendered counts.
+  const counts = useMemo(() => {
+    if (!isOwner || !library.ready) return shelfCounts;
+    const live = { all: library.entries.size };
+    for (const entry of library.entries.values()) {
+      for (const id of entry.shelfIds) live[id] = (live[id] || 0) + 1;
+    }
+    return live;
+  }, [isOwner, library.ready, library.entries, shelfCounts]);
+
+  const userBase = `/u/${encodeURIComponent(profile.username)}`;
+
+  // Shelf tabs: "All Books" (every book in the library) + the real shelves
+  const shelfTabs = [
+    { key: "all", href: `${userBase}/all`, label: "All Books", count: counts.all },
+    ...localShelves.map((s) => ({
+      key: s.slug,
+      href: `${userBase}/${s.slug}`,
+      label: s.name,
+      count: counts[s.id] || 0
+    }))
+  ];
+
+  // Followers / Following get the same strip, with a way back to the bookcase
+  const peopleTabs = [
+    {
+      key: "bookcase",
+      href: `${userBase}/all`,
+      label: "Bookcase",
+      icon: (
+        <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M10 3L5 8l5 5" />
+        </svg>
+      )
+    },
+    { key: "followers", href: `${userBase}/followers`, label: "Followers", count: followCounts?.followers },
+    { key: "following", href: `${userBase}/following`, label: "Following", count: followCounts?.following }
   ];
 
   function handleShelvesUpdated(updatedShelves) {
     setLocalShelves(updatedShelves);
+    // Keep the Add books drawer / shelf menus in step with renames & new shelves
+    if (isOwner) library.setShelves(updatedShelves);
   }
 
-  function handleDeleteRedirect(remaining) {
-    const next = remaining[0]?.slug || "all";
-    router.push(`/u/${encodeURIComponent(profile.username)}/${next}`);
+  function handleDeleteRedirect() {
+    router.replace(`${userBase}/all`);
   }
+
+  // Sort is remembered per shelf (this browser only)
+  const sortStorageKey = `shelf-sort:${profile.id}:${activeSlug}`;
+  useEffect(() => {
+    try {
+      setSortKey(localStorage.getItem(sortStorageKey) || "user");
+    } catch {
+      setSortKey("user");
+    }
+  }, [sortStorageKey]);
+  function handleSortChange(key) {
+    setSortKey(key);
+    try {
+      localStorage.setItem(sortStorageKey, key);
+    } catch {}
+  }
+
+  async function copyProfileLink() {
+    const url = `${window.location.origin}/u/${encodeURIComponent(profile.username)}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied", { description: url });
+    } catch {
+      toast("Your bookcase link", { description: url });
+    }
+  }
+
+  const displayName = profile.full_name || profile.username;
+  // Follower counts read as links: underlined, with a generous tap area.
+  const countLinkClass =
+    "py-2 -my-2 underline decoration-black/25 underline-offset-[3px] hover:text-ink hover:decoration-ink transition-colors rounded-[2px] focus-ring";
+
+  // "Custom order" only exists on real shelves; All Books falls back to newest
+  const effectiveSort = activeSlug === "all" && sortKey === "user" ? "date_added" : sortKey;
 
   return (
-    <div className="ProfileLayout min-h-screen bg-white">
-      {/* Profile header */}
-      <div className="px-5 py-[120px]">
-        <div className="max-w-4xl mx-auto flex flex-col items-center gap-4">
-          <FacehashAvatar
-            name={profile.full_name || profile.username}
-            color={facehashColor}
-            size={64}
-          />
+    <div className="ProfileLayout min-h-screen">
+      {/* Profile header, stats and tabs live here in the layout, outside the
+          route's loading boundary, so they stay put while you switch tabs. */}
+      <header className="page-x pt-8 sm:pt-12 pb-6 sm:pb-8">
+        <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+          <div className="flex items-center gap-4 sm:gap-5 min-w-0">
+            <div className="shrink-0 hidden sm:block">
+              <FacehashAvatar name={displayName} color={facehashColor} size={76} />
+            </div>
+            <div className="shrink-0 sm:hidden">
+              <FacehashAvatar name={displayName} color={facehashColor} size={56} />
+            </div>
+            <div className="min-w-0">
+              <h1 className="font-ppMondwest text-ink text-[28px] sm:text-[38px] leading-[1.05] truncate">
+                {displayName}
+              </h1>
+              {/* Phones: @username, then the counts on their own (wrapping) line */}
+              <div className="mt-1.5 flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 label text-textSecondary">
+                <span>@{profile.username}</span>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                  {typeof counts.all === "number" && (
+                    <span>
+                      <span className="text-ink tabular-nums">{counts.all}</span> {counts.all === 1 ? "book" : "books"}
+                    </span>
+                  )}
+                  {followCounts && (
+                    <>
+                      <Link href={`${userBase}/followers`} className={countLinkClass}>
+                        <span className="text-ink tabular-nums">{followCounts.followers}</span>{" "}
+                        {followCounts.followers === 1 ? "follower" : "followers"}
+                      </Link>
+                      <Link href={`${userBase}/following`} className={countLinkClass}>
+                        <span className="text-ink tabular-nums">{followCounts.following}</span> following
+                      </Link>
+                    </>
+                  )}
+                </div>
+              </div>
+              {profile.bio && (
+                <p className="mt-2 font-ppMondwest text-[16px] text-textPrimary line-clamp-2 max-w-xl">
+                  {profile.bio}
+                </p>
+              )}
+            </div>
+          </div>
 
-          <div className="min-w-0 flex-1 text-center">
-            <h1 className="font-ppMondwest text-xl text-textPrimary truncate">
-              {profile.full_name || profile.username}
-            </h1>
-            <p className="font-departureMono uppercase text-[11px] text-textSecondary">
-              @{profile.username}
-            </p>
-            {profile.bio && (
-              <p className="mt-1 font-inter text-[14px] text-textSecondary line-clamp-2">
-                {profile.bio}
-              </p>
+          <div className="flex items-center gap-2 shrink-0">
+            {!isOwner && currentUserId && (
+              <FollowButton
+                targetUserId={profile.id}
+                isPrivate={profile.is_private}
+                initialStatus={followStatus || "none"}
+              />
+            )}
+            {/* Icon-only on phones so the owner's three actions share one row */}
+            <button type="button" onClick={copyProfileLink} className="btn btn-secondary btn-icon sm:w-auto sm:px-4 shrink-0" aria-label="Copy link to this bookcase">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+              </svg>
+              <span className="hidden sm:inline">Share</span>
+            </button>
+            {isOwner && (
+              <>
+                <button type="button" onClick={() => setManageShelvesOpen(true)} className="btn btn-secondary flex-1 sm:flex-none px-3 sm:px-4">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+                  </svg>
+                  Manage shelves
+                </button>
+                <Link href="/account" className="btn btn-secondary flex-1 sm:flex-none px-3 sm:px-4">
+                  Edit profile
+                </Link>
+              </>
             )}
           </div>
-
-          {/* Follower / following counts */}
-          {followCounts && (
-            <div className="flex items-center gap-6">
-              <Link
-                href={`/u/${profile.username}/followers`}
-                className="font-departureMono uppercase text-[11px] hover:underline"
-              >
-                <span className="font-ppMondwest text-[18px]">
-                  {followCounts.followers}
-                </span>{" "}
-                <span className="text-textSecondary">Followers</span>
-              </Link>
-              <Link
-                href={`/u/${profile.username}/following`}
-                className="font-departureMono uppercase text-[11px] hover:underline"
-              >
-                <span className="font-ppMondwest text-[18px]">
-                  {followCounts.following}
-                </span>{" "}
-                <span className="text-textSecondary">Following</span>
-              </Link>
-            </div>
-          )}
-
-          {/* Follow button — only show to logged-in non-owners */}
-          {!isOwner && currentUserId && (
-            <FollowButton
-              targetUserId={profile.id}
-              isPrivate={profile.is_private}
-              initialStatus={followStatus || "none"}
-            />
-          )}
-
-          {isOwner && (
-            <div className="flex gap-2 items-center">
-              <Link
-                href="/account"
-                className="shrink-0 h-8 px-3 flex items-center font-departureMono uppercase text-[10px] text-textSecondary rounded-[8px] border border-border hover:bg-[#f4f4f4] transition-colors"
-              >
-                Edit Profile
-              </Link>
-              <button
-                onClick={() => setManageShelvesOpen(true)}
-                className="flex items-center gap-1.5 px-3 h-8
-                           font-departureMono uppercase text-[10px] text-textSecondary
-                           border border-border rounded-[8px] hover:bg-[#f4f4f4]
-                           hover:text-textPrimary transition-colors"
-              >
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="8" y1="6" x2="21" y2="6" />
-                  <line x1="8" y1="12" x2="21" y2="12" />
-                  <line x1="8" y1="18" x2="21" y2="18" />
-                  <line x1="3" y1="6" x2="3.01" y2="6" />
-                  <line x1="3" y1="12" x2="3.01" y2="12" />
-                  <line x1="3" y1="18" x2="3.01" y2="18" />
-                </svg>
-                Manage Shelves
-              </button>
-            </div>
-          )}
         </div>
-      </div>
+      </header>
 
-      {/* Shelf tab navigation — hidden on followers/following sub-pages */}
-      {activeSlug !== "followers" && activeSlug !== "following" && (
-        <div className="px-5">
-          <div className="w-full flex px-20 items-center justify-between mb-[-2px]">
-            <nav className="flex gap-1 overflow-x-auto no-scrollbar -mb-px items-center shrink-0">
-              {tabs.map((tab) => (
-                <Link
-                  key={tab.slug}
-                  href={`/u/${encodeURIComponent(profile.username)}/${tab.slug}`}
-                  prefetch={true}
-                  className={cn(
-                    "px-3 py-2 font-departureMono uppercase text-[11px] whitespace-nowrap border-b-2 transition-colors",
-                    activeSlug === tab.slug
-                      ? "border-textPrimary text-textPrimary"
-                      : "border-transparent text-textSecondary hover:text-textPrimary hover:border-[#ddd]"
-                  )}
-                >
-                  {tab.name}
-                </Link>
-              ))}
-            </nav>
-            <div className="flex-1" />
-            <div className="-mb-px pb-2">
-              <ShelfToolbar
-                sortKey={sortKey}
-                onSortChange={setSortKey}
-                viewMode={viewMode}
-                onViewModeChange={handleViewModeChange}
-                filters={filters}
-                onFiltersChange={setFilters}
-              />
-            </div>
-          </div>
-        </div>
+      {isShelfPage && (
+        <ReaderStats
+          userId={profile.id}
+          readCount={counts[localShelves.find((s) => s.slug === "read")?.id] || 0}
+          isOwner={isOwner}
+        />
+      )}
+
+      {isShelfPage ? (
+        <ProfileTabs tabs={shelfTabs} activeKey={activeSlug} label="Shelves" />
+      ) : (
+        <ProfileTabs tabs={peopleTabs} activeKey={activeSlug} label={`${displayName}’s profile`} />
       )}
 
       {/* Shelf content */}
@@ -229,12 +262,13 @@ export default function ProfileLayout({
             shelves={localShelves}
             defaultView={defaultView}
             profile={profileWithLiveColor}
-            sortKey={sortKey}
-            onSortChange={setSortKey}
+            sortKey={effectiveSort}
+            onSortChange={handleSortChange}
             viewMode={viewMode}
             onViewModeChange={handleViewModeChange}
             filters={filters}
             onFiltersChange={setFilters}
+            knownCount={activeSlug === "all" ? counts.all : shelfId ? counts[shelfId] || 0 : undefined}
           />
           {/* children carries the @modal slot (e.g. ReviewModal on direct load) */}
           {children}
@@ -243,7 +277,6 @@ export default function ProfileLayout({
         <div>{children}</div>
       )}
 
-      {/* Manage Shelves Panel */}
       {isOwner && (
         <ManageShelvesPanel
           open={manageShelvesOpen}
@@ -253,6 +286,10 @@ export default function ProfileLayout({
           onShelvesUpdated={handleShelvesUpdated}
           currentShelfSlug={activeSlug}
           onDeleteRedirect={handleDeleteRedirect}
+          onRenameRedirect={(slug) =>
+            router.replace(`${userBase}/${slug}`)
+          }
+          shelfCounts={counts}
         />
       )}
     </div>

@@ -31,7 +31,8 @@ export async function updateUserBook(
   supabase,
   userBookId,
   fields,
-  pageCount = null
+  pageCount = null,
+  { silent = false } = {}
 ) {
   const update = { ...fields };
 
@@ -60,7 +61,8 @@ export async function updateUserBook(
   if (error) throw error;
 
   // Record rating/review activities as fire-and-forget
-  if (fields.rating !== undefined) {
+  // (Cleared ratings and in-progress autosaves don't belong in friends' feeds.)
+  if (!silent && fields.rating > 0) {
     // Fetch book data for snapshot
     supabase
       .from(TABLES.BOOKS)
@@ -81,7 +83,7 @@ export async function updateUserBook(
       });
   }
 
-  if (fields.review !== undefined && fields.review?.trim()) {
+  if (!silent && fields.review !== undefined && fields.review?.trim()) {
     supabase
       .from(TABLES.BOOKS)
       .select("id, title, cover_url, isbn_13")

@@ -1,26 +1,15 @@
-import React from "react";
 import HomePage from "@/components/pages/home/HomePage";
+import { countCatalogue, loadHomeLists } from "@/lib/books/catalogueRanks";
+import { SFF } from "@/lib/genres";
 import { createStaticClient } from "@/utils/supabase/static";
 
 export const revalidate = 60;
 
-export default async function BooksPage() {
+export default async function Home() {
   const supabase = createStaticClient();
-
-  // Fetch initial books server-side (first 45 books)
-  const { data: initialBooks, error } = await supabase
-    .from("books")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .range(0, 44); // Get first 45 books (0-44)
-
-  // Get user authentication status (if using server client for auth)
-  // For now, setting isLoggedIn to false since we're using static client
-  const isLoggedIn = false;
-
-  return (
-    <>
-      <HomePage isLoggedIn={isLoggedIn} initialBooks={initialBooks || []} />
-    </>
-  );
+  const [lists, total] = await Promise.all([
+    loadHomeLists(supabase).catch(() => null),
+    countCatalogue(supabase, SFF).catch(() => null)
+  ]);
+  return <HomePage lists={lists || {}} total={total} />;
 }

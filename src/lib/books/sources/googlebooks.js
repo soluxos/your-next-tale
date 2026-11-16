@@ -1,10 +1,19 @@
 /**
- * Search Google Books by title. Returns an array of volumeInfo objects.
- * Used by the search API route and the normaliser.
+ * Search Google Books. Returns an array of volumeInfo objects.
+ * By default matches title *or* author (people search for both);
+ * pass { field: "title" } to restrict to titles.
  */
-export async function searchGoogleBooks(query, maxResults = 5) {
+export async function searchGoogleBooks(
+  query,
+  maxResults = 5,
+  { field = "any" } = {}
+) {
   try {
-    const url = `https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(query)}&maxResults=${maxResults}&langRestrict=en`;
+    const q =
+      field === "title"
+        ? `intitle:${encodeURIComponent(query)}`
+        : encodeURIComponent(query);
+    const url = `https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=${maxResults}&langRestrict=en&printType=books`;
     const response = await fetch(url);
     if (!response.ok) return [];
 

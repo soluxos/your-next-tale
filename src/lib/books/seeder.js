@@ -10,17 +10,11 @@ import { sanitiseDescription } from "./sanitiseDescription";
 import { normaliseLanguage } from "./normaliseLanguage";
 import { isNonEnglishIsbn } from "./isbnUtils";
 import { getBookshopLink } from "../bookshop";
+import { assessCover, fetchCover, COVER_REJECT } from "./coverQuality";
+import { tidyTitle, tidyAuthors } from "./tidyText";
+import { SEED_GENRES } from "./seedGenres";
 
-export const SEED_GENRES = [
-  { query: "Fantasy", label: "Fantasy", minReaders: 100 },
-  { query: "Epic Fantasy", label: "Epic Fantasy", minReaders: 50 },
-  { query: "Science Fiction", label: "Sci-Fi", minReaders: 100 },
-  { query: "Space Opera", label: "Space Opera", minReaders: 50 },
-  { query: "Dystopia", label: "Dystopian", minReaders: 50 },
-  { query: "Urban Fantasy", label: "Urban Fantasy", minReaders: 50 },
-  { query: "Dark Fantasy", label: "Dark Fantasy", minReaders: 50 },
-  { query: "Romantasy", label: "Romantasy", minReaders: 25 }
-];
+export { SEED_GENRES };
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -216,18 +210,18 @@ export async function runSeeder({ genres = SEED_GENRES, send, supabase }) {
         extractAuthors(details?.cached_contributors) || item.author_names || [];
       const hcGenres = extractGenres(details?.cached_tags);
 
-      const title = cleanTitle(
+      const title = tidyTitle(cleanTitle(
         isbndbData?.title || details?.title || item.title
-      );
+      ));
       if (!title) {
         send({ type: "progress", message: "  [SKIP] No title found" });
         results.failed++;
         continue;
       }
 
-      const authors = isbndbData?.authors?.length
-        ? isbndbData.authors
-        : hcAuthors;
+      const authors = tidyAuthors(
+        isbndbData?.authors?.length ? isbndbData.authors : hcAuthors
+      );
 
       const description = sanitiseDescription(
         isbndbData?.description || details?.description || null
@@ -264,28 +258,15 @@ export async function runSeeder({ genres = SEED_GENRES, send, supabase }) {
       if (cover_remote) {
         const isbn = isbn_13 || isbn_10 || String(item.hardcover_id);
         try {
-          const coverRes = await fetch(cover_remote);
-          if (!coverRes.ok) throw new Error(`HTTP ${coverRes.status}`);
+          const buffer = await fetchCover(cover_remote);
+          if (!buffer) throw new Error("Cover download failed");
+          const check = await assessCover(buffer);
+          if (check.tier === COVER_REJECT) throw new Error(`Cover rejected: ${check.reason}`);
 
-          const contentType = coverRes.headers.get("content-type") || "";
-          const contentLength = coverRes.headers.get("content-length");
-
-          if (
-            contentType.includes("gif") ||
-            (contentLength && parseInt(contentLength) < 500)
-          ) {
-            throw new Error("Placeholder cover image");
-          }
-
-          const ext = contentType.includes("png") ? ".png" : ".jpg";
-          const filename = `${isbn}${ext}`;
-          const buffer = Buffer.from(await coverRes.arrayBuffer());
-
-          if (buffer.length < 500) throw new Error("Cover too small");
-
+          const filename = `${isbn}${check.ext}`;
           const { error: uploadError } = await supabase.storage
             .from("books")
-            .upload(filename, buffer, { contentType, upsert: true });
+            .upload(filename, buffer, { contentType: check.contentType, upsert: true });
 
           if (uploadError) throw uploadError;
           cover_url = filename;

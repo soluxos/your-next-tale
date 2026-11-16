@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { TABLES } from "@/lib/supabase/types";
 
@@ -12,23 +12,15 @@ export default async function UserProfileRedirect({ params }) {
   // Look up profile by username
   const { data: profile } = await supabase
     .from(TABLES.PROFILES)
-    .select("id, is_private")
+    .select("id")
     .eq("username", username)
-    .single();
+    .maybeSingle();
 
-  if (!profile) {
-    redirect("/");
-  }
+  if (!profile) notFound();
 
-  // Privacy check — only the owner can view a private profile
-  if (profile.is_private) {
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
-    if (!user || user.id !== profile.id) {
-      redirect("/");
-    }
-  }
+  // Private profiles are gated in layout.jsx: the owner and accepted
+  // followers see the bookcase, everyone else gets the request-to-follow page.
+  // Redirecting here as well would bounce both of those to the home page.
 
   // Get first shelf to redirect to
   const { data: shelves } = await supabase

@@ -7,6 +7,8 @@ import TopNavigation from "@/components/navigation/TopNavigation";
 import Footer from "@/components/navigation/Footer";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import UIOverlays from "@/components/providers/UIOverlays";
+import { LibraryProvider } from "@/components/providers/LibraryProvider";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -97,7 +99,8 @@ const satoshi = localFont({
 
 export const metadata = {
   title: "Your Next Tale",
-  description: "Discover your next favorite book with our curated book case.",
+  description:
+    "A beautiful bookcase for everything you read — shelve, track, rate and share your books.",
   openGraph: {
     title: "Your Next Tale",
     description: "Discover your next favorite book with our curated book case.",
@@ -132,12 +135,36 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased text-foreground relative bg-white`}
       >
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[300] btn btn-primary"
+        >
+          Skip to content
+        </a>
         <AuthProvider>
-          <UIOverlays />
-          <TopNavigation />
-          <main className="pt-[69px]">{children}</main>
+          <LibraryProvider>
+            <UIOverlays />
+            <TopNavigation />
+            <main id="main" tabIndex={-1} className="pt-16 outline-none">
+              {children}
+            </main>
+            <Footer />
+          </LibraryProvider>
         </AuthProvider>
-        <Footer />
+        <Toaster
+          theme="light"
+          position="bottom-center"
+          toastOptions={{
+            classNames: {
+              toast:
+                "!rounded-[12px] !border-line !shadow-[0_12px_32px_-12px_rgba(0,0,0,0.35)] !font-departureMono !uppercase !text-[11px] !text-ink !gap-2",
+              description:
+                "!font-ppMondwest !normal-case !text-[15px] !text-textSecondary",
+              actionButton:
+                "!font-departureMono !uppercase !text-[11px] !bg-ink !rounded-[6px] !h-7 !px-2.5"
+            }
+          }}
+        />
         <Script src="https://scripts.simpleanalyticscdn.com/latest.js" />
       </body>
     </html>

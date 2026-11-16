@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { fetchAndNormaliseBook } from "@/lib/books/fetchAndNormaliseBook";
+import {
+  invalidateCatalogIndex,
+  findCatalogMatches
+} from "@/lib/books/catalogSearch";
 
 /**
  * POST /api/books/normalise
@@ -25,7 +29,18 @@ export async function POST(request) {
 
     const supabase = await createClient();
 
-    const book = await fetchAndNormaliseBook(body, supabase);
+    // Adding a book found online: if the catalogue already has this book
+    // (any edition — the import only de-dupes by ISBN), use that copy rather
+    // than creating another row for the same book.
+    if (body.source !== "local" && body.preview?.title) {
+      const existing = (await findCatalogMatches(supabase, [body.preview])).get(0);
+      if (existing) return NextResponse.json({ book: existing });
+    }
+
+    // strict: library imports — only save books an online source confirms
+    const book = await fetchAndNormaliseBook(body, supabase, {
+      strict: body.strict === true
+    });
 
     if (!book) {
       return NextResponse.json(
@@ -33,6 +48,9 @@ export async function POST(request) {
         { status: 422 }
       );
     }
+
+    // New catalogue rows should be searchable straight away.
+    if (body.source !== "local") invalidateCatalogIndex();
 
     return NextResponse.json({ book });
   } catch (e) {

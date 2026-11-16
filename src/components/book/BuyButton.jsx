@@ -7,6 +7,8 @@ export default function BuyButton({
   title,
   authors,
   size = "default",
+  variant = "secondary",
+  preorder = false,
   className = ""
 }) {
   const link =
@@ -14,24 +16,18 @@ export default function BuyButton({
 
   if (!link) return null;
 
-  const sizeClasses =
-    size === "sm"
-      ? "text-[10px] px-3 h-[36px] gap-1.5"
-      : "text-[11px] px-4 h-[44px] gap-2";
+  const sizeClass = size === "sm" ? "btn-sm" : size === "lg" ? "btn-lg" : "";
 
   return (
     <a
       href={link}
       target="_blank"
       rel="noopener noreferrer"
-      className={`inline-flex items-center justify-center
-                  font-departureMono uppercase
-                  bg-[#1a1a1a] text-white hover:bg-[#333]
-                  transition-colors rounded-[8px]
-                  ${sizeClasses} ${className}`}
+      className={`btn btn-${variant} ${sizeClass} ${className}`}
     >
       <BookshopIcon size={size} />
-      {size === "sm" ? "Buy" : "Buy on Bookshop.org"}
+      {preorder ? (size === "sm" ? "Pre-order" : "Pre-order on Bookshop.org") : size === "sm" ? "Buy" : "Buy on Bookshop.org"}
+      <span className="sr-only">(opens in a new tab)</span>
     </a>
   );
 }
@@ -48,6 +44,7 @@ function BookshopIcon({ size = "default" }) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      aria-hidden="true"
     >
       <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
       <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />

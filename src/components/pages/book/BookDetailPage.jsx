@@ -1,8 +1,8 @@
 "use client";
-import React, { useEffect, useState, useMemo } from "react";
-import { createClient } from "@/utils/supabase/client";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import BuyButton from "@/components/book/BuyButton";
+import AddToShelfButton from "@/components/book/AddToShelfButton";
 import Link from "next/link";
 
 export default function BookDetailPage({ book }) {
@@ -31,7 +31,7 @@ export default function BookDetailPage({ book }) {
             {/* Back button */}
             <div className="p-4 md:p-8">
               <Button asChild variant="outline" className="font-departureMono">
-                <Link href="/">
+                <Link href="/discover">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="w-4 h-4 mr-2"
@@ -46,7 +46,7 @@ export default function BookDetailPage({ book }) {
                       d="M15 19l-7-7 7-7"
                     />
                   </svg>
-                  Back to Library
+                  Back to Discover
                 </Link>
               </Button>
             </div>
@@ -94,12 +94,15 @@ export default function BookDetailPage({ book }) {
                     : "No description available."}
                 </div>
 
-                <BuyButton
-                  isbn_13={book.isbn_13}
-                  title={book.title}
-                  authors={book.authors}
-                  className="w-full md:w-auto mt-4"
-                />
+                <div className="flex flex-col sm:flex-row gap-2 mt-4">
+                  <AddToShelfButton book={book} className="w-full sm:w-auto sm:min-w-[220px]" />
+                  <BuyButton
+                    isbn_13={book.isbn_13}
+                    title={book.title}
+                    authors={book.authors}
+                    className="w-full sm:w-auto"
+                  />
+                </div>
               </div>
             </div>
 

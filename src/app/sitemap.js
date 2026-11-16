@@ -28,6 +28,18 @@ export default async function sitemap() {
       changeFrequency: "daily",
       priority: 1
     },
+    {
+      url: "https://yournexttale.com/discover",
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.9
+    },
+    {
+      url: "https://yournexttale.com/releases",
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.9
+    },
     ...bookUrls
   ];
 }

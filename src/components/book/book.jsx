@@ -1,8 +1,6 @@
 "use client";
-import React, { useEffect, useState, useRef, useMemo } from "react";
-import { motion } from "motion/react";
+import React, { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
 import { useAuth } from "@/components/providers/AuthProvider";
 import {
   HoverCard,
@@ -12,59 +10,84 @@ import {
 import { useAdminBookEdit } from "@/hooks/useAdminBookEdit";
 import BookPopover from "@/components/book/BookPopover.jsx";
 import BookDrawer from "@/components/book/BookDrawer.jsx";
+import BookCover from "@/components/book/BookCover";
+import { coverUrl as coverUrlFor } from "@/lib/covers";
+import { generateBookSlug } from "@/lib/slugify";
 
+// Hover cards only where there is a real hover — on touch screens a tap
+// should go straight to the details, not to a floating card.
+//
+// One media-query listener shared by every cover. With one each, a mouse
+// appearing (a tablet's keyboard attached, or devtools leaving phone mode)
+// re-rendered a 100-book shelf 100 separate times, and React stopped it as a
+// "Maximum update depth exceeded" loop.
+const HOVER_QUERY = "(hover: hover) and (pointer: fine)";
+const hoverSubscribers = new Set();
+let hoverQuery = null;
+function subscribeCanHover(onChange) {
+  if (!hoverQuery) {
+    hoverQuery = window.matchMedia(HOVER_QUERY);
+    hoverQuery.addEventListener("change", () => hoverSubscribers.forEach((fn) => fn()));
+  }
+  hoverSubscribers.add(onChange);
+  return () => hoverSubscribers.delete(onChange);
+}
+const canHoverNow = () => window.matchMedia(HOVER_QUERY).matches;
+const canHoverOnServer = () => false;
+
+function useCanHover() {
+  return useSyncExternalStore(subscribeCanHover, canHoverNow, canHoverOnServer);
+}
+
+/**
+ * A cover on a shelf. It's a real link to the book's page (open in a new tab,
+ * copy the link); a plain click opens the details drawer instead — or calls
+ * `onClick` (your own shelf opens the reading-details modal).
+ */
 const Book = (props) => {
-  const [coverUrl, setCoverUrl] = useState(null);
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const { book: initialBook, onImageLoad, onDeleted, disableHover, onClick } = props;
+  const [currentBook, setCurrentBook] = useState(initialBook);
+  const [drawerOn, setDrawerOn] = useState(false);
   const [deleted, setDeleted] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-  const { book: initialBook, onImageLoad, onDeleted, disableHover } = props;
-  const [currentBook, setCurrentBook] = useState(initialBook);
-  const { id, title, cover_url } = currentBook;
+  const [hoverOpen, setHoverOpen] = useState(false);
+  const { id, title, authors } = currentBook;
+  const hoverAllowed = useCanHover() && !disableHover;
+
+  useEffect(() => setCurrentBook(initialBook), [initialBook]);
 
   const { profile } = useAuth();
   const isAdmin = profile?.role === "admin";
   const router = useRouter();
-
   const adminEdit = useAdminBookEdit(currentBook);
-
   const drawerRef = useRef();
+  const openWhenReady = useRef(false);
 
-  // Ensure drawer only renders on client to avoid hydration mismatch
+  const href = `/books/${generateBookSlug(title, authors?.[0])}`;
+  const label = authors?.[0] ? `${title} by ${authors[0]}` : title;
+
+  // The details drawer is only built the first time it's opened. Built up
+  // front, every cover on a shelf fetched its description as the shelf loaded
+  // (hundreds of requests on a big bookcase), holding up whatever came next.
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!cover_url) return;
-
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const bucketName = "books";
-
-    // Use public URL directly - much faster than blob downloads
-    const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucketName}/${cover_url}`;
-    setCoverUrl(publicUrl);
-  }, [cover_url]);
-
-  const handleImageLoad = () => {
-    setImageLoaded(true);
-    if (onImageLoad) onImageLoad();
-  };
+    if (!drawerOn || !openWhenReady.current) return;
+    // A frame after it mounts, so it slides in rather than appearing.
+    const frame = requestAnimationFrame(() => {
+      openWhenReady.current = false;
+      drawerRef.current?.open();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [drawerOn]);
 
   const openDrawer = () => {
-    if (drawerRef.current) {
-      drawerRef.current.open();
-    }
+    setHoverOpen(false);
+    if (drawerRef.current) return drawerRef.current.open();
+    openWhenReady.current = true;
+    setDrawerOn(true);
   };
 
   const closeDrawer = () => {
-    if (drawerRef.current) {
-      drawerRef.current.close();
-    }
-    // Reset hover state when the drawer is closed
-    setIsHovered(false);
+    drawerRef.current?.close();
     adminEdit.exitEditMode();
   };
 
@@ -75,30 +98,42 @@ const Book = (props) => {
       if (res.ok) {
         closeDrawer();
         setDeleted(true);
-        if (onDeleted) onDeleted(id);
+        onDeleted?.(id);
       }
     } finally {
       setDeleting(false);
     }
   };
 
-  const handleMouseEnter = () => {
-    if (!disableHover) setIsHovered(true);
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovered(false);
+  const handleClick = (e) => {
+    // Let the browser handle new-tab / new-window clicks
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return;
+    e.preventDefault();
+    setHoverOpen(false);
+    (onClick || openDrawer)();
   };
 
   if (deleted) return null;
 
+  const tile = (
+    <a
+      href={href}
+      onClick={handleClick}
+      aria-label={label}
+      draggable={false}
+      className="block relative z-10 rounded-[3px] transition-transform duration-200 ease-out hover:-translate-y-1.5 focus-visible:-translate-y-1.5 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
+    >
+      <BookCover book={currentBook} onLoad={onImageLoad} />
+    </a>
+  );
+
   return (
     <>
-      {mounted && (
+      {drawerOn && (
         <BookDrawer
           ref={drawerRef}
           book={currentBook}
-          coverUrl={coverUrl}
+          coverUrl={coverUrlFor(currentBook.cover_url)}
           onClose={closeDrawer}
           isAdmin={isAdmin}
           onDelete={handleDelete}
@@ -106,79 +141,31 @@ const Book = (props) => {
           adminEdit={adminEdit}
           onBookUpdated={(updatedBook) => {
             setCurrentBook(updatedBook);
-            if (updatedBook.cover_url) {
-              const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-              setCoverUrl(
-                `${supabaseUrl}/storage/v1/object/public/books/${updatedBook.cover_url}`
-              );
-            }
             router.refresh();
           }}
         />
       )}
 
-      <div
-        className="z-10"
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
+      {/* Always wrapped, and only allowed to open where it should, so the
+          cover isn't torn down and rebuilt (image and all) whenever that
+          changes — a drag starting or ending did it to every cover. */}
+      <HoverCard
+        open={hoverAllowed && hoverOpen}
+        onOpenChange={(open) => setHoverOpen(open && hoverAllowed)}
+        openDelay={350}
+        closeDelay={80}
       >
-        <HoverCard
-          {...(disableHover ? { openDelay: 999999, closeDelay: 0 } : {})}
+        <HoverCardTrigger asChild>{tile}</HoverCardTrigger>
+        <HoverCardContent
+          side="right"
+          align="start"
+          sideOffset={10}
+          collisionPadding={16}
+          className="book-popover w-[min(380px,80vw)] p-0 bg-white rounded-[12px] border-line shadow-[0_18px_48px_-18px_rgba(0,0,0,0.4)] z-[60]"
         >
-          <HoverCardTrigger asChild>
-            <div
-              className="relative transition-all duration-200 ease-in-out cursor-pointer"
-              onClick={openDrawer}
-            >
-              <div className="flex flex-col gap-1 relative z-10" key={id}>
-                <div className="relative w-full">
-                  {/* Skeleton placeholder shown until image loads */}
-                  {!imageLoaded && (
-                    <div
-                      className="w-full bg-[#e0e0e0] rounded-sm animate-pulse"
-                      style={{ aspectRatio: "2 / 3" }}
-                    />
-                  )}
-                  {coverUrl && (
-                    <img
-                      src={coverUrl}
-                      alt={`${title} cover`}
-                      draggable={false}
-                      className={`w-full h-auto transform transition-all duration-200 ease-in-out rounded-sm ${
-                        imageLoaded ? "opacity-100" : "opacity-0"
-                      } ${imageLoaded ? "" : "absolute top-0 left-0"} ${
-                        disableHover
-                          ? ""
-                          : isHovered
-                            ? "-translate-y-2"
-                            : "hover:-translate-y-2"
-                      }`}
-                      onLoad={handleImageLoad}
-                      loading="lazy"
-                    />
-                  )}
-                </div>
-              </div>
-              <div className="w-full h-full absolute top-0 left-0 z-0"></div>
-              {/* Invisible buffer area */}
-              <div className="absolute bottom-[-8px] left-0 w-full h-2 bg-transparent"></div>
-            </div>
-          </HoverCardTrigger>
-          <HoverCardContent
-            className="book-popover w-full max-w-[80vw] xs:max-w-[480px] p-4 bg-white shadow-lg rounded-lg"
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          >
-            <BookPopover
-              book={currentBook}
-              onOpenDrawer={openDrawer}
-              isAdmin={isAdmin}
-              onDelete={handleDelete}
-              deleting={deleting}
-            />
-          </HoverCardContent>
-        </HoverCard>
-      </div>
+          <BookPopover book={currentBook} onOpenDrawer={openDrawer} />
+        </HoverCardContent>
+      </HoverCard>
     </>
   );
 };

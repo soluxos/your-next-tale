@@ -1,21 +1,27 @@
+import Link from "next/link";
+import StatusPage from "@/components/status/StatusPage";
+
+export const metadata = { title: "That link didn’t work | Your Next Tale" };
+
+// Landing page for failed email links (/auth/confirm redirects here).
 export default function ErrorPage() {
   return (
-    <div className="ErrorPage min-h-screen bg-white flex flex-col items-center justify-center px-4">
-      <p className="font-departureMono uppercase text-[10px] text-textSecondary mb-2">
-        Error
-      </p>
-      <h1 className="font-ppMondwest text-[32px] text-textPrimary mb-4">
-        Something went wrong
-      </h1>
-      <p className="font-departureMono uppercase text-[10px] text-textSecondary mb-8">
-        An unexpected error occurred. Please try again.
-      </p>
-      <a
-        href="/"
-        className="h-[44px] px-6 flex items-center bg-[#1f1f1f] text-white hover:bg-[#353535] font-departureMono uppercase text-[11px] rounded-[8px] transition-colors"
-      >
-        Back to Home
-      </a>
-    </div>
+    <StatusPage
+      eyebrow="Email link · Expired or already used"
+      title="That link didn’t work"
+      actions={
+        <>
+          <Link href="/login" className="btn btn-primary">
+            Sign in
+          </Link>
+          <Link href="/login/forgot" className="btn btn-secondary">
+            Reset password
+          </Link>
+        </>
+      }
+    >
+      Email links only work once and expire after a while. If you&rsquo;ve already confirmed your
+      account, just sign in — or ask for a fresh password-reset link.
+    </StatusPage>
   );
 }

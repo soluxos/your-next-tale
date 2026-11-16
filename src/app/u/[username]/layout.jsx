@@ -1,19 +1,25 @@
 import { createClient } from "@/utils/supabase/server";
 import { TABLES } from "@/lib/supabase/types";
-import { redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import ProfileLayout from "./ProfileLayout";
+import PrivateProfile from "@/components/profile/PrivateProfile";
 import { getFollowCounts, getFollowStatus } from "@/lib/follows";
-
-const DEFAULT_SHELVES = [
-  { name: "Read", slug: "read", display_order: 0 },
-  { name: "Currently Reading", slug: "currently-reading", display_order: 1 },
-  { name: "Want to Read", slug: "want-to-read", display_order: 2 },
-  { name: "Did Not Finish", slug: "did-not-finish", display_order: 3 }
-];
+import { ensureDefaultShelves } from "@/lib/bookshelves";
 
 export async function generateMetadata({ params }) {
   const { username } = await params;
-  return { title: `${username}'s Shelves | Your Next Tale` };
+  const supabase = await createClient();
+  const { data: profile } = await supabase
+    .from(TABLES.PROFILES)
+    .select("full_name, username")
+    .eq("username", username)
+    .maybeSingle();
+  if (!profile) return { title: "Reader not found | Your Next Tale" };
+  const name = profile.full_name || profile.username;
+  return {
+    title: `${name}'s bookcase | Your Next Tale`,
+    description: `See what ${name} is reading, has read and wants to read on Your Next Tale.`
+  };
 }
 
 export default async function UserLayout({ children, params }) {
@@ -27,9 +33,9 @@ export default async function UserLayout({ children, params }) {
       "id, full_name, username, avatar_url, bio, is_private, facehash_color"
     )
     .eq("username", username)
-    .single();
+    .maybeSingle();
 
-  if (!profile) redirect("/");
+  if (!profile) notFound();
 
   // Auth check
   const {
@@ -37,7 +43,13 @@ export default async function UserLayout({ children, params }) {
   } = await supabase.auth.getUser();
   const isOwner = user?.id === profile.id;
 
-  if (profile.is_private && !isOwner) redirect("/");
+  // Private bookcases are visible to their owner and accepted followers only.
+  if (profile.is_private && !isOwner) {
+    const status = user ? await getFollowStatus(supabase, user.id, profile.id) : "none";
+    if (status !== "accepted") {
+      return <PrivateProfile profile={profile} signedIn={!!user} followStatus={status} />;
+    }
+  }
 
   // Fetch user shelves
   let { data: shelves, error: shelvesError } = await supabase
@@ -57,35 +69,28 @@ export default async function UserLayout({ children, params }) {
 
   shelves = shelves || [];
 
-  // --- Default shelves guard (Problem 2C) ---
-  // If the viewer is the owner and any default shelves are missing, create them
+  // Owners always get the four default status shelves
   if (isOwner) {
-    const existingSlugs = new Set(shelves.map((s) => s.slug));
-    const missing = DEFAULT_SHELVES.filter((ds) => !existingSlugs.has(ds.slug));
+    shelves = await ensureDefaultShelves(supabase, profile.id, shelves);
+  }
 
-    if (missing.length > 0) {
-      const rows = missing.map((ds) => ({
-        user_id: profile.id,
-        name: ds.name,
-        slug: ds.slug,
-        is_default: true,
-        is_exclusive: true,
-        display_order: ds.display_order
-      }));
-
-      await supabase
-        .from(TABLES.BOOKSHELVES)
-        .upsert(rows, { onConflict: "user_id,slug", ignoreDuplicates: true });
-
-      // Re-fetch shelves after creating missing ones
-      const { data: refreshed } = await supabase
-        .from(TABLES.BOOKSHELVES)
-        .select("id, name, slug, is_default, is_exclusive")
-        .eq("user_id", profile.id)
-        .order("display_order", { ascending: true });
-
-      shelves = refreshed || shelves;
-    }
+  // Book counts per shelf (for the tab labels) + total library size
+  const shelfIds = shelves.map((s) => s.id);
+  const [{ data: shelfLinks }, { count: libraryCount }] = await Promise.all([
+    shelfIds.length
+      ? supabase
+          .from(TABLES.BOOKSHELF_BOOKS)
+          .select("bookshelf_id")
+          .in("bookshelf_id", shelfIds)
+      : Promise.resolve({ data: [] }),
+    supabase
+      .from(TABLES.USER_BOOKS)
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", profile.id)
+  ]);
+  const shelfCounts = { all: libraryCount || 0 };
+  for (const link of shelfLinks || []) {
+    shelfCounts[link.bookshelf_id] = (shelfCounts[link.bookshelf_id] || 0) + 1;
   }
 
   // Resolve avatar URL — full HTTP URLs (OAuth) are used directly;
@@ -119,6 +124,7 @@ export default async function UserLayout({ children, params }) {
     <ProfileLayout
       profile={{ ...profile, avatarUrl }}
       shelves={shelves}
+      shelfCounts={shelfCounts}
       isOwner={isOwner}
       isAdmin={isAdmin}
       currentUserId={user?.id || null}

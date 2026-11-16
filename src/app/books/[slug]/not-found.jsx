@@ -1,20 +1,20 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import StatusPage from "@/components/status/StatusPage";
+import { HomeAction, SearchBooksAction } from "@/components/status/StatusActions";
 
-export default function NotFound() {
+export default function BookNotFound() {
   return (
-    <div className="NotFound min-h-screen flex items-center justify-center bg-gradient-to-b from-bookLightDark to-bookLightLight">
-      <div className="text-center p-8 max-w-md">
-        <h1 className="text-4xl font-ppMondwest text-textPrimary mb-2">
-          Book Not Found
-        </h1>
-        <p className="text-lg font-ppMondwest text-textSecondary mb-4">
-          Sorry, we couldn't find the book you're looking for.
-        </p>
-        <Button asChild variant="default">
-          <Link href="/">Return to Library</Link>
-        </Button>
-      </div>
-    </div>
+    <StatusPage
+      eyebrow="404 · Book not found"
+      title="This book isn’t on our shelves"
+      actions={
+        <>
+          <SearchBooksAction />
+          <HomeAction />
+        </>
+      }
+    >
+      The link may be out of date, or the book may have been merged with another edition. Try
+      searching for it by title or author.
+    </StatusPage>
   );
 }

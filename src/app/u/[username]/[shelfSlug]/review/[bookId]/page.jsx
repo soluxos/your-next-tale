@@ -20,7 +20,7 @@ export default async function StandaloneReviewPage({ params }) {
     .from("profiles")
     .select("id, username, full_name, facehash_color")
     .eq("username", username)
-    .single();
+    .maybeSingle();
 
   if (!profile) notFound();
 
@@ -30,15 +30,15 @@ export default async function StandaloneReviewPage({ params }) {
       `
       id, rating, review,
       book:book_id (
-        id, title, authors, cover_url, isbn_13, description
+        id, title, authors, cover_url, isbn_13, description, page_count, published_date, genres
       )
     `
     )
     .eq("user_id", profile.id)
     .eq("book_id", bookId)
-    .single();
+    .maybeSingle();
 
-  if (!userBook || (!userBook.rating && !userBook.review)) notFound();
+  if (!userBook) notFound();
 
   return (
     <ReviewModal

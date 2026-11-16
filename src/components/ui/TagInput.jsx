@@ -4,7 +4,8 @@ import { useState, useRef } from "react";
 export default function TagInput({
   tags,
   onChange,
-  placeholder = "Type and press Enter..."
+  placeholder = "Type and press Enter...",
+  ariaLabel
 }) {
   const [input, setInput] = useState("");
   const inputRef = useRef(null);
@@ -35,16 +36,16 @@ export default function TagInput({
   return (
     <div
       onClick={() => inputRef.current?.focus()}
-      className="min-h-[36px] w-full border border-border rounded-[6px] px-2 py-1.5
-                 flex flex-wrap gap-1 cursor-text focus-within:border-[#1f1f1f]
+      className="min-h-[40px] w-full border border-[#d6d6d6] rounded-[8px] px-2 py-1.5
+                 flex flex-wrap items-center gap-1 cursor-text focus-within:border-ink
                  transition-colors bg-white"
     >
       {tags.map((tag) => (
         <span
           key={tag}
           className="flex items-center gap-1 bg-[#f4f4f4] text-textPrimary
-                     font-departureMono uppercase text-[8px] px-2 h-[20px]
-                     rounded-[4px]"
+                     label !text-[10px] pl-2 pr-1 h-[26px]
+                     rounded-[6px]"
         >
           {tag}
           <button
@@ -52,7 +53,8 @@ export default function TagInput({
               e.stopPropagation();
               removeTag(tag);
             }}
-            className="text-textSecondary hover:text-textPrimary leading-none"
+            aria-label={`Remove ${tag}`}
+            className="w-5 h-5 rounded-[4px] flex items-center justify-center text-textSecondary hover:text-ink hover:bg-white leading-none"
           >
             ×
           </button>
@@ -67,8 +69,9 @@ export default function TagInput({
           if (input.trim()) addTag(input);
         }}
         placeholder={tags.length ? "" : placeholder}
-        className="flex-1 min-w-[80px] font-departureMono text-[10px]
-                   text-textPrimary bg-transparent outline-none placeholder:text-textSecondary"
+        aria-label={ariaLabel || placeholder}
+        className="flex-1 min-w-[80px] h-7 font-departureMono text-[16px] sm:text-[13px]
+                   text-textPrimary bg-transparent !border-0 outline-none placeholder:text-[#9a9a9a]"
       />
     </div>
   );

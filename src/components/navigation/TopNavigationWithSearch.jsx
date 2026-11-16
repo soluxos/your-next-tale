@@ -38,7 +38,7 @@ export default function TopNavigation() {
   }, [searchOpen]);
 
   const navItems = [
-    { id: "discover", label: "Discover", href: "/" },
+    { id: "discover", label: "Discover", href: "/discover" },
     { id: "bookshelves", label: "My Shelves", href: "/bookshelves" },
     { id: "community", label: "Community", href: "/community" }
   ];

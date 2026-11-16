@@ -1,108 +1,57 @@
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import BuyButton from "@/components/book/BuyButton";
+import React from "react";
+import AddToShelfButton from "@/components/book/AddToShelfButton";
+import { tidyGenres } from "@/lib/genres";
+import { useBookDescription } from "@/lib/useBookDescription";
 
-const truncateDescription = (text, limit) => {
+const truncate = (text, limit) => {
   if (!text) return "";
   if (text.length <= limit) return text;
-  return text.slice(0, text.lastIndexOf(" ", limit)) + "...";
+  return text.slice(0, text.lastIndexOf(" ", limit)) + "…";
 };
 
-const BookPopover = ({ book, onOpenDrawer, isAdmin, onDelete, deleting }) => {
-  const { title, authors, description } = book;
-  const [confirming, setConfirming] = useState(false);
+export function bookMeta(book) {
+  return [
+    tidyGenres(book.genres)[0],
+    book.published_date?.slice(0, 4),
+    book.page_count ? `${book.page_count} pages` : null
+  ].filter(Boolean);
+}
 
-  const handleDeleteClick = () => {
-    if (!confirming) {
-      setConfirming(true);
-      return;
-    }
-    onDelete();
-    setConfirming(false);
-  };
+/** The card that appears when you hover a cover (mouse only). */
+const BookPopover = ({ book, onOpenDrawer }) => {
+  const { title, authors } = book;
+  const description = useBookDescription(book);
+  const meta = bookMeta(book);
 
   return (
-    <div className="book-popover space-y-4 max-w-full">
-      {/* Title and Author */}
-      <div>
-        <h4 className="text-[20px] text-textPrimary font-ppMondwest">
-          {title}
-        </h4>
-        <p className="text-[20px] font-ppMondwest text-textSecondary">
-          By <span className="text-textPrimary">{authors?.[0]}</span>
-        </p>
-      </div>
-
-      {/* Description */}
-      <p className="text-[16px] leading-[1.4] text-textSecondary font-ppMondwest">
-        {truncateDescription(description, 240)}
-      </p>
-
-      {/* Buttons */}
-      <div className="flex flex-col xs:flex-row xs:justify-between items-center gap-2">
-        <Button
-          variant="outline"
-          className="w-full flex justify-between font-departureMono uppercase text-[11px]"
-          onClick={onOpenDrawer}
-        >
-          View all details{" "}
-          <img src="/icons/arrow-right.svg" alt="cart" className="ml-2" />
-        </Button>
-        <BuyButton
-          isbn_13={book.isbn_13}
-          title={book.title}
-          authors={book.authors}
-          size="sm"
-          className="w-full"
-        />
-      </div>
-
-      {/* Admin delete */}
-      {isAdmin && (
-        <div className="pt-1 border-t border-border flex items-center gap-2">
-          {confirming ? (
-            <>
-              <span className="font-departureMono text-[10px] text-textSecondary">
-                Delete this book?
-              </span>
-              <button
-                onClick={handleDeleteClick}
-                disabled={deleting}
-                className="font-departureMono uppercase text-[10px] text-red-500 hover:text-red-600 disabled:opacity-40"
-              >
-                {deleting ? "Deleting…" : "Confirm"}
-              </button>
-              <button
-                onClick={() => setConfirming(false)}
-                className="font-departureMono uppercase text-[10px] text-textSecondary hover:text-textPrimary"
-              >
-                Cancel
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={handleDeleteClick}
-              className="font-departureMono uppercase text-[10px] text-textSecondary hover:text-red-500 transition-colors flex items-center gap-1.5"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="w-3.5 h-3.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                />
-              </svg>
-              Delete book
-            </button>
+    <div className="flex flex-col">
+      <div className="p-4 pb-3 flex flex-col gap-2">
+        {meta.length > 0 && (
+          <p className="label !text-[10px] text-textSecondary">{meta.join(" · ")}</p>
+        )}
+        <div>
+          <h4 className="font-ppMondwest text-[20px] leading-tight text-ink">{title}</h4>
+          {authors?.[0] && (
+            <p className="font-ppMondwest text-[16px] text-textSecondary mt-0.5">
+              by <span className="text-textPrimary">{authors[0]}</span>
+            </p>
           )}
         </div>
-      )}
+        {description && (
+          <p className="font-ppMondwest text-[15px] leading-[1.45] text-textPrimary">
+            {truncate(description, 220)}
+          </p>
+        )}
+      </div>
+      <div className="px-4 pb-4 pt-1 grid grid-cols-2 gap-2">
+        <AddToShelfButton book={book} size="sm" variant="quick" className="w-full" />
+        <button type="button" onClick={onOpenDrawer} className="btn btn-secondary btn-sm w-full">
+          Details
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M13.172 12l-4.95-4.95 1.414-1.414L16 12l-6.364 6.364-1.414-1.414z" />
+          </svg>
+        </button>
+      </div>
     </div>
   );
 };

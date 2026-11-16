@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { SEED_GENRES } from "@/lib/books/seeder";
+import { SEED_GENRES } from "@/lib/books/seedGenres";
 
 export default function SeedBooksPage() {
   const [selectedLabels, setSelectedLabels] = useState(

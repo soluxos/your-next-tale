@@ -13,14 +13,30 @@ export async function login(formData) {
     password: formData.get("password")
   };
 
-  const { error } = await supabase.auth.signInWithPassword(data);
+  const { data: auth, error } = await supabase.auth.signInWithPassword(data);
 
   if (error) {
     return { error: error.message };
   }
 
   revalidatePath("/", "layout");
-  redirect("/account");
+
+  // Back to where they were (e.g. a book they tried to save), otherwise
+  // straight to their bookcase. Only same-site relative paths are allowed.
+  const next = formData.get("next");
+  if (typeof next === "string" && /^\/(?!\/)/.test(next) && next !== "/login") {
+    redirect(next);
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("username")
+    .eq("id", auth.user.id)
+    .single();
+
+  redirect(
+    profile?.username ? `/u/${encodeURIComponent(profile.username)}` : "/account"
+  );
 }
 
 export async function signup(formData) {
@@ -76,4 +92,29 @@ export async function signup(formData) {
 
   revalidatePath("/", "layout");
   redirect("/account");
+}
+
+/**
+ * Email a password-reset link. Always reports success so the form can't be
+ * used to discover which emails have accounts.
+ */
+export async function requestPasswordReset(formData) {
+  const email = String(formData.get("email") || "").trim();
+  if (!email) return { error: "Enter the email you signed up with." };
+
+  const supabase = await createClient();
+  const headersList = await headers();
+  const host = headersList.get("host");
+  const proto = headersList.get("x-forwarded-proto") || "http";
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${proto}://${host}/auth/confirm?reset=1`
+  });
+  if (error && !/rate limit/i.test(error.message)) {
+    console.error("resetPasswordForEmail:", error.message);
+  }
+  if (error && /rate limit/i.test(error.message)) {
+    return { error: "Too many requests — please wait a minute and try again." };
+  }
+  return { ok: true };
 }

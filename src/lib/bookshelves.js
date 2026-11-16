@@ -1,13 +1,50 @@
 import { TABLES } from "@/lib/supabase/types";
 import { recordActivity } from "@/lib/activities";
 
-function slugFromName(name) {
+export function shelfSlug(name) {
   return name
     .toLowerCase()
     .replace(/[^\w\s-]/g, "")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
     .trim();
+}
+
+export const DEFAULT_SHELVES = [
+  { name: "Read", slug: "read", display_order: 0 },
+  { name: "Currently Reading", slug: "currently-reading", display_order: 1 },
+  { name: "Want to Read", slug: "want-to-read", display_order: 2 },
+  { name: "Did Not Finish", slug: "did-not-finish", display_order: 3 }
+];
+
+/**
+ * Make sure the four default (exclusive "status") shelves exist for a user.
+ * Returns the full, ordered shelf list (re-fetched only if anything was
+ * created). Safe to call repeatedly.
+ */
+export async function ensureDefaultShelves(supabase, userId, shelves) {
+  const existing = new Set((shelves || []).map((s) => s.slug));
+  const missing = DEFAULT_SHELVES.filter((d) => !existing.has(d.slug));
+  if (!missing.length) return shelves;
+
+  await supabase.from(TABLES.BOOKSHELVES).upsert(
+    missing.map((d) => ({
+      user_id: userId,
+      name: d.name,
+      slug: d.slug,
+      is_default: true,
+      is_exclusive: true,
+      display_order: d.display_order
+    })),
+    { onConflict: "user_id,slug", ignoreDuplicates: true }
+  );
+
+  const { data } = await supabase
+    .from(TABLES.BOOKSHELVES)
+    .select("*")
+    .eq("user_id", userId)
+    .order("display_order", { ascending: true });
+  return data || shelves;
 }
 
 /**
@@ -25,10 +62,16 @@ export async function getUserShelves(supabase, userId) {
 }
 
 /**
- * Create a custom bookshelf for a user.
+ * Create a custom bookshelf for a user. `silent` skips the feed activity
+ * (used by imports, which may create many shelves at once).
  */
-export async function createShelf(supabase, userId, { name, description }) {
-  const slug = slugFromName(name);
+export async function createShelf(
+  supabase,
+  userId,
+  { name, description },
+  { silent = false } = {}
+) {
+  const slug = shelfSlug(name);
 
   const { data, error } = await supabase
     .from(TABLES.BOOKSHELVES)
@@ -45,6 +88,8 @@ export async function createShelf(supabase, userId, { name, description }) {
     .single();
 
   if (error) throw error;
+
+  if (silent) return data;
 
   recordActivity(supabase, {
     userId,
@@ -100,7 +145,7 @@ export async function renameShelf(supabase, shelfId, newName) {
 
   const { data, error } = await supabase
     .from(TABLES.BOOKSHELVES)
-    .update({ name: newName, slug: slugFromName(newName) })
+    .update({ name: newName, slug: shelfSlug(newName) })
     .eq("id", shelfId)
     .select()
     .single();

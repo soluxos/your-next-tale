@@ -36,6 +36,7 @@ export function useShelfDragDrop({ books, setBooks, shelfId, enabled }) {
   const setBooksFnRef = useRef(setBooks);
   const shelfIdRef = useRef(shelfId);
   const saving = useRef(false);
+  const pendingSave = useRef(null); // latest order requested while saving
 
   useEffect(() => { booksRef.current = books; }, [books]);
   useEffect(() => { setBooksFnRef.current = setBooks; }, [setBooks]);
@@ -153,24 +154,39 @@ export function useShelfDragDrop({ books, setBooks, shelfId, enabled }) {
       }));
       setBooksFnRef.current(withPositions);
 
-      if (saving.current) return;
+      const orderedIds = withPositions
+        .filter((b) => b.id && !String(b.id).startsWith("new-"))
+        .map((b) => b.id);
+      if (!orderedIds.length) return;
+
+      // A save is in flight: remember only the latest desired order; it is
+      // sent when the current request finishes.
+      if (saving.current) {
+        pendingSave.current = { orderedIds, rollback: currentBooks };
+        return;
+      }
       saving.current = true;
+      let job = { orderedIds, rollback: currentBooks };
       try {
-        const orderedIds = withPositions
-          .filter((b) => b.id && !String(b.id).startsWith("new-"))
-          .map((b) => b.id);
-        if (!orderedIds.length) return;
-        const res = await fetch(`/api/shelves/${shelfIdRef.current}/reorder`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderedIds }),
-        });
-        if (!res.ok) {
-          setBooksFnRef.current(currentBooks);
-          console.error("Reorder failed — reverted");
+        while (job) {
+          pendingSave.current = null;
+          try {
+            const res = await fetch(`/api/shelves/${shelfIdRef.current}/reorder`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ orderedIds: job.orderedIds }),
+            });
+            if (!res.ok) {
+              setBooksFnRef.current(job.rollback);
+              pendingSave.current = null;
+              console.error("Reorder failed — reverted");
+            }
+          } catch {
+            setBooksFnRef.current(job.rollback);
+            pendingSave.current = null;
+          }
+          job = pendingSave.current;
         }
-      } catch {
-        setBooksFnRef.current(currentBooks);
       } finally {
         saving.current = false;
       }

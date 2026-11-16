@@ -1,6 +1,6 @@
 import { createStaticClient } from "@/utils/supabase/static";
 import { notFound } from "next/navigation";
-import BookDetailPage from "@/components/pages/book/BookDetailPage";
+import BookView from "@/components/pages/book/BookPage";
 import { generateBookSlug, getBookFromSlug } from "@/lib/slugify";
 
 // Enable ISR — regenerate on request after this many seconds
@@ -34,7 +34,7 @@ export async function generateMetadata({ params }) {
 
   if (!book) {
     return {
-      title: "Book Not Found | Your Next Tale"
+      title: "Book not found | Your Next Tale"
     };
   }
 
@@ -54,8 +54,24 @@ export async function generateMetadata({ params }) {
   };
 }
 
-// Main page component
-export default async function BookPage({ params }) {
+async function getMoreByAuthor(supabase, book) {
+  const author = book.authors?.[0];
+  if (!author) return [];
+  const { data, error } = await supabase
+    .from("books")
+    .select("*")
+    .contains("authors", [author])
+    .neq("id", book.id)
+    .order("published_date", { ascending: false, nullsFirst: false })
+    .limit(9);
+  if (error) {
+    console.error("Error fetching more by author:", error);
+    return [];
+  }
+  return data || [];
+}
+
+export default async function BookRoute({ params }) {
   const { slug } = await params;
   const supabase = createStaticClient();
 
@@ -65,5 +81,7 @@ export default async function BookPage({ params }) {
     notFound();
   }
 
-  return <BookDetailPage book={book} />;
+  const moreByAuthor = await getMoreByAuthor(supabase, book);
+
+  return <BookView book={book} moreByAuthor={moreByAuthor} />;
 }

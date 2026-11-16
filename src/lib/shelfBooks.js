@@ -7,8 +7,15 @@ import { recordActivity } from "@/lib/activities";
  * - Ensures a user_books row exists.
  * - If the target shelf is exclusive, removes the book from all other
  *   exclusive shelves for this user before inserting.
+ * - `silent` skips the feed activity (imports add hundreds of books at once).
  */
-export async function addBookToShelf(supabase, userId, bookId, shelfId) {
+export async function addBookToShelf(
+  supabase,
+  userId,
+  bookId,
+  shelfId,
+  { silent = false } = {}
+) {
   // 1. Ensure user_books row
   const userBook = await getOrCreateUserBook(supabase, userId, bookId);
 
@@ -62,35 +69,34 @@ export async function addBookToShelf(supabase, userId, bookId, shelfId) {
     }
   }
 
-  // 4. Bump existing positions so the new book can take position 1
-  const { data: existingEntries } = await supabase
+  // 4. New books go to the front of the shelf. Rather than bumping every
+  //    existing row (one request per book), take a position just before the
+  //    current first one — "user" sort is ascending, so it lands on top.
+  const { data: first } = await supabase
     .from(TABLES.BOOKSHELF_BOOKS)
-    .select("id, position")
+    .select("position")
     .eq("bookshelf_id", shelfId)
-    .not("position", "is", null);
+    .not("position", "is", null)
+    .order("position", { ascending: true })
+    .limit(1)
+    .maybeSingle();
 
-  if (existingEntries?.length) {
-    await Promise.all(
-      existingEntries.map((entry) =>
-        supabase
-          .from(TABLES.BOOKSHELF_BOOKS)
-          .update({ position: entry.position + 1 })
-          .eq("id", entry.id)
-      )
-    );
-  }
+  const position = first?.position != null ? first.position - 1 : 1;
 
-  // 5. Insert into bookshelf_books at position 1
+  // 5. Insert into bookshelf_books (re-adding moves it to the front)
   const { data, error } = await supabase
     .from(TABLES.BOOKSHELF_BOOKS)
     .upsert(
-      { bookshelf_id: shelfId, user_book_id: userBook.id, position: 1 },
+      { bookshelf_id: shelfId, user_book_id: userBook.id, position },
       { onConflict: "bookshelf_id,user_book_id" }
     )
     .select()
     .single();
 
   if (error) throw error;
+
+  const result = { ...data, user_book: userBook, previous_shelf_id: previousShelfId };
+  if (silent) return result;
 
   // 6. Fetch book data for activity snapshot
   const { data: book } = await supabase
@@ -114,7 +120,7 @@ export async function addBookToShelf(supabase, userId, bookId, shelfId) {
     fromShelfName: previousShelfName
   });
 
-  return data;
+  return result;
 }
 
 /**
@@ -138,7 +144,51 @@ export async function removeBookFromShelf(supabase, userBookId, shelfId) {
     .limit(1);
 
   if (!remaining || remaining.length === 0) {
-    await supabase.from(TABLES.USER_BOOKS).delete().eq("id", userBookId);
+    const { error: ubErr } = await supabase
+      .from(TABLES.USER_BOOKS)
+      .delete()
+      .eq("id", userBookId);
+    if (ubErr) throw ubErr;
+  }
+}
+
+/**
+ * Remove a book from the user's library entirely — every shelf, plus the
+ * user_books row (rating, review, progress).
+ */
+export async function removeBookFromLibrary(supabase, userBookId) {
+  // Delete the library row first: if it goes, its shelf links go with it,
+  // and if it can't, nothing has changed. Deleting the links first could
+  // leave a book in your library on no shelf at all.
+  const first = await supabase
+    .from(TABLES.USER_BOOKS)
+    .delete()
+    .eq("id", userBookId)
+    .select("id");
+  if (!first.error && first.data?.length) return;
+  if (!first.error) {
+    throw new Error("This book couldn’t be removed from your library. Please try again.");
+  }
+  const blockedByLinks =
+    first.error.code === "23503" &&
+    /bookshelf_books/.test(`${first.error.message} ${first.error.details || ""}`);
+  if (!blockedByLinks) throw first.error;
+
+  // Shelf links block the delete (no cascade) — remove them, then retry.
+  const { error: linkErr } = await supabase
+    .from(TABLES.BOOKSHELF_BOOKS)
+    .delete()
+    .eq("user_book_id", userBookId);
+  if (linkErr) throw linkErr;
+
+  const { data, error } = await supabase
+    .from(TABLES.USER_BOOKS)
+    .delete()
+    .eq("id", userBookId)
+    .select("id");
+  if (error) throw error;
+  if (!data?.length) {
+    throw new Error("This book couldn’t be removed from your library. Please try again.");
   }
 }
 

@@ -1,100 +1,58 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
-const SORT_OPTIONS = [
-  { key: "user", label: "Custom Order" },
-  { key: "date_added", label: "Date Added" },
-  { key: "rating", label: "Rating" },
-  { key: "az", label: "A → Z" },
-  { key: "za", label: "Z → A" }
+export const SORT_OPTIONS = [
+  { key: "user", label: "Custom order" },
+  { key: "date_added", label: "Recently added" },
+  { key: "finished", label: "Recently finished" },
+  { key: "rating", label: "Highest rated" },
+  { key: "short", label: "Shortest first" },
+  { key: "long", label: "Longest first" },
+  { key: "author", label: "Author A → Z" },
+  { key: "az", label: "Title A → Z" },
+  { key: "za", label: "Title Z → A" }
 ];
 
-export default function SortControl({ value, onChange }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  const current = SORT_OPTIONS.find((o) => o.key === value) || SORT_OPTIONS[0];
+/** The sort options a shelf offers ("Custom order" only exists on real shelves). */
+export function sortOptionsFor(allowCustomOrder = true) {
+  return allowCustomOrder ? SORT_OPTIONS : SORT_OPTIONS.filter((o) => o.key !== "user");
+}
 
-  useEffect(() => {
-    function handleClickOutside(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+/** Desktop sort menu. Phones pick a sort in the "Sort & filter" sheet instead. */
+export default function SortControl({ value, onChange, allowCustomOrder = true, className }) {
+  const options = sortOptionsFor(allowCustomOrder);
+  const current = options.find((o) => o.key === value) || options[0];
 
   return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 h-[32px] px-3 rounded-[8px]
-                   border border-border bg-white hover:border-[#1f1f1f]
-                   transition-colors font-departureMono uppercase text-[9px]
-                   text-textPrimary"
-      >
-        <svg
-          width="11"
-          height="11"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          className="text-textSecondary"
-        >
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger className={cn("btn btn-secondary btn-sm h-9 data-[state=open]:border-ink", className)}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-textSecondary" aria-hidden="true">
           <path d="M3 6h18M7 12h10M11 18h2" />
         </svg>
+        <span className="sr-only">Sort: </span>
         {current.label}
-        <svg
-          width="9"
-          height="9"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          className={`text-textSecondary transition-transform ${open ? "rotate-180" : ""}`}
-        >
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-textSecondary" aria-hidden="true">
           <path d="M6 9l6 6 6-6" />
         </svg>
-      </button>
-
-      {open && (
-        <div
-          className="absolute left-0 top-[calc(100%+4px)] z-30 bg-white
-                        border border-border rounded-[8px] shadow-lg py-1 min-w-[140px]"
-        >
-          {SORT_OPTIONS.map((opt) => (
-            <button
-              key={opt.key}
-              onClick={() => {
-                onChange(opt.key);
-                setOpen(false);
-              }}
-              className={`
-                w-full text-left px-3 py-2 font-departureMono uppercase text-[9px]
-                transition-colors flex items-center justify-between
-                ${
-                  value === opt.key
-                    ? "text-textPrimary bg-[#f4f4f4]"
-                    : "text-textSecondary hover:text-textPrimary hover:bg-[#fafafa]"
-                }
-              `}
-            >
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" sideOffset={6} className="w-52 p-1.5 rounded-[12px] z-[60]">
+        <DropdownMenuLabel className="label !text-[10px] text-textSecondary font-normal">Sort by</DropdownMenuLabel>
+        <DropdownMenuRadioGroup value={current.key} onValueChange={onChange}>
+          {options.map((opt) => (
+            <DropdownMenuRadioItem key={opt.key} value={opt.key} className="label h-10 rounded-[6px] cursor-pointer">
               {opt.label}
-              {value === opt.key && (
-                <svg
-                  width="10"
-                  height="10"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
-                  <path d="M20 6L9 17l-5-5" />
-                </svg>
-              )}
-            </button>
+            </DropdownMenuRadioItem>
           ))}
-        </div>
-      )}
-    </div>
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

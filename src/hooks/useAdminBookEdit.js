@@ -1,5 +1,6 @@
 "use client";
 import { useState, useCallback } from "react";
+import { createClient } from "@/utils/supabase/client";
 
 export function useAdminBookEdit(book) {
   // Whether edit mode is active
@@ -21,24 +22,35 @@ export function useAdminBookEdit(book) {
   // Tracks which fields have been changed from the original book
   const [dirtyFields, setDirtyFields] = useState(new Set());
 
-  function enterEditMode() {
+  async function enterEditMode() {
+    // Shelf lists carry trimmed book rows. Editing saves every field, so start
+    // from the full record or the missing ones would be blanked.
+    let full = book;
+    if (!("description" in book)) {
+      const { data, error } = await createClient().from("books").select("*").eq("id", book.id).single();
+      if (error || !data) {
+        setFetchError("Couldn’t load this book for editing.");
+        return;
+      }
+      full = data;
+    }
     setDraft({
-      title: book.title || "",
-      authors: book.authors || [],
-      description: book.description || "",
-      isbn_13: book.isbn_13 || "",
-      isbn_10: book.isbn_10 || "",
-      publisher: book.publisher || "",
-      published_date: book.published_date || "",
-      page_count: book.page_count || "",
-      language: book.language || "",
-      genres: book.genres || [],
-      is_incomplete: book.is_incomplete || false,
+      title: full.title || "",
+      authors: full.authors || [],
+      description: full.description || "",
+      isbn_13: full.isbn_13 || "",
+      isbn_10: full.isbn_10 || "",
+      publisher: full.publisher || "",
+      published_date: full.published_date || "",
+      page_count: full.page_count || "",
+      language: full.language || "",
+      genres: full.genres || [],
+      is_incomplete: full.is_incomplete || false,
       // cover fields
-      cover_url: book.cover_url || "", // current stored filename
+      cover_url: full.cover_url || "", // current stored filename
       cover_url_remote: null, // remote URL to re-upload on save
-      cover_preview: book.cover_url // what's shown in the preview
-        ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/books/${book.cover_url}`
+      cover_preview: full.cover_url // what's shown in the preview
+        ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/books/${full.cover_url}`
         : null
     });
     setDirtyFields(new Set());

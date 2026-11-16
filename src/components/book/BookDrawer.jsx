@@ -7,21 +7,33 @@ import React, {
   useState
 } from "react";
 import { createPortal } from "react-dom";
-import { Drawer } from "vaul";
-import { Button } from "@/components/ui/button";
-import BuyButton from "@/components/book/BuyButton";
 import Link from "next/link";
+import { Drawer } from "vaul";
+import BookCover from "@/components/book/BookCover";
+import { Bookcase, Shelf } from "@/components/bookcase/Bookcase";
+import BuyButton from "@/components/book/BuyButton";
 import { generateBookSlug } from "@/lib/slugify";
 import AdminEditPanel from "@/components/admin/AdminEditPanel";
+import AddToShelfButton from "@/components/book/AddToShelfButton";
+import { useBookDescription } from "@/lib/useBookDescription";
+import { tidyGenres } from "@/lib/genres";
 
 const VaulDrawer = forwardRef(
   (
     { book, coverUrl, isAdmin, onDelete, deleting, adminEdit, onBookUpdated },
     ref
   ) => {
-    const { id, title, authors, description } = book;
+    const { title, authors } = book;
+    const description = useBookDescription(book);
+    const genre = tidyGenres(book.genres)[0];
+    // One light line of facts, the same as the book page — not a boxed grid
+    // that repeats the year already shown above it.
+    const facts = [
+      book.page_count && `${book.page_count.toLocaleString()} pages`,
+      book.published_date?.slice(0, 4),
+      book.publisher
+    ].filter(Boolean);
     const triggerRef = useRef();
-    const [copied, setCopied] = useState(false);
     const [confirmingDelete, setConfirmingDelete] = useState(false);
     const [open, setOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
@@ -83,196 +95,136 @@ const VaulDrawer = forwardRef(
             <Drawer.Content
               className="right-0 top-0 bottom-0 fixed z-[100] outline-none w-[480px] max-w-full flex h-full"
               style={{ "--initial-transform": "calc(100% + 8px)" }}
-              onOpenAutoFocus={(e) => e.preventDefault()}
+              aria-describedby={undefined}
             >
-              <section className="drawer-container bg-white w-[480px] h-full flex flex-row">
-                <div className="drawer-left w-4 h-full border border-solid border-border"></div>
-                <div className="drawer-center w-full h-full flex flex-col">
-                  <div className="drawer-top w-full h-4 border-1 border-border border flex border-r-0 border-l-0 relative">
-                    <Drawer.Close
-                      className="absolute left-4 top-11 transform -translate-y-1/2 w-8 h-8 bg-white rounded-[6px] flex items-center justify-center shadow-md hover:bg-[#f4f4f4] cursor-pointer"
-                      aria-label="Close"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-4 h-4 text-textPrimary hover:text-textSecondary"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </Drawer.Close>
-                  </div>
+              <section className="bg-white w-full h-full flex flex-col shadow-[-24px_0_48px_-24px_rgba(0,0,0,0.35)]">
+                {/* Header */}
+                <div className="h-14 shrink-0 flex items-center justify-between px-3 border-b border-line">
+                  <Drawer.Close className="btn btn-ghost btn-icon" aria-label="Close details">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </Drawer.Close>
+                  <Link
+                    href={bookPageUrl}
+                    onClick={(e) => {
+                      if (adminEdit?.isEditing && adminEdit?.dirtyFields.size > 0 && !window.confirm("Discard unsaved changes?")) {
+                        e.preventDefault();
+                        return;
+                      }
+                      // Close without restoring the old scroll position —
+                      // we're moving on to a new page.
+                      adminEdit?.exitEditMode();
+                      setOpen(false);
+                    }}
+                    className="btn btn-ghost btn-sm"
+                  >
+                    Full page
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M13.172 12l-4.95-4.95 1.414-1.414L16 12l-6.364 6.364-1.414-1.414z" />
+                    </svg>
+                  </Link>
+                </div>
 
-                  {/* Admin edit mode — replaces normal content */}
-                  {adminEdit?.isEditing && adminEdit?.draft ? (
-                    <div className="flex-1 overflow-hidden">
-                      <AdminEditPanel
-                        book={book}
-                        {...adminEdit}
-                        onCancel={() => {
-                          if (adminEdit.dirtyFields.size > 0) {
-                            if (!window.confirm("Discard unsaved changes?"))
-                              return;
-                          }
-                          adminEdit.exitEditMode();
-                        }}
-                        save={async () => {
-                          const updatedBook = await adminEdit.save();
-                          if (updatedBook) onBookUpdated?.(updatedBook);
-                        }}
-                      />
-                    </div>
-                  ) : (
-                    <div className="drawer-content overflow-y-scroll flex flex-col h-full items-center justify-start">
-                      <div className="content-container flex flex-col w-full max-w-full h-auto">
-                        <div className="flex flex-col items-center gap-4 w-full bg-[#dddddd] p-10">
-                          {coverUrl && (
-                            <img
-                              src={coverUrl}
-                              alt={`${title} cover`}
-                              className="h-auto w-[50%] self-center shadow-[0_0_64px_8px_rgba(0,0,0,0.2)]"
-                              loading="eager"
-                              decoding="async"
-                            />
+                {adminEdit?.isEditing && adminEdit?.draft ? (
+                  <div className="flex-1 overflow-hidden">
+                    <AdminEditPanel
+                      book={book}
+                      {...adminEdit}
+                      onCancel={() => {
+                        if (adminEdit.dirtyFields.size > 0) {
+                          if (!window.confirm("Discard unsaved changes?")) return;
+                        }
+                        adminEdit.exitEditMode();
+                      }}
+                      save={async () => {
+                        const updatedBook = await adminEdit.save();
+                        if (updatedBook) onBookUpdated?.(updatedBook);
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex-1 overflow-y-auto overscroll-contain">
+                      <div className="px-5 pt-5">
+                        <Bookcase>
+                          <Shelf grid={false} booksClassName="justify-center !pt-8 !pb-2">
+                            <div className="w-[38%] max-w-[170px] relative z-10">
+                              <BookCover book={book} src={coverUrl} eager />
+                            </div>
+                          </Shelf>
+                        </Bookcase>
+                      </div>
+
+                      <div className="px-5 pt-6 pb-8 flex flex-col gap-5">
+                        <div className="flex flex-col gap-2">
+                          {genre && <p className="label text-textSecondary">{genre}</p>}
+                          <Drawer.Title className="font-ppMondwest text-[28px] leading-[1.1] text-ink">
+                            {title}
+                          </Drawer.Title>
+                          {authors?.[0] && (
+                            <p className="font-ppMondwest text-[18px] text-textSecondary">
+                              by <span className="text-textPrimary">{authors.join(", ")}</span>
+                            </p>
+                          )}
+                          {facts.length > 0 && (
+                            <p className="mt-1 font-ppMondwest text-[15px] text-textSecondary">
+                              {facts.join(" · ")}
+                            </p>
                           )}
                         </div>
-                        <div className="drawer-bottom w-full h-4 border-1 border-border border flex border-r-0 border-l-0"></div>
-                        <div className="py-5 px-10 xs:p-5 flex flex-col gap-5 w-full max-w-full pb-20 xs:pb-24">
-                          <div>
-                            <Drawer.Title className="text-[24px] text-textPrimary font-ppMondwest">
-                              {title}
-                            </Drawer.Title>
-                            <Drawer.Description className="text-[24px] font-ppMondwest text-textSecondary">
-                              By{" "}
-                              <span className="text-textPrimary">
-                                {authors?.[0]}
-                              </span>
-                            </Drawer.Description>
-                            <div className="text-[16px] leading-[1.4] font-ppMondwest text-textSecondary mt-2">
-                              {description
-                                ? description
-                                    .split("\n")
-                                    .map((paragraph, index) => (
-                                      <p key={index} className="mb-2">
-                                        {paragraph}
-                                      </p>
-                                    ))
-                                : "No description available."}
-                            </div>
-                          </div>
+
+                        <div className="prose-book !text-[16px]">
+                          {description
+                            ? description
+                                .split(/\n+/)
+                                .filter(Boolean)
+                                .map((paragraph, index) => <p key={index}>{paragraph}</p>)
+                            : description === null && <p className="text-textSecondary">No description yet.</p>}
                         </div>
-                        <div className="fixed bottom-8 left-8 w-[calc(100%-64px)] flex flex-col gap-2">
-                          {isAdmin && (
-                            <div className="flex items-center gap-2 justify-end">
-                              <button
-                                onClick={adminEdit?.enterEditMode}
-                                className="font-departureMono uppercase text-[10px] text-textSecondary hover:text-textPrimary transition-colors flex items-center gap-1.5"
-                              >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className="w-3.5 h-3.5"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                  strokeWidth={2}
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"
-                                  />
-                                </svg>
+
+                        {isAdmin && (
+                          <div className="mt-4 pt-4 border-t border-dashed border-line flex flex-col gap-2">
+                            <p className="label !text-[10px] text-textSecondary">Admin</p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <button onClick={adminEdit?.enterEditMode} className="btn btn-secondary btn-sm">
                                 Edit book
                               </button>
                               {confirmingDelete ? (
                                 <>
-                                  <span className="font-departureMono text-[10px] text-textSecondary">
-                                    Delete this book?
-                                  </span>
                                   <button
                                     onClick={() => {
                                       onDelete();
                                       setConfirmingDelete(false);
                                     }}
                                     disabled={deleting}
-                                    className="font-departureMono uppercase text-[10px] text-red-500 hover:text-red-600 disabled:opacity-40"
+                                    className="btn btn-danger-solid btn-sm"
                                   >
-                                    {deleting ? "Deleting…" : "Confirm"}
+                                    {deleting ? "Deleting…" : "Delete from catalogue"}
                                   </button>
-                                  <button
-                                    onClick={() => setConfirmingDelete(false)}
-                                    className="font-departureMono uppercase text-[10px] text-textSecondary hover:text-textPrimary"
-                                  >
+                                  <button onClick={() => setConfirmingDelete(false)} className="btn btn-ghost btn-sm">
                                     Cancel
                                   </button>
                                 </>
                               ) : (
-                                <button
-                                  onClick={() => setConfirmingDelete(true)}
-                                  className="font-departureMono uppercase text-[10px] text-textSecondary hover:text-red-500 transition-colors flex items-center gap-1.5"
-                                >
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="w-3.5 h-3.5"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                    strokeWidth={2}
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                    />
-                                  </svg>
-                                  Delete book
+                                <button onClick={() => setConfirmingDelete(true)} className="btn btn-danger btn-sm">
+                                  Delete…
                                 </button>
                               )}
                             </div>
-                          )}
-                          <div className="flex gap-4">
-                            <BuyButton
-                              isbn_13={book.isbn_13}
-                              title={book.title}
-                              authors={book.authors}
-                              className="w-full"
-                            />
-                            <a
-                              href={bookPageUrl}
-                              className="rounded-[8px] border border-border bg-white shadow-sm hover:bg-[#f4f4f4] text-textPrimary items-center h-[44px] flex justify-center font-departureMono uppercase text-[11px] w-full gap-2 transition-colors"
-                              variant="outline"
-                            >
-                              View page
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="w-4 h-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                strokeWidth={2}
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                                />
-                              </svg>
-                            </a>
                           </div>
-                        </div>
+                        )}
                       </div>
                     </div>
-                  )}
-                  <div className="drawer-bottom w-full h-4 border-1 border-border border flex border-r-0 border-l-0"></div>
-                </div>
-                <div className="drawer-right w-4 h-full border border-solid border-border"></div>
+
+                    {/* Actions — a real footer, never over the text */}
+                    <div className="shrink-0 border-t border-line bg-white px-5 py-4 pb-[max(16px,env(safe-area-inset-bottom))] grid grid-cols-1 xs:grid-cols-[minmax(0,1fr)_auto] gap-2">
+                      {/* Both at the default 40px size, so they line up */}
+                      <AddToShelfButton book={book} className="w-full" />
+                      <BuyButton isbn_13={book.isbn_13} title={book.title} authors={book.authors} />
+                    </div>
+                  </>
+                )}
               </section>
             </Drawer.Content>
           </Drawer.Portal>

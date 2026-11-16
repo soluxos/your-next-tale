@@ -1,48 +1,60 @@
 // Bulk catalogue import: the fantasy and science fiction people actually read,
 // for a few ISBNdb calls rather than one per book.
 //
-// Which books: Open Library's reading-log counts (free, no key) rank the most
-// read works in a subject, and list every ISBN each work has been published
-// under. ISBNdb has no popularity data, so it can't answer that part.
+// Which books: ISBNdb has no popularity data, so other sources say what
+// people read (see catalogueSources.js): Open Library's reading-log counts,
+// Hardcover's most-read and trending lists, and bookshops' best-seller
+// lists. This file holds Open Library's side and everything after the
+// candidates are chosen.
 //
 // What we store: facts, blurb and cover from ISBNdb (licensed for display),
 // fetched 100 ISBNs per request. ISBNdb's daily allowance counts each ISBN,
-// so each work starts with two: Open Library's featured edition (English,
-// with a cover) and one other. Only works those don't settle get up to four
-// more. Covers pass the same checks as everywhere else (no 3D mock-ups, no
-// "cover to be revealed"), and a book without a usable cover and blurb is
-// left out rather than stored incomplete.
+// so each work starts with as few as will do: the one edition Hardcover or a
+// bookshop says readers buy, or Open Library's featured edition and one
+// other. Only works those don't settle get more, up to six. Covers pass the
+// same checks as everywhere else (no 3D mock-ups, no "cover to be
+// revealed"), and a book without a usable cover and blurb is left out rather
+// than stored incomplete.
 //
 // Server only: uses ISBNDB_API_KEY and the service-role client.
 import crypto from "node:crypto";
 import { isbndbBooks, isbndbQuota, IsbndbLimitError } from "@/lib/releases/isbndbBulk";
 import { cleanTitle } from "@/lib/releases/syncReleases";
 import { verifyCover, MIN_DESCRIPTION } from "@/lib/releases/quality";
-import { describeWork, sameWork, authorKey, isBundle, normalise as plain } from "@/lib/books/sameBook";
+import { describeWork, sameWork, authorsOverlap, authorKey, isBundle, normalise as plain } from "@/lib/books/sameBook";
 import { assessCover, fetchCover, COVER_GOOD, COVER_WEAK } from "@/lib/books/coverQuality";
 import { isEnglishIsbn } from "@/lib/books/isbnUtils";
 import { tidyTitle, tidyAuthors } from "@/lib/books/tidyText";
+import { needsTitleCase, publisherCasing } from "@/lib/books/titleCase";
 import { getBookshopLink } from "@/lib/bookshop";
 
 export { IsbndbLimitError };
 
 /**
- * Where candidates come from, most read first. Modern fantasy is the bulk of
- * what readers here shelve; science fiction reaches further back (Foundation,
- * Dune); older fantasy is capped so children's classics don't crowd it.
+ * Open Library's side of the candidates, most read first. Modern fantasy is
+ * the bulk of what readers here shelve; science fiction reaches further back
+ * (Foundation, Dune); older fantasy is capped so children's classics don't
+ * crowd it.
+ *
+ * `subject:` rather than `subject_key:`: the key misses books whose tags are
+ * spelt differently (Project Hail Mary, Red Rising, Babel). It lets in more
+ * noise too, which the publisher's own categories filter out later.
  */
 export const IMPORT_SLICES = [
-  { label: "fantasy since 1990", q: "subject_key:fantasy AND first_publish_year:[1990 TO 2100]", take: 1500 },
-  { label: "science fiction since 1950", q: "subject_key:science_fiction AND first_publish_year:[1950 TO 2100]", take: 1200 },
-  { label: "fantasy 1930–1989", q: "subject_key:fantasy AND first_publish_year:[1930 TO 1989]", take: 250 }
+  { label: "fantasy since 1990", q: "subject:fantasy AND first_publish_year:[1990 TO 2100]", take: 3400 },
+  { label: "science fiction since 1950", q: 'subject:"science fiction" AND first_publish_year:[1950 TO 2100]', take: 2800 },
+  { label: "fantasy 1930–1989", q: "subject:fantasy AND first_publish_year:[1930 TO 1989]", take: 400 }
 ];
 
 // Fewer people than this have logged it on Open Library: too obscure for Discover.
-const MIN_READERS = 20;
+export const MIN_READERS = 20;
 // ISBNs tried per work. More finds a good edition more often; fewer is cheaper.
 const ISBNS_PER_WORK = 6;
-// Asked first; the rest only for works these don't settle.
-const FIRST_PASS = 2;
+// How many ISBNs each look asks for; a work goes round again only when the
+// look before didn't settle it. A work whose first ISBN is the print edition
+// readers actually buy usually needs just that one.
+const STEPS = [2, 4];
+const SURE_STEPS = [1, 2, 3];
 const BATCH_ISBNS = 100; // ISBNdb's bulk limit
 const OL_PAGE = 200;
 // `editions` is Open Library's featured edition of the work: in English
@@ -50,19 +62,19 @@ const OL_PAGE = 200;
 const OL_FIELDS =
   "key,title,author_name,first_publish_year,publish_year,readinglog_count,want_to_read_count,ratings_average,ratings_count,isbn,subject_key,editions,editions.isbn,editions.language";
 // Skips that more editions might fix.
-const RETRYABLE = /no usable english edition|no cover|no blurb|doesn't class it/i;
+export const RETRYABLE = /no usable english edition|no cover|no blurb|doesn't class it/i;
 const UA = "YourNextTale-catalogue/1.0";
 
 // Picture books and early readers: not what Discover is for.
-const YOUNG_CHILDREN = /picture_book|board_book|early_reader|easy_reader|beginning_reader|toddler|baby|ages_[0-8](?:\b|-)/;
+export const YOUNG_CHILDREN = /picture_book|board_book|early_reader|easy_reader|beginning_reader|toddler|baby|ages_[0-8](?:\b|-)/;
 // Formats whose "cover" isn't a book cover, or that aren't the book.
 const NOT_A_BOOK = /audio|\bcd\b|mp3|cassette|calendar|poster|toy|game|map|spiral|library binding/i;
 const WRONG_EDITION = /large print|graphic novel|coloring|colouring|study guide|summary of|sparknotes|cliffsnotes|box(?:ed)? set|collection set/i;
 // Works that aren't one novel: omnibuses, box sets, companions, comics.
-const NOT_A_NOVEL =
+export const NOT_A_NOVEL =
   /\b(?:box(?:ed)? ?set|omnibus|trilogy|quartet|books? \d+\s*[-–&]\s*\d+|complete (?:series|collection|works)|graphic novel|manga|film comics?|colou?ring book|official companion|the art of|guide to|encyclopedia|world of|playscript|script book)\b|^the chronicles of narnia$/i;
 // Japanese, Chinese or Korean script in the title: a manga volume or a translation's record.
-const CJK_TITLE = /[぀-ヿ一-鿿가-힯]/;
+export const CJK_TITLE = /[぀-ヿ一-鿿가-힯]/;
 // Editions filed under these are comics or plays, not the novel. ("Comic
 // fiction" is humour, so not plain "comic".)
 const NOT_PROSE = /comics|comic books|comic strips|strip cartoons|graphic novel|\bmanga\b|^drama\b|\bplays\b|playscript/i;
@@ -134,23 +146,27 @@ export function isbn10to13(isbn10) {
 }
 
 /**
- * Up to `max` English-language ISBN-13s, best bet first: Open Library's
- * featured edition, then picks spread across the work's other editions.
+ * Up to `max` English-language ISBN-13s, best bet first: the editions another
+ * source says readers use (`work.prefer`, from Hardcover or a bookshop's
+ * list), Open Library's featured edition, then picks spread across the
+ * work's other editions.
  */
 export function candidateIsbns(work, max = ISBNS_PER_WORK) {
   const to13 = (i) => (i.length === 13 ? i : isbn10to13(i));
+  const preferred = (work.prefer || []).map((p) => p.isbn).filter((i) => isEnglishIsbn(i)).slice(0, 4);
   const featured = [...new Set((work.editions?.docs?.[0]?.isbn || []).map(to13))]
     .filter((i) => i && isEnglishIsbn(i))
     .slice(0, 1);
+  const first = [...new Set([...preferred, ...featured])].slice(0, max);
   const raw = work.isbn || [];
   const native = raw.filter((i) => i.length === 13 && isEnglishIsbn(i));
   const converted = raw.filter((i) => i.length === 10).map(isbn10to13).filter((i) => i && isEnglishIsbn(i));
-  const list = [...new Set([...native, ...converted])].filter((i) => !featured.includes(i));
-  const room = max - featured.length;
-  if (list.length <= room) return [...featured, ...list];
+  const list = [...new Set([...native, ...converted])].filter((i) => !first.includes(i));
+  const room = max - first.length;
+  if (list.length <= room) return [...first, ...list];
   // Evenly spaced picks reach more publishers than the first few would.
   const step = list.length / room;
-  return [...featured, ...Array.from({ length: room }, (_, i) => list[Math.floor(i * step)])];
+  return [...first, ...Array.from({ length: room }, (_, i) => list[Math.floor(i * step)])];
 }
 
 // "Science Fiction & Fantasy" is a bookshop shelf, not a genre: it says
@@ -230,11 +246,18 @@ function editionScore(e) {
 
 /** Every edition ISBNdb returned that is this work, in any format. */
 function workEditions(work, facts) {
-  const want = describeWork({ title: work.title, authors: work.author_name || [] });
+  // A work can go by two titles (Northern Lights is The Golden Compass in
+  // the US); an edition under either is the work.
+  const wants = [work.title, ...(work.altTitles || [])].map((title) =>
+    describeWork({ title, authors: work.author_name || [] })
+  );
   return candidateIsbns(work)
     .map((isbn) => facts.get(isbn))
     .filter(Boolean)
-    .filter((e) => sameWork(want, describeWork({ title: e.title, authors: e.authors })));
+    .filter((e) => {
+      const got = describeWork({ title: e.title, authors: e.authors });
+      return wants.some((want) => sameWork(want, got));
+    });
 }
 
 /** The work's editions ISBNdb returned that really are this book, best first. */
@@ -245,29 +268,61 @@ export function matchingEditions(work, facts) {
     .sort((a, b) => b.score - a.score);
 }
 
-/** The first cover that passes every check: good before merely acceptable. */
-async function bestCover(editions, book, log) {
-  const urls = [
-    ...new Set([
-      ...editions.flatMap((e) => e.covers || []),
-      ...editions.slice(0, 2).map((e) => `https://covers.openlibrary.org/b/isbn/${e.isbn}-L.jpg?default=false`)
-    ])
-  ].slice(0, 6);
-  const passed = [];
-  for (const url of urls) {
+const openLibraryCover = (isbn) => `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg?default=false`;
+
+// Where a batch's time goes (summed over the covers in hand at once), for
+// the import's log.
+const coverTime = { fetched: 0, fetchMs: 0, checked: 0, checkMs: 0 };
+
+/**
+ * The first cover that passes every check: good before merely acceptable.
+ * Exported for the import's tests.
+ */
+export async function bestCover(editions, book, log = () => {}, work = null) {
+  // An image that could be the cover: { buf, a, url }, or null.
+  const candidate = async (url) => {
+    const from = Date.now();
     const buf = await fetchCover(url);
-    if (!buf) continue;
+    coverTime.fetched++;
+    coverTime.fetchMs += Date.now() - from;
+    if (!buf) return null;
     const a = await assessCover(buf);
-    // An exact 3:4 frame is a phone photo of a copy, not the artwork.
-    if (a.width && Math.abs(a.width / a.height - 0.75) < 0.004) continue;
-    if (a.tier === COVER_GOOD || a.tier === COVER_WEAK) passed.push({ buf, a, url });
-    if (a.tier === COVER_GOOD) break;
+    // An exact 3:4 or 9:16 frame is a phone photo of a copy, not the artwork.
+    if (a.width && [3 / 4, 9 / 16].some((frame) => Math.abs(a.width / a.height - frame) < 0.004)) return null;
+    return a.tier === COVER_GOOD || a.tier === COVER_WEAK ? { buf, a, url } : null;
+  };
+  const verified = async (c, options) => {
+    const from = Date.now();
+    const v = await verifyCover(c.buf, book, options);
+    coverTime.checked++;
+    coverTime.checkMs += Date.now() - from;
+    if (!v.ok) log(`  cover refused (${v.reason})`);
+    return v.ok;
+  };
+
+  const urls = [
+    ...new Set([...editions.flatMap((e) => e.covers || []), ...editions.slice(0, 2).map((e) => openLibraryCover(e.isbn))])
+  ].slice(0, 6);
+  const weak = [];
+  for (const url of urls) {
+    const c = await candidate(url);
+    if (!c) continue;
+    if (c.a.tier !== COVER_GOOD) weak.push(c);
+    else if (await verified(c)) return c;
   }
-  passed.sort((x, y) => y.a.tier - x.a.tier);
-  for (const c of passed) {
-    const v = await verifyCover(c.buf, book);
-    if (v.ok) return c;
-    log(`  cover refused (${v.reason})`);
+  for (const c of weak) if (await verified(c)) return c;
+
+  // Last resort: Open Library's cover of another edition (a popular book's
+  // ISBNdb images are often all photos of the special edition). Nothing has
+  // checked these ISBNs against the book, so its title or author has to be
+  // readable on the cover.
+  const others = [...new Set([...editions.map((e) => e.isbn), ...(work ? candidateIsbns(work, 12) : [])])]
+    .map(openLibraryCover)
+    .filter((url) => !urls.includes(url))
+    .slice(0, 5);
+  for (const url of others) {
+    const c = await candidate(url);
+    if (c && (await verified(c, { mustMention: true }))) return c;
   }
   return null;
 }
@@ -280,12 +335,24 @@ async function bestCover(editions, book, log) {
 export function displayTitle(work, editions = []) {
   // Open Library cuts some tags short: "Rowan of Rin (Rowan of Rin".
   const stripTag = (t) => t.replace(/\s*\([^()]*\)\s*$/, "").replace(/\s*\([^()]*$/, "").trim();
-  const base = stripTag(tidyTitle(work.title)) || tidyTitle(work.title);
-  for (const e of editions) {
-    const t = stripTag(cleanTitle(e.title).title).replace(/:\s*a novel$/i, "");
-    if (plain(t) === plain(base) && /[a-z]/.test(t)) return t;
+  // A work first described in its own language ("O Alquimista") or under a
+  // series name goes by the title its best English edition carries.
+  const names = [work.title, ...(work.altTitles || [])].filter(Boolean);
+  let name = work.title;
+  if (names.length > 1 && editions.length) {
+    const got = describeWork({ title: editions[0].title, authors: [] });
+    name = names.find((t) => sameWork(describeWork({ title: t, authors: [] }), got)) || work.title;
   }
-  return base;
+  const base = stripTag(tidyTitle(name)) || tidyTitle(name);
+  // ISBNdb's records for older editions come from libraries and are in
+  // sentence case too ("The cat who walks through walls"), so the first
+  // edition whose title matches isn't always the publisher's. One written in
+  // title case wins; failing that, the best there is gets title-cased.
+  const matches = editions
+    .map((e) => stripTag(cleanTitle(e.title).title).replace(/:\s*a novel$/i, ""))
+    .filter((t) => plain(t) === plain(base) && /[a-z]/.test(t));
+  const cased = matches.find((t) => !needsTitleCase(t));
+  return cased || publisherCasing(matches[0] || base, [base, ...editions.map((e) => e.title)]);
 }
 
 /**
@@ -318,40 +385,93 @@ export function firstYear(work, editions = []) {
   return confirmed || year;
 }
 
-/** Index of the catalogue for "do we have this already?". */
-export function catalogueIndex(rows) {
-  const byKey = new Map();
-  const isbns = new Set();
-  for (const r of rows) {
-    if (r.isbn_13) isbns.add(r.isbn_13);
-    const w = describeWork({ title: r.title, authors: r.authors || [] });
-    for (const k of [w.core, w.alt].filter(Boolean)) {
-      if (!byKey.has(k)) byKey.set(k, []);
-      byKey.get(k).push(w);
-    }
+/**
+ * When the work first came out: { year, date }.
+ *
+ * Open Library and Hardcover each state a first year, and each is wrong about
+ * one book in twelve, nearly always too early: a record made before the book
+ * was out (Klara and the Sun, 2019), or another book's date (The Rook, 2001).
+ * So where they differ the later year stands, unless ISBNdb has an edition
+ * from before it, which shows the later year is a reissue's.
+ *
+ * A work only Hardcover knows goes by its year unless an ISBNdb edition is
+ * older; one neither dates, by the oldest edition ISBNdb returned.
+ */
+export function firstPublished(work, editions = []) {
+  const editionYears = editions
+    .map((e) => Number(String(e.published || "").slice(0, 4)))
+    .filter((y) => y >= 1800)
+    .sort((a, b) => a - b);
+  const ol = firstYear(work, editions);
+  const hc = Number(work.hc?.year) || 0;
+  let year = ol;
+  if (ol >= 1800 && hc >= 1800 && ol !== hc) {
+    const [early, late] = ol < hc ? [ol, hc] : [hc, ol];
+    year = editionYears.find((y) => y >= early && y < late) || late;
+  } else if (ol < 1800) {
+    const oldest = editionYears.find((y) => y >= 1970);
+    year = hc ? Math.min(hc, oldest || hc) : oldest || 0;
   }
-  return {
-    has(work) {
-      if ((work.isbn || []).some((i) => isbns.has(i.length === 10 ? isbn10to13(i) : i))) return true;
-      const w = describeWork({ title: work.title, authors: work.author_name || [] });
-      return [w.core, w.alt].filter(Boolean).some((k) => (byKey.get(k) || []).some((x) => sameWork(w, x)));
-    },
-    add(row) {
-      if (row.isbn_13) isbns.add(row.isbn_13);
-      const w = describeWork({ title: row.title, authors: row.authors });
-      for (const k of [w.core, w.alt].filter(Boolean)) {
-        if (!byKey.has(k)) byKey.set(k, []);
-        byKey.get(k).push(w);
-      }
-    }
-  };
+  if (year < 1800) return { year: 0, date: null };
+  // Its first edition's exact date when a source has it, else the year.
+  // The first of January is what records say when they only know the year.
+  const date = [...editions.map((e) => e.releaseDate), work.hc?.releaseDate]
+    .map((d) => String(d || "").slice(0, 10))
+    .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d) && Number(d.slice(0, 4)) === year && !d.endsWith("-01-01"))
+    .sort()[0];
+  return { year, date: date || `${year}-01-01` };
 }
 
 /**
- * Turn one Open Library work plus ISBNdb's facts into a books row, or a reason
- * it was left out. Downloads and checks the cover; doesn't store anything.
+ * Index of the catalogue for "do we have this already, and which row is it?".
+ * Rows are { id, title, authors, isbn_13, hardcover_id }.
  */
-export async function buildRow(work, facts, { log = () => {} } = {}) {
+export function catalogueIndex(rows) {
+  const byKey = new Map();
+  const byIsbn = new Map();
+  const byHardcover = new Map();
+  const add = (r) => {
+    const w = describeWork({ title: r.title, authors: r.authors || [] });
+    const entry = { id: r.id ?? null, w };
+    if (r.isbn_13) byIsbn.set(r.isbn_13, entry);
+    if (r.hardcover_id) byHardcover.set(String(r.hardcover_id), entry);
+    for (const k of [w.core, w.alt].filter(Boolean)) {
+      if (!byKey.has(k)) byKey.set(k, []);
+      byKey.get(k).push(entry);
+    }
+    return entry;
+  };
+  for (const r of rows) add(r);
+
+  /** The catalogue's entry ({ id }) for a work, or null. */
+  const find = (work) => {
+    if (work.hc?.id && byHardcover.has(String(work.hc.id))) return byHardcover.get(String(work.hc.id));
+    const probes = [work.title, ...(work.altTitles || [])].map((title) =>
+      describeWork({ title, authors: work.author_name || [] })
+    );
+    // Crowd-sourced records file the odd ISBN under the wrong work, so a
+    // shared ISBN counts only when the authors agree too.
+    for (const i of work.isbn || []) {
+      const hit = byIsbn.get(i.length === 10 ? isbn10to13(i) : i);
+      if (hit && authorsOverlap(hit.w.authors, probes[0].authors)) return hit;
+    }
+    for (const w of probes) {
+      for (const k of [w.core, w.alt].filter(Boolean)) {
+        const hit = (byKey.get(k) || []).find((x) => sameWork(w, x.w));
+        if (hit) return hit;
+      }
+    }
+    return null;
+  };
+  return { find, has: (work) => !!find(work), add };
+}
+
+/**
+ * Turn one work plus ISBNdb's facts into a books row, or a reason it was left
+ * out (`transient` when a later run should simply try again). Downloads and
+ * checks the cover; doesn't store anything.
+ */
+export async function buildRow(work, facts, { log = () => {}, today = new Date().toISOString().slice(0, 10) } = {}) {
   if (NOT_A_NOVEL.test(work.title || "") || CJK_TITLE.test(work.title || "")) return { skip: "not a single novel" };
   const editions = matchingEditions(work, facts);
   if (!editions.length) return { skip: "ISBNdb has no usable English edition" };
@@ -377,8 +497,8 @@ export async function buildRow(work, facts, { log = () => {} } = {}) {
       .find((d) => (d || "").length >= MIN_DESCRIPTION) || null;
   if (!description) return { skip: "no blurb" };
 
-  // Open Library's work title is the plain one ("Six of Crows", not "Six of
-  // Crows (Six of Crows, 1)"); its authors are the work's, not a narrator's.
+  // The work's title is the plain one ("Six of Crows", not "Six of Crows
+  // (Six of Crows, 1)"); its authors are the work's, not a narrator's.
   const title = displayTitle(work, editions);
   const isbndbAuthors = describeWork({ title, authors: editions.flatMap((e) => e.authors || []) }).authors;
   const olAuthors = tidyAuthors(work.author_name || []).slice(0, 3);
@@ -386,15 +506,12 @@ export async function buildRow(work, facts, { log = () => {} } = {}) {
   if (!authors.length && olAuthors.length) authors.push(olAuthors[0]);
   if (!authors.length) return { skip: "no author" };
 
-  const year = firstYear(work, editions);
+  const { year, date } = firstPublished(work, editions);
   if (year < 1800) return { skip: "no first-published year" };
-  // Its first edition's exact date when ISBNdb has it, else the year.
-  const exact = editions
-    .map((e) => e.releaseDate)
-    .filter((d) => d && Number(d.slice(0, 4)) === year)
-    .sort()[0];
+  // Upcoming books belong to the releases sync, which knows about pre-orders.
+  if (date > today) return { skip: "not out yet", transient: true };
 
-  const cover = await bestCover(editions, { title, authors }, log);
+  const cover = await bestCover(editions, { title, authors, year }, log, work);
   if (!cover) return { skip: "no cover passed the checks" };
 
   const md5 = crypto.createHash("md5").update(cover.buf).digest("hex").slice(0, 8);
@@ -407,7 +524,7 @@ export async function buildRow(work, facts, { log = () => {} } = {}) {
       description,
       genres,
       page_count: best.pages || editions.find((e) => e.pages)?.pages || null,
-      published_date: exact || `${year}-01-01`,
+      published_date: date,
       publisher: best.publisher || null,
       isbn_13: best.isbn,
       isbn_10: best.isbn10 || null,
@@ -420,44 +537,27 @@ export async function buildRow(work, facts, { log = () => {} } = {}) {
   };
 }
 
-/**
- * Candidates from every slice, one per work, most read first, minus picture
- * books, upcoming books (the releases sync handles those) and books the
- * catalogue already has.
- */
-export async function importCandidates(slices, catalogue, { log = () => {}, fetchJson } = {}) {
-  const thisYear = new Date().getFullYear();
-  const works = new Map();
-  for (const slice of slices) {
-    for (const w of await openLibraryWorks(slice, { log, fetchJson })) {
-      if (!w.key || works.has(w.key)) continue;
-      works.set(w.key, w);
+/** Run `fn` over the items, `n` at a time, keeping their order. */
+async function inParallel(items, n, fn) {
+  const out = new Array(items.length);
+  let next = 0;
+  const lanes = Array.from({ length: Math.max(1, Math.min(n, items.length)) }, async () => {
+    while (next < items.length) {
+      const i = next++;
+      out[i] = await fn(items[i], i);
     }
-  }
-  const out = [];
-  const counts = { works: works.size, children: 0, comics: 0, upcoming: 0, owned: 0, noIsbn: 0 };
-  const sorted = [...works.values()].sort((a, b) => (b.readinglog_count || 0) - (a.readinglog_count || 0));
-  // `rank`: place among all the works, whatever the catalogue already has, so
-  // a later run puts its books in the same order as the first run's.
-  sorted.forEach((w, i) => (w.rank = i));
-  for (const w of sorted) {
-    if ((w.subject_key || []).some((k) => YOUNG_CHILDREN.test(k))) counts.children++;
-    else if (isComicWork(w) || NOT_A_NOVEL.test(w.title || "") || CJK_TITLE.test(w.title || "")) counts.comics++;
-    else if (!w.first_publish_year || w.first_publish_year > thisYear) counts.upcoming++;
-    else if (catalogue.has(w)) counts.owned++;
-    else if (!candidateIsbns(w).length) counts.noIsbn++;
-    else out.push(w);
-  }
-  log(`candidates: ${JSON.stringify(counts)} → ${out.length} to look up`);
+  });
+  await Promise.all(lanes);
   return out;
 }
 
 /**
  * Look the candidates up on ISBNdb in batches of 100 ISBNs and build rows.
- * Each work first gets FIRST_PASS ISBNs; one that those don't settle goes
- * round again with the rest. `onBuilt(result, work)` gets every final
- * outcome (rows and skips) so the caller decides whether to store, preview
- * or just count.
+ * Each work first gets one or two ISBNs (see STEPS); one that those don't
+ * settle goes round again with more. `onBuilt(result, work)` gets every
+ * final outcome (rows and skips), one at a time and in the candidates'
+ * order, so the caller decides whether to store, preview or just count.
+ * `parallel` is how many covers are fetched and checked at once.
  *
  * Stops before a request would leave less than `reserve` of ISBNdb's daily
  * allowance (the site's own lookups need it) or spend more than `budget`.
@@ -465,29 +565,32 @@ export async function importCandidates(slices, catalogue, { log = () => {}, fetc
  */
 export async function lookUpCandidates(
   candidates,
-  { onBuilt, log = () => {}, limit = Infinity, reserve = 0, budget = Infinity } = {}
+  { onBuilt, log = () => {}, limit = Infinity, reserve = 0, budget = Infinity, parallel = 1 } = {}
 ) {
   const facts = new Map();
   let calls = 0;
   let units = 0;
   let stopped = null;
-  const fresh = candidates.slice(0, limit).map((work) => ({ work, isbns: candidateIsbns(work), asked: 0 }));
+  let failures = 0;
+  const fresh = candidates.slice(0, limit).map((work) => {
+    const isbns = candidateIsbns(work);
+    const sure = work.prefer?.[0]?.tier === 0 && work.prefer[0].isbn === isbns[0];
+    return { work, isbns, asked: 0, look: 0, steps: sure ? SURE_STEPS : STEPS };
+  });
   const again = [];
-  const pending = (q) => q.reduce((n, job) => n + job.isbns.length - job.asked, 0);
+  const nextIsbns = (job) => job.isbns.slice(job.asked, job.asked + (job.steps[job.look] ?? job.isbns.length));
+  const pending = (q) => q.reduce((n, job) => n + nextIsbns(job).length, 0);
 
   while (!stopped && (fresh.length || again.length)) {
-    // Second-pass works go once they fill a request, or when nothing else is left.
+    // Works on a later look go once they fill a request, or when nothing else is left.
     const fromAgain = again.length && (!fresh.length || pending(again) >= BATCH_ISBNS);
     const queue = fromAgain ? again : fresh;
-    const take = fromAgain ? ISBNS_PER_WORK : FIRST_PASS;
     const batch = [];
     const isbns = [];
     while (queue.length) {
-      const job = queue[0];
-      const next = job.isbns.slice(job.asked, job.asked + take);
+      const next = nextIsbns(queue[0]);
       if (batch.length && isbns.length + next.length > BATCH_ISBNS) break;
-      queue.shift();
-      batch.push({ job, next });
+      batch.push({ job: queue.shift(), next });
       isbns.push(...next);
     }
     const left = isbndbQuota()?.remaining;
@@ -495,13 +598,38 @@ export async function lookUpCandidates(
     else if (left != null && left - isbns.length < reserve) stopped = `keeping ${reserve} of ISBNdb's daily allowance for the site (${left} left)`;
     if (stopped) break;
 
-    for (const [isbn, e] of await isbndbBooks(isbns, { log })) facts.set(isbn, e);
+    const found = await isbndbBooks(isbns, { log });
+    if (!found.size && isbns.length >= 10) {
+      // No answer at all is ISBNdb failing, not a hundred unknown books:
+      // put the works back rather than write them off.
+      if (++failures >= 3) {
+        stopped = "ISBNdb stopped answering";
+        break;
+      }
+      queue.unshift(...batch.map((b) => b.job));
+      await new Promise((r) => setTimeout(r, 5000 * failures));
+      continue;
+    }
+    failures = 0;
+    for (const [isbn, e] of found) facts.set(isbn, e);
     calls++;
     units += isbns.length;
-    log(`isbndb call ${calls} (${fromAgain ? "second look" : "first look"}): ${isbns.length} ISBNs, ${batch.length} books, ${isbndbQuota()?.remaining ?? "?"} left today`);
-    for (const { job, next } of batch) {
+    log(`isbndb call ${calls} (${fromAgain ? "another look" : "first look"}): ${isbns.length} ISBNs, ${batch.length} books, ${isbndbQuota()?.remaining ?? "?"} left today`);
+
+    const began = Date.now();
+    Object.assign(coverTime, { fetched: 0, fetchMs: 0, checked: 0, checkMs: 0 });
+    const results = await inParallel(batch, parallel, ({ job, next }) => {
       job.asked += next.length;
-      const result = await buildRow(job.work, facts, { log });
+      job.look++;
+      return buildRow(job.work, facts, { log }).catch((e) => ({ skip: `lookup failed (${e.message})`, transient: true }));
+    });
+    const secs = (ms) => Math.round(ms / 1000);
+    log(
+      `  ${batch.length} books built in ${secs(Date.now() - began)}s: ${coverTime.fetched} covers fetched (${secs(coverTime.fetchMs)}s), ${coverTime.checked} checked (${secs(coverTime.checkMs)}s), ${parallel} at once`
+    );
+    for (let i = 0; i < batch.length; i++) {
+      const { job } = batch[i];
+      const result = results[i];
       if (result.skip && RETRYABLE.test(result.skip) && job.asked < job.isbns.length) again.push(job);
       else await onBuilt(result, job.work);
     }

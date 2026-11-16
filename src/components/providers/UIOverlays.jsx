@@ -7,7 +7,9 @@ export default function UIOverlays() {
   const { profile } = useAuth();
   const s = profile?.ui_settings ?? {};
   const showNoise = s.noise !== false;
-  const showCrt = s.crt !== false;
+  // The CRT shader stripes text, so it's opt-in; paper grain stays on unless
+  // turned off.
+  const showCrt = s.crt === true;
 
   return (
     <>

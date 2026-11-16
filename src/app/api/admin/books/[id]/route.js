@@ -2,6 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { assessCover, COVER_REJECT } from "@/lib/books/coverQuality";
 
 export async function PATCH(request, { params }) {
   const { id } = await params;
@@ -59,13 +60,13 @@ export async function PATCH(request, { params }) {
       if (!coverRes.ok)
         throw new Error(`Cover fetch failed: ${coverRes.status}`);
 
-      const contentType = coverRes.headers.get("content-type") || "image/jpeg";
       const buffer = Buffer.from(await coverRes.arrayBuffer());
+      // A person chose this one, so only refuse what can't be a cover at all.
+      const check = await assessCover(buffer);
+      if (check.tier === COVER_REJECT)
+        throw new Error(`that image doesn't look like a cover (${check.reason})`);
+      const { contentType, ext } = check;
 
-      if (buffer.length < 500)
-        throw new Error("Cover image too small — likely a placeholder");
-
-      const ext = contentType.includes("png") ? ".png" : ".jpg";
       const identifier = sanitised.isbn_13 || fields.isbn_13 || id;
       const filename = `${identifier}-${Date.now()}${ext}`;
 

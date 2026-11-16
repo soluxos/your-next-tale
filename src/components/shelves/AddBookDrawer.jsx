@@ -1,8 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -10,721 +8,650 @@ import {
   SheetTitle,
   SheetDescription
 } from "@/components/ui/sheet";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { addBookToShelf } from "@/lib/shelfBooks";
-import { getUserShelves } from "@/lib/bookshelves";
-import { TABLES } from "@/lib/supabase/types";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { Spinner } from "@/components/ui/spinner";
+import { useLibrary } from "@/components/providers/LibraryProvider";
+import { describeWork, sameWork } from "@/lib/books/sameBook";
 
-export default function AddBookDrawer({
-  userId,
-  shelfId,
-  onClose,
-  onBookAdded
-}) {
-  const supabase = createClient();
-  const router = useRouter();
+/**
+ * "Add books" — one search, one list.
+ *
+ * As you type we ask our catalogue (instant) and online sources (a second or
+ * two) at the same time, and show everything in a single list: catalogue
+ * books first, online finds appended underneath as they arrive. Every row has
+ * the same action — add it to the shelf picked at the top — whether we
+ * already had the book or not. Books you own are marked so you never add a
+ * duplicate, and the drawer stays open so you can add several in a row.
+ */
+
+const DEBOUNCE_MS = 250;
+const SUGGESTION_COUNT = 18;
+
+export default function AddBookDrawer({ open, initialShelfId, onClose }) {
+  const library = useLibrary();
+  const {
+    statusShelves,
+    customShelves,
+    defaultShelfId,
+    findEntry,
+    addBook,
+    openImport,
+    entries
+  } = library;
+
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [searchedExternal, setSearchedExternal] = useState(false);
-  const [loadingExternal, setLoadingExternal] = useState(false);
-  const [shelves, setShelves] = useState([]);
-  const [selectedShelfId, setSelectedShelfId] = useState(shelfId || "");
-  const [adding, setAdding] = useState(null);
-  const [addingStatus, setAddingStatus] = useState("");
-  const [error, setError] = useState(null);
-  const [warning, setWarning] = useState(null);
-  const [selectedCovers, setSelectedCovers] = useState({});
-  const fetchedShelves = useRef(false);
-  const lastQuery = useRef("");
+  const [targetShelfId, setTargetShelfId] = useState(null);
+  const [localResults, setLocalResults] = useState([]);
+  const [onlineResults, setOnlineResults] = useState([]);
+  const [searchingLocal, setSearchingLocal] = useState(false);
+  const [searchingOnline, setSearchingOnline] = useState(false);
+  const [searchError, setSearchError] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestionsLoaded, setSuggestionsLoaded] = useState(false);
+  const [rowState, setRowState] = useState({}); // key -> { status, message }
+  const [addedCount, setAddedCount] = useState(0);
 
-  // Detail view state
-  const [selectedResult, setSelectedResult] = useState(null);
-  const [previewData, setPreviewData] = useState(null);
-  const [loadingPreview, setLoadingPreview] = useState(false);
-  const [chosenDescription, setChosenDescription] = useState(null);
-  const [chosenCover, setChosenCover] = useState(null);
+  const inputRef = useRef(null);
+  const requestId = useRef(0);
+  const debounceRef = useRef(null);
 
-  const loadShelves = async () => {
-    if (fetchedShelves.current) return;
-    fetchedShelves.current = true;
-    try {
-      const data = await getUserShelves(supabase, userId);
-      setShelves(data || []);
-      if (!selectedShelfId && data?.length > 0) {
-        const exclusive = data.find((s) => s.is_exclusive);
-        setSelectedShelfId(exclusive?.id || data[0].id);
-      }
-    } catch (e) {
-      console.error("Error loading shelves:", e);
+  // Reset each time the drawer opens
+  useEffect(() => {
+    if (!open) return;
+    setTargetShelfId(initialShelfId || defaultShelfId);
+    setRowState({});
+    setAddedCount(0);
+    // Fresh search every time — reopening shouldn't append to an old query
+    setQuery("");
+    clearTimeout(debounceRef.current);
+    runSearch("");
+    const t = setTimeout(() => inputRef.current?.focus(), 50);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialShelfId]);
+
+  // Shelves may finish loading after the drawer opens
+  useEffect(() => {
+    if (open && !targetShelfId && defaultShelfId) {
+      setTargetShelfId(initialShelfId || defaultShelfId);
     }
-  };
+  }, [open, targetShelfId, defaultShelfId, initialShelfId]);
 
-  // Phase 1: Fast DB-only search
-  const handleSearch = async () => {
-    if (!query.trim()) return;
-    setLoading(true);
-    setError(null);
-    setWarning(null);
-    setSearchedExternal(false);
-    lastQuery.current = query.trim();
-    await loadShelves();
+  // Suggestions for the empty state — newest catalogue books. Fetch a deep
+  // page: owned books are filtered out, and big libraries own most of them.
+  useEffect(() => {
+    if (!open || suggestionsLoaded) return;
+    let cancelled = false;
+    fetch(`/api/books?start=0&end=${SUGGESTION_COUNT * 6 - 1}`)
+      .then((r) => (r.ok ? r.json() : { books: [] }))
+      .then(({ books }) => {
+        if (cancelled) return;
+        setSuggestions(
+          (books || []).filter((b) => b.cover_url).map(bookToResult)
+        );
+      })
+      .catch(() => {})
+      .finally(() => !cancelled && setSuggestionsLoaded(true));
+    return () => {
+      cancelled = true;
+    };
+  }, [open, suggestionsLoaded]);
 
-    try {
-      const res = await fetch(
-        `/api/books/search?q=${encodeURIComponent(query.trim())}&source=local`
-      );
-      if (!res.ok) throw new Error("Search failed");
+  const runSearch = useCallback(async (q) => {
+    const id = ++requestId.current;
+    const trimmed = q.trim();
+    setSearchError(null);
 
-      const data = await res.json();
-      setResults(data.results || []);
-    } catch (e) {
-      console.error("Search error:", e);
-      setError("Search failed. Please try again.");
-      setResults([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Phase 2: Full external search (user-triggered)
-  const handleSearchExternal = async () => {
-    const q = lastQuery.current;
-    if (!q) return;
-    setLoadingExternal(true);
-    setError(null);
-
-    try {
-      const res = await fetch(`/api/books/search?q=${encodeURIComponent(q)}`);
-      if (!res.ok) throw new Error("Search failed");
-
-      const data = await res.json();
-      setResults(data.results || []);
-      setSearchedExternal(true);
-    } catch (e) {
-      console.error("External search error:", e);
-      setError("Online search failed. Please try again.");
-    } finally {
-      setLoadingExternal(false);
-    }
-  };
-
-  // Click a search result — local books add directly, external opens detail view
-  const handleResultClick = async (result) => {
-    if (
-      result.source === "local" &&
-      result._raw?.id &&
-      !result._raw?.is_incomplete
-    ) {
-      // Complete local book — add directly
-      handleAddBook(result);
+    if (!trimmed) {
+      setLocalResults([]);
+      setOnlineResults([]);
+      setSearchingLocal(false);
+      setSearchingOnline(false);
       return;
     }
 
-    // External / incomplete — open detail view and fetch preview
-    setSelectedResult(result);
-    setLoadingPreview(true);
-    setError(null);
-    setChosenDescription(null);
-    setChosenCover(null);
+    setSearchingLocal(true);
+    setSearchingOnline(true);
+    const enc = encodeURIComponent(trimmed);
 
-    try {
-      const res = await fetch("/api/books/preview", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          _raw: result._raw,
-          source: result.source,
-          preview: result.preview,
-          ...(result.hardcover_id ? { hardcover_id: result.hardcover_id } : {})
-        })
+    // Both requests fire together; the catalogue answers first.
+    fetch(`/api/books/search?q=${enc}&source=local`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+      .then(({ results }) => {
+        if (id !== requestId.current) return;
+        setLocalResults(results || []);
+      })
+      .catch(() => {
+        if (id === requestId.current) setLocalResults([]);
+      })
+      .finally(() => {
+        if (id === requestId.current) setSearchingLocal(false);
       });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Preview fetch failed");
-      }
+    fetch(`/api/books/search?q=${enc}&source=online`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+      .then(({ results }) => {
+        if (id !== requestId.current) return;
+        setOnlineResults(results || []);
+      })
+      .catch(() => {
+        if (id !== requestId.current) return;
+        setOnlineResults([]);
+        setSearchError("Couldn't reach online sources — showing catalogue matches only.");
+      })
+      .finally(() => {
+        if (id === requestId.current) setSearchingOnline(false);
+      });
+  }, []);
 
-      const data = await res.json();
-      setPreviewData(data);
-
-      // Default to longest description
-      const descriptions = getUniqueDescriptions(data.sources);
-      if (descriptions.length > 0) {
-        setChosenDescription(descriptions[0].text);
-      }
-
-      // Default to first cover candidate
-      if (data.coverCandidates?.length > 0) {
-        setChosenCover(data.coverCandidates[0]);
-      }
-    } catch (e) {
-      console.error("Preview error:", e);
-      setError("Failed to load book details. Please try again.");
-      setSelectedResult(null);
-    } finally {
-      setLoadingPreview(false);
+  function handleQueryChange(value) {
+    setQuery(value);
+    clearTimeout(debounceRef.current);
+    if (!value.trim()) {
+      runSearch("");
+      return;
     }
-  };
+    // Keep the previous results visible while the next search runs,
+    // but show we're working.
+    setSearchingLocal(true);
+    debounceRef.current = setTimeout(() => runSearch(value), DEBOUNCE_MS);
+  }
 
-  const handleBackToResults = () => {
-    setSelectedResult(null);
-    setPreviewData(null);
-    setChosenDescription(null);
-    setChosenCover(null);
-    setError(null);
-  };
+  function handleKeyDown(e) {
+    if (e.key === "Enter") {
+      clearTimeout(debounceRef.current);
+      runSearch(query);
+    }
+    if (e.key === "Escape" && query) {
+      e.preventDefault();
+      e.stopPropagation();
+      handleQueryChange("");
+    }
+  }
 
-  // Add book (used for both direct add and confirmed detail add)
-  const handleAddBook = async (result, overrides = {}) => {
-    if (!selectedShelfId) return;
-    const key = result.preview?.isbn_13 || result.preview?.title;
-    setAdding(key);
-    setAddingStatus("Fetching book data...");
-    setError(null);
-    setWarning(null);
+  useEffect(() => () => clearTimeout(debounceRef.current), []);
 
+  // ── The single list ──────────────────────────────────────────────────────
+  const hasQuery = !!query.trim();
+  const rows = useMemo(() => {
+    const source = hasQuery
+      ? collapseEditions(dedupe([...localResults, ...onlineResults]), findEntry)
+      : // Suggestions are for discovering something new — skip owned books,
+        // but keep the ones added just now so they can show "Added".
+        collapseEditions(suggestions, findEntry)
+          .filter((r) => !findEntry(r) || rowState[resultKey(r)])
+          .slice(0, SUGGESTION_COUNT);
+    return source.map((result) => ({
+      key: resultKey(result),
+      result,
+      entry: findEntry(result)
+    }));
+  }, [hasQuery, localResults, onlineResults, suggestions, findEntry, rowState]);
+
+  const targetShelf = useMemo(
+    () =>
+      [...statusShelves, ...customShelves].find(
+        (s) => s.id === targetShelfId
+      ) || null,
+    [statusShelves, customShelves, targetShelfId]
+  );
+
+  async function handleAdd(row) {
+    if (!targetShelfId) return;
+    setRowState((s) => ({ ...s, [row.key]: { status: "adding" } }));
     try {
-      let book;
-
-      if (
-        result.source === "local" &&
-        result._raw?.id &&
-        !result._raw?.is_incomplete
-      ) {
-        book = result._raw;
-      } else {
-        const chosenCoverUrl =
-          overrides.chosenCover ||
-          selectedCovers[result.preview?.isbn_13 || result.preview?.title];
-        const previewForAdd = chosenCoverUrl
-          ? { ...result.preview, cover_preview_url: chosenCoverUrl }
-          : result.preview;
-
-        const res = await fetch("/api/books/normalise", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            _raw: result._raw,
-            source: result.source,
-            preview: previewForAdd,
-            ...(result.hardcover_id
-              ? { hardcover_id: result.hardcover_id }
-              : {}),
-            ...(overrides.chosenDescription
-              ? { chosenDescription: overrides.chosenDescription }
-              : {}),
-            ...(overrides.chosenCover
-              ? { chosenCover: overrides.chosenCover }
-              : {})
-          })
-        });
-
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || "Normalisation failed");
-        }
-
-        const data = await res.json();
-        book = data.book;
-      }
-
-      if (!book) {
-        setError("Could not fetch book data. Please try again.");
-        return;
-      }
-
-      setAddingStatus("Adding to shelf...");
-      await addBookToShelf(supabase, userId, book.id, selectedShelfId);
-
-      const { data: userBook } = await supabase
-        .from(TABLES.USER_BOOKS)
-        .select("*")
-        .eq("user_id", userId)
-        .eq("book_id", book.id)
-        .single();
-
-      if (book.is_incomplete) {
-        setWarning(
-          "Some book details are missing but it has been added to your shelf."
-        );
-      }
-
-      onBookAdded?.({ book, userBook });
-      router.refresh();
-
-      if (!book.is_incomplete) {
-        onClose();
-      }
+      const { alreadyThere } = await addBook({ result: row.result }, targetShelfId);
+      setRowState((s) => ({
+        ...s,
+        [row.key]: { status: "added", shelfId: targetShelfId }
+      }));
+      if (!alreadyThere) setAddedCount((n) => n + 1);
     } catch (e) {
-      console.error("Error adding book:", e);
-      setError("Failed to add book. Please try again.");
-    } finally {
-      setAdding(null);
-      setAddingStatus("");
+      console.error("Add book failed:", e);
+      setRowState((s) => ({
+        ...s,
+        [row.key]: { status: "error", message: e.message }
+      }));
     }
-  };
+  }
 
-  const handleConfirmAdd = () => {
-    if (!selectedResult) return;
-    handleAddBook(selectedResult, {
-      chosenDescription,
-      chosenCover
-    });
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") handleSearch();
-  };
-
-  const hasSearched = lastQuery.current && !loading;
-  const showExternalPrompt =
-    hasSearched && !searchedExternal && !loadingExternal;
+  const showSkeletons = hasQuery && searchingLocal && rows.length === 0;
+  const noResults =
+    hasQuery && !searchingLocal && !searchingOnline && rows.length === 0;
 
   return (
-    <Sheet open onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
-        <SheetHeader>
-          <SheetTitle className="font-ppMondwest text-xl">
-            Add a Book
-          </SheetTitle>
-          <SheetDescription className="font-departureMono uppercase text-[11px] text-textSecondary">
-            Search and add to your shelf
-          </SheetDescription>
-        </SheetHeader>
+    <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
+      <SheetContent
+        side="right"
+        className="w-full sm:max-w-[480px] p-0 flex flex-col gap-0"
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          inputRef.current?.focus();
+        }}
+      >
+        {/* ── Header + controls (fixed) ── */}
+        <div className="px-5 pt-5 pb-4 border-b border-border space-y-4">
+          <SheetHeader className="space-y-1 text-left">
+            <SheetTitle className="font-ppMondwest text-[22px] font-normal leading-tight">
+              Add books
+            </SheetTitle>
+            <SheetDescription className="sr-only">
+              Search by title, author or ISBN, then add a book to a shelf
+            </SheetDescription>
+          </SheetHeader>
 
-        <div className="mt-4 space-y-4">
-          {/* ──────── DETAIL VIEW ──────── */}
-          {selectedResult ? (
-            <div className="space-y-4">
-              {/* Back button */}
+          {/* Search */}
+          <div className="relative">
+            <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-textSecondary pointer-events-none" />
+            <input
+              ref={inputRef}
+              type="search"
+              value={query}
+              onChange={(e) => handleQueryChange(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Title, author or ISBN"
+              aria-label="Search for a book"
+              autoComplete="off"
+              spellCheck={false}
+              className="field !h-12 !pl-10 !pr-11 [&::-webkit-search-cancel-button]:hidden"
+            />
+            {query && (
               <button
-                onClick={handleBackToResults}
-                className="font-departureMono uppercase text-[11px] text-textSecondary hover:text-textPrimary transition-colors flex items-center gap-1"
+                type="button"
+                onClick={() => {
+                  handleQueryChange("");
+                  inputRef.current?.focus();
+                }}
+                aria-label="Clear search"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-[6px] flex items-center justify-center text-textSecondary hover:text-ink hover:bg-paper-3 transition-colors"
               >
-                <span>←</span> Back to results
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
               </button>
+            )}
+          </div>
 
-              {loadingPreview ? (
-                <div className="py-8 text-center">
-                  <p className="font-departureMono uppercase text-[10px] text-textSecondary animate-pulse">
-                    Loading book details from multiple sources...
-                  </p>
-                </div>
-              ) : previewData ? (
-                <DetailView
-                  result={selectedResult}
-                  previewData={previewData}
-                  chosenDescription={chosenDescription}
-                  setChosenDescription={setChosenDescription}
-                  chosenCover={chosenCover}
-                  setChosenCover={setChosenCover}
-                  shelves={shelves}
-                  selectedShelfId={selectedShelfId}
-                  setSelectedShelfId={setSelectedShelfId}
-                  adding={adding}
-                  addingStatus={addingStatus}
-                  onConfirm={handleConfirmAdd}
-                  error={error}
-                  warning={warning}
-                />
-              ) : null}
-            </div>
-          ) : (
-            <>
-              {/* ──────── SEARCH VIEW ──────── */}
-              {/* Shelf selector */}
-              {shelves.length > 0 && (
-                <div className="space-y-1">
-                  <label className="font-departureMono uppercase text-[10px] text-textSecondary">
-                    Add to shelf
-                  </label>
-                  <select
-                    className="w-full border border-border rounded-[8px] px-3 h-9 font-departureMono text-[12px] bg-transparent focus:outline-none focus:ring-1 focus:ring-textPrimary"
-                    value={selectedShelfId}
-                    onChange={(e) => setSelectedShelfId(e.target.value)}
-                  >
-                    {shelves.map((shelf) => (
-                      <option key={shelf.id} value={shelf.id}>
-                        {shelf.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Search */}
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Search by title or author..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  className="font-departureMono text-[12px]"
-                />
-                <Button
-                  onClick={handleSearch}
-                  disabled={loading}
-                  className="font-departureMono uppercase text-[11px] bg-[#1f1f1f] text-white hover:bg-[#353535] rounded-[8px] shrink-0"
-                >
-                  {loading ? "..." : "Search"}
-                </Button>
-              </div>
-
-              {/* Error / Warning messages */}
-              {error && (
-                <p className="font-departureMono uppercase text-[10px] text-red-500 bg-red-50 border border-red-200 rounded-[8px] px-3 py-2">
-                  {error}
-                </p>
-              )}
-              {warning && (
-                <p className="font-departureMono uppercase text-[10px] text-amber-600 bg-amber-50 border border-amber-200 rounded-[8px] px-3 py-2">
-                  {warning}
-                </p>
-              )}
-
-              {/* Results */}
-              <div className="space-y-2">
-                {results.map((result, i) => {
-                  const preview = result.preview || {};
-                  const key = preview.isbn_13
-                    ? `${preview.isbn_13}-${i}`
-                    : `${preview.title}-${i}`;
-                  const stateKey = preview.isbn_13 || preview.title;
-                  const isAdding = adding === stateKey;
-                  const displayCover =
-                    selectedCovers[stateKey] || preview.cover_preview_url;
-                  const isLocal =
-                    result.source === "local" &&
-                    result._raw?.id &&
-                    !result._raw?.is_incomplete;
-
-                  return (
+          {/* Target shelf — a reading status, or one of your own shelves */}
+          <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <p className="label text-textSecondary shrink-0" id="add-to-label">Add to</p>
+            <div
+              className="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto no-scrollbar -mr-5 pr-5 [mask-image:linear-gradient(to_right,#000_88%,transparent)]"
+              role="radiogroup"
+              aria-labelledby="add-to-label"
+            >
+              {[...statusShelves, ...customShelves].map((shelf, i) => {
+                const selected = shelf.id === targetShelfId;
+                return (
+                  <span key={shelf.id} className="contents">
+                    {/* Your own shelves come after the reading statuses */}
+                    {i === statusShelves.length && i > 0 && (
+                      <span className="w-px h-5 bg-line shrink-0 mx-1" aria-hidden="true" />
+                    )}
                     <button
-                      key={key}
                       type="button"
-                      onClick={() => handleResultClick(result)}
-                      disabled={isAdding || !!adding}
-                      className="w-full text-left p-3 border border-border rounded-[8px] hover:bg-[#f4f4f4] transition-colors"
+                      role="radio"
+                      aria-checked={selected}
+                      data-active={selected}
+                      onClick={() => setTargetShelfId(shelf.id)}
+                      className="chip chip-lg shrink-0 whitespace-nowrap"
                     >
-                      <div className="flex items-start gap-3">
-                        {displayCover ? (
-                          <img
-                            src={displayCover}
-                            alt={preview.title}
-                            className="w-10 h-auto rounded-sm shrink-0"
-                          />
-                        ) : (
-                          <div className="w-10 h-14 bg-[#e0e0e0] rounded-sm shrink-0" />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <p className="font-ppMondwest text-sm text-textPrimary truncate">
-                              {preview.title}
-                            </p>
-                            {result.source !== "local" && (
-                              <span className="shrink-0 font-departureMono uppercase text-[9px] px-1.5 py-0.5 rounded-[6px] bg-[#f0f0f0] text-textSecondary">
-                                New
-                              </span>
-                            )}
-                            {result.is_incomplete && (
-                              <span className="shrink-0 font-departureMono uppercase text-[9px] px-1.5 py-0.5 rounded-[6px] bg-amber-50 text-amber-600">
-                                Incomplete
-                              </span>
-                            )}
-                          </div>
-                          <p className="font-departureMono uppercase text-[10px] text-textSecondary truncate">
-                            {preview.author}
-                          </p>
-                        </div>
-                        <span className="font-departureMono uppercase text-[10px] text-textSecondary shrink-0 self-center">
-                          {isAdding
-                            ? addingStatus || "Adding..."
-                            : isLocal
-                              ? "Add →"
-                              : "Review →"}
-                        </span>
-                      </div>
+                      {shelf.name}
                     </button>
-                  );
-                })}
+                  </span>
+                );
+              })}
+              {statusShelves.length === 0 && (
+                <span className="h-9 w-48 rounded-full bg-paper-3 animate-pulse" />
+              )}
+            </div>
+          </div>
+            {targetShelf && !targetShelf.is_exclusive && (
+              <p className="label !normal-case !text-[12px] text-textSecondary">
+                Books without a status also go on Want to Read.
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* ── Results (scrolls) ── */}
+        <div className="flex-1 overflow-y-auto px-5 py-3">
+          <div className="flex items-center justify-between h-6 mb-1">
+            <p className="label text-textSecondary">
+              {hasQuery
+                ? rows.length > 0
+                  ? `${rows.length} result${rows.length === 1 ? "" : "s"}`
+                  : searchingLocal || searchingOnline
+                    ? "Searching…"
+                    : "Results"
+                : rows.length || !suggestionsLoaded
+                  ? "New in the catalogue"
+                  : ""}
+            </p>
+            {hasQuery && searchingOnline && rows.length > 0 && (
+              <p className="label text-textSecondary flex items-center gap-1.5">
+                <Spinner /> Checking more sources
+              </p>
+            )}
+          </div>
+
+          {/* New readers: offer to bring their Goodreads library instead */}
+          {!hasQuery && library.ready && entries.size < 5 && (
+            <div className="card p-4 mb-3 flex items-start gap-3">
+              <div className="flex-1 min-w-0 space-y-1">
+                <p className="font-ppMondwest text-[17px] leading-snug text-ink">
+                  Coming from Goodreads?
+                </p>
+                <p className="text-[13px] leading-snug text-textSecondary">
+                  Import your whole library from a CSV export: shelves, ratings and reviews.
+                </p>
               </div>
-
-              {/* "Can't find it?" prompt */}
-              {showExternalPrompt && (
-                <div className="text-center py-3 space-y-2">
-                  {results.length === 0 && (
-                    <p className="font-departureMono uppercase text-[10px] text-textSecondary">
-                      No results in our catalogue
-                    </p>
-                  )}
-                  <button
-                    onClick={handleSearchExternal}
-                    className="font-departureMono uppercase text-[11px] text-textSecondary hover:text-textPrimary underline underline-offset-2 transition-colors"
-                  >
-                    {results.length === 0
-                      ? "Search online for this book"
-                      : "Can\u2019t find it? Search online"}
-                  </button>
-                </div>
-              )}
-
-              {/* Loading indicator for external search */}
-              {loadingExternal && (
-                <p className="text-center font-departureMono uppercase text-[10px] text-textSecondary py-4 animate-pulse">
-                  Searching online sources...
-                </p>
-              )}
-
-              {/* No results at all after external search */}
-              {searchedExternal && !loadingExternal && results.length === 0 && (
-                <p className="text-center font-departureMono uppercase text-[10px] text-textSecondary py-4">
-                  No results found — try a different search term
-                </p>
-              )}
-            </>
+              <button type="button" onClick={openImport} className="btn btn-secondary btn-sm shrink-0">
+                Import
+              </button>
+            </div>
           )}
+
+          {searchError && (
+            <p className="mb-2 font-departureMono text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-[8px] px-3 py-2">
+              {searchError}
+            </p>
+          )}
+
+          <ul className="divide-y divide-border">
+            {rows.map((row) => (
+              <ResultRow
+                key={row.key}
+                row={row}
+                state={rowState[row.key]}
+                targetShelf={targetShelf}
+                library={library}
+                onAdd={() => handleAdd(row)}
+              />
+            ))}
+            {(showSkeletons || (hasQuery && searchingOnline)) &&
+              Array.from({ length: showSkeletons ? 5 : 2 }).map((_, i) => (
+                <SkeletonRow key={`sk-${i}`} />
+              ))}
+            {!hasQuery && !suggestionsLoaded &&
+              Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={`sg-${i}`} />)}
+          </ul>
+
+          {!hasQuery && suggestionsLoaded && rows.length === 0 && (
+            <div className="py-10 text-center">
+              <p className="font-ppMondwest text-[20px] text-ink">Search above to add a book</p>
+              <p className="mt-1 text-[13.5px] text-textSecondary">
+                You already have everything new in the catalogue. Look one up, or see what’s coming out.
+              </p>
+              <div className="mt-5 flex flex-wrap justify-center gap-2">
+                <Link href="/releases" onClick={onClose} className="btn btn-secondary btn-sm">
+                  New releases
+                </Link>
+                <button type="button" onClick={openImport} className="btn btn-ghost btn-sm">
+                  Import from Goodreads
+                </button>
+              </div>
+            </div>
+          )}
+
+          {noResults && (
+            <div className="py-12 text-center space-y-1">
+              <p className="font-ppMondwest text-[18px] text-textPrimary">
+                No books found for &ldquo;{query.trim()}&rdquo;
+              </p>
+              <p className="label text-textSecondary">
+                Try the author&rsquo;s surname, fewer words, or an ISBN
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* ── Footer ── */}
+        <div className="px-5 py-3 pb-[max(12px,env(safe-area-inset-bottom))] border-t border-line flex items-center justify-between gap-3 bg-white">
+          <p className="label text-textSecondary" aria-live="polite">
+            {addedCount > 0
+              ? `${addedCount} book${addedCount === 1 ? "" : "s"} added`
+              : (
+                <span className="hidden sm:inline">
+                  <kbd className="font-departureMono px-1.5 py-0.5 rounded-[4px] border border-line text-[10px]">⌘K</kbd>{" "}
+                  opens this anywhere
+                </span>
+              )}
+          </p>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button type="button" onClick={openImport} className="btn btn-ghost">
+              <UploadIcon /> Import CSV
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className={cn("btn", addedCount > 0 ? "btn-primary" : "btn-secondary")}
+            >
+              Done
+            </button>
+          </div>
         </div>
       </SheetContent>
     </Sheet>
   );
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Row ──────────────────────────────────────────────────────────────────────
 
-function getUniqueDescriptions(sources) {
-  const seen = new Set();
-  const descriptions = [];
-  for (const src of sources) {
-    if (!src?.description) continue;
-    // Dedupe by first 100 chars to catch near-identical descriptions
-    const fingerprint = src.description.slice(0, 100).toLowerCase();
-    if (seen.has(fingerprint)) continue;
-    seen.add(fingerprint);
-    descriptions.push({ text: src.description, source: src.name });
+function ResultRow({ row, state, targetShelf, library, onAdd }) {
+  const { result, entry } = row;
+  const p = result.preview || {};
+  const [coverFailed, setCoverFailed] = useState(false);
+  const cover = !coverFailed ? p.cover_preview_url : null;
+
+  const onTarget = entry?.shelfIds?.includes(targetShelf?.id);
+  const ownedShelf = library.statusShelfFor(entry);
+  const status = state?.status;
+
+  const meta = [p.author, p.year].filter(Boolean).join(" · ");
+
+  let action;
+  if (status === "adding") {
+    action = (
+      <span className="h-9 px-3 inline-flex items-center gap-1.5 label text-textSecondary">
+        <Spinner /> Adding
+      </span>
+    );
+  } else if (onTarget || status === "added") {
+    action = (
+      <span className="btn btn-sm btn-shelved !h-9 pointer-events-none">
+        <CheckIcon /> {status === "added" ? "Added" : "On shelf"}
+      </span>
+    );
+  } else {
+    action = (
+      <button
+        type="button"
+        onClick={onAdd}
+        disabled={!targetShelf}
+        aria-label={
+          entry && targetShelf?.is_exclusive && ownedShelf?.is_exclusive
+            ? `Move ${p.title} from ${ownedShelf.name} to ${targetShelf.name}`
+            : `Add ${p.title} to ${targetShelf?.name || "shelf"}`
+        }
+        title={
+          entry && targetShelf?.is_exclusive && ownedShelf?.is_exclusive
+            ? `Move from ${ownedShelf.name} to ${targetShelf.name}`
+            : undefined
+        }
+        className={cn(
+          "btn btn-sm !h-9 min-w-[72px]",
+          status === "error" ? "btn-danger" : entry ? "btn-secondary" : "btn-primary"
+        )}
+      >
+        {status === "error" ? (
+          "Retry"
+        ) : entry && targetShelf?.is_exclusive && ownedShelf?.is_exclusive ? (
+          "Move here"
+        ) : (
+          <>
+            <PlusIcon /> Add
+          </>
+        )}
+      </button>
+    );
   }
-  // Sort longest first
-  descriptions.sort((a, b) => b.text.length - a.text.length);
-  return descriptions;
-}
-
-// ── Detail View Component ───────────────────────────────────────────────────
-
-function DetailView({
-  result,
-  previewData,
-  chosenDescription,
-  setChosenDescription,
-  chosenCover,
-  setChosenCover,
-  shelves,
-  selectedShelfId,
-  setSelectedShelfId,
-  adding,
-  addingStatus,
-  onConfirm,
-  error,
-  warning
-}) {
-  const { merged, sources, coverCandidates } = previewData;
-  const descriptions = getUniqueDescriptions(sources);
-  const stateKey = result.preview?.isbn_13 || result.preview?.title;
-  const isAdding = adding === stateKey;
 
   return (
-    <div className="space-y-5">
-      {/* Error / Warning */}
-      {error && (
-        <p className="font-departureMono uppercase text-[10px] text-red-500 bg-red-50 border border-red-200 rounded-[8px] px-3 py-2">
-          {error}
-        </p>
-      )}
-      {warning && (
-        <p className="font-departureMono uppercase text-[10px] text-amber-600 bg-amber-50 border border-amber-200 rounded-[8px] px-3 py-2">
-          {warning}
-        </p>
-      )}
-
-      {/* Cover selection */}
-      {coverCandidates.length > 0 && (
-        <div className="space-y-2">
-          <span className="font-departureMono uppercase text-[10px] text-textSecondary">
-            Cover
-          </span>
-          <div className="flex gap-2 flex-wrap">
-            {coverCandidates.map((url, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setChosenCover(url)}
-                className={`w-16 h-24 rounded-sm overflow-hidden border-2 transition-colors ${
-                  chosenCover === url
-                    ? "border-textPrimary"
-                    : "border-transparent hover:border-border"
-                }`}
-              >
-                <img src={url} alt="" className="w-full h-full object-cover" />
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Title */}
-      <div className="space-y-1">
-        <span className="font-departureMono uppercase text-[10px] text-textSecondary">
-          Title
-        </span>
-        <p className="font-ppMondwest text-base text-textPrimary">
-          {merged.title}
-        </p>
-      </div>
-
-      {/* Authors */}
-      {merged.authors?.length > 0 && (
-        <div className="space-y-1">
-          <span className="font-departureMono uppercase text-[10px] text-textSecondary">
-            Author{merged.authors.length > 1 ? "s" : ""}
-          </span>
-          <p className="font-departureMono text-[12px] text-textPrimary">
-            {merged.authors.join(", ")}
-          </p>
-        </div>
-      )}
-
-      {/* ISBN */}
-      {(merged.isbn_13 || merged.isbn_10) && (
-        <div className="space-y-1">
-          <span className="font-departureMono uppercase text-[10px] text-textSecondary">
-            ISBN
-          </span>
-          <p className="font-departureMono text-[12px] text-textPrimary">
-            {merged.isbn_13 || merged.isbn_10}
-          </p>
-        </div>
-      )}
-
-      {/* Description picker */}
-      <div className="space-y-2">
-        <span className="font-departureMono uppercase text-[10px] text-textSecondary">
-          Description
-          {descriptions.length > 1 && (
-            <span className="normal-case ml-1">
-              — pick the best match ({descriptions.length} options)
-            </span>
-          )}
-        </span>
-        {descriptions.length > 0 ? (
-          <div className="space-y-2">
-            {descriptions.map((desc, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setChosenDescription(desc.text)}
-                className={`w-full text-left p-3 rounded-[8px] border transition-colors ${
-                  chosenDescription === desc.text
-                    ? "border-textPrimary bg-[#f9f9f9]"
-                    : "border-border hover:border-textSecondary"
-                }`}
-              >
-                <span className="font-departureMono uppercase text-[9px] text-textSecondary block mb-1">
-                  {desc.source}
-                </span>
-                <p className="text-[12px] text-textPrimary leading-relaxed line-clamp-4">
-                  {desc.text}
-                </p>
-              </button>
-            ))}
-          </div>
+    <li className="flex items-center gap-3 py-3">
+      <div className="w-11 h-[66px] shrink-0 rounded-[3px] overflow-hidden bg-[#ececec] shadow-[0_1px_2px_rgba(0,0,0,0.12)]">
+        {cover ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={cover}
+            alt=""
+            loading="lazy"
+            className="w-full h-full object-cover"
+            onError={() => setCoverFailed(true)}
+          />
         ) : (
-          <p className="font-departureMono text-[10px] text-textSecondary italic">
-            No description available from any source
+          <div className="w-full h-full flex items-center justify-center p-1">
+            <span className="font-ppMondwest text-[8px] leading-tight text-center text-textSecondary line-clamp-4">
+              {p.title}
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <p className="font-ppMondwest text-[15px] leading-snug text-textPrimary line-clamp-2">
+          {p.title}
+        </p>
+        {meta && (
+          <p className="font-departureMono text-[11px] text-textSecondary truncate mt-0.5">
+            {meta}
+          </p>
+        )}
+        {entry && ownedShelf && !onTarget && status !== "added" && (
+          <p className="label !text-[10px] text-shelved mt-1">
+            On your {ownedShelf.name} shelf
+          </p>
+        )}
+        {status === "added" && targetShelf && (
+          <p className="label !text-[10px] text-shelved mt-1">
+            Added to {library.shelfById(state.shelfId)?.name || targetShelf.name}
+          </p>
+        )}
+        {status === "error" && (
+          <p className="label !normal-case !text-[12px] text-[#b42318] mt-1">
+            {state.message || "Couldn't add this book"}
           </p>
         )}
       </div>
 
-      {/* Genres */}
-      {merged.genres?.length > 0 && (
-        <div className="space-y-1">
-          <span className="font-departureMono uppercase text-[10px] text-textSecondary">
-            Genres
-          </span>
-          <div className="flex gap-1.5 flex-wrap">
-            {merged.genres.slice(0, 10).map((genre, i) => (
-              <span
-                key={i}
-                className="font-departureMono text-[10px] px-2 py-0.5 rounded-[6px] bg-[#f0f0f0] text-textSecondary"
-              >
-                {genre}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+      <div className="shrink-0">{action}</div>
+    </li>
+  );
+}
 
-      {/* Meta row */}
-      <div className="flex gap-4 flex-wrap">
-        {merged.page_count && (
-          <div className="space-y-0.5">
-            <span className="font-departureMono uppercase text-[9px] text-textSecondary block">
-              Pages
-            </span>
-            <span className="font-departureMono text-[12px] text-textPrimary">
-              {merged.page_count}
-            </span>
-          </div>
-        )}
-        {merged.published_date && (
-          <div className="space-y-0.5">
-            <span className="font-departureMono uppercase text-[9px] text-textSecondary block">
-              Published
-            </span>
-            <span className="font-departureMono text-[12px] text-textPrimary">
-              {merged.published_date}
-            </span>
-          </div>
-        )}
-        {merged.publisher && (
-          <div className="space-y-0.5">
-            <span className="font-departureMono uppercase text-[9px] text-textSecondary block">
-              Publisher
-            </span>
-            <span className="font-departureMono text-[12px] text-textPrimary">
-              {merged.publisher}
-            </span>
-          </div>
-        )}
+function SkeletonRow() {
+  return (
+    <li className="flex items-center gap-3 py-3" aria-hidden="true">
+      <div className="w-11 h-[66px] rounded-[3px] bg-[#ececec] animate-pulse" />
+      <div className="flex-1 space-y-2">
+        <div className="h-3 w-3/4 rounded bg-[#ececec] animate-pulse" />
+        <div className="h-2.5 w-1/3 rounded bg-[#f1f1f1] animate-pulse" />
       </div>
+      <div className="h-8 w-16 rounded-full bg-[#f1f1f1] animate-pulse" />
+    </li>
+  );
+}
 
-      {/* Shelf selector + Confirm */}
-      <div className="pt-2 border-t border-border space-y-3">
-        {shelves.length > 0 && (
-          <div className="space-y-1">
-            <label className="font-departureMono uppercase text-[10px] text-textSecondary">
-              Add to shelf
-            </label>
-            <select
-              className="w-full border border-border rounded-[8px] px-3 h-9 font-departureMono text-[12px] bg-transparent focus:outline-none focus:ring-1 focus:ring-textPrimary"
-              value={selectedShelfId}
-              onChange={(e) => setSelectedShelfId(e.target.value)}
-            >
-              {shelves.map((shelf) => (
-                <option key={shelf.id} value={shelf.id}>
-                  {shelf.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-        <Button
-          onClick={onConfirm}
-          disabled={isAdding || !!adding}
-          className="w-full font-departureMono uppercase text-[11px] bg-[#1f1f1f] text-white hover:bg-[#353535] rounded-[8px]"
-        >
-          {isAdding ? addingStatus || "Adding..." : "Add to Shelf"}
-        </Button>
-      </div>
-    </div>
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+function bookToResult(book) {
+  return {
+    source: "local",
+    in_catalog: true,
+    is_incomplete: book.is_incomplete || false,
+    catalog_ids: [book.id],
+    _raw: book,
+    preview: {
+      title: book.title,
+      author: book.authors?.[0] || null,
+      authors: book.authors || [],
+      year: book.published_date ? String(book.published_date).slice(0, 4) : null,
+      isbn_13: book.isbn_13,
+      isbn_10: book.isbn_10,
+      cover_preview_url: book.cover_url
+        ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/books/${book.cover_url}`
+        : null
+    }
+  };
+}
+
+function resultKey(result) {
+  if (result.source === "local" && result._raw?.id) return `b:${result._raw.id}`;
+  const p = result.preview || {};
+  return `x:${p.isbn_13 || p.isbn_10 || ""}:${(p.title || "").toLowerCase()}:${(p.author || "").toLowerCase()}`;
+}
+
+function dedupe(results) {
+  const seen = new Set();
+  return results.filter((r) => {
+    const k = resultKey(r);
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
+// The instant (catalogue) and online lists are merged client-side, and the
+// catalogue can hold one book several times — show each book once, using the
+// same rule as the search API. If the reader owns one of the copies, keep the
+// row that says so, so they never add a duplicate.
+function collapseEditions(results, findEntry) {
+  const kept = [];
+  for (const r of results) {
+    const work = describeWork(r.preview);
+    const ids = new Set(r.catalog_ids || []);
+    const i = kept.findIndex(
+      (x) =>
+        sameWork(x.work, work) || (x.r.catalog_ids || []).some((id) => ids.has(id))
+    );
+    if (i === -1) kept.push({ r, work });
+    else if (!findEntry(kept[i].r) && findEntry(r)) kept[i] = { r, work };
+  }
+  return kept.map((x) => x.r);
+}
+
+function SearchIcon({ className }) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  );
+}
+
+function UploadIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 16V4M7 9l5-5 5 5" />
+      <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
+    </svg>
+  );
+}
+
+function PlusIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+      <path d="M8 2v12M2 8h12" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 8.5l3 3 7-7" />
+    </svg>
   );
 }

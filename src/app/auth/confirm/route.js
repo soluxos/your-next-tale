@@ -6,6 +6,7 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type");
+  const code = searchParams.get("code");
   const next = "/account";
 
   // Create redirect link without the secret token
@@ -13,6 +14,22 @@ export async function GET(request) {
   redirectTo.pathname = next;
   redirectTo.searchParams.delete("token_hash");
   redirectTo.searchParams.delete("type");
+  redirectTo.searchParams.delete("code");
+  // Password-reset links land on the password tab.
+  if (type === "recovery" || searchParams.get("reset")) {
+    redirectTo.searchParams.delete("reset");
+    redirectTo.searchParams.set("tab", "password");
+  }
+
+  // PKCE links (e.g. password reset) arrive with ?code= instead of a token hash.
+  if (code) {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) {
+      redirectTo.searchParams.delete("next");
+      return NextResponse.redirect(redirectTo);
+    }
+  }
 
   if (token_hash && type) {
     const supabase = await createClient();

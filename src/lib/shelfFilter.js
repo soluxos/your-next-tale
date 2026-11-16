@@ -8,12 +8,30 @@
  *   maxPages: number|''      — book.page_count <= maxPages
  *   minRating: number|0      — user_book.rating >= minRating (0 = no filter)
  *   hasReview: boolean       — only books with a written review
+ *   query: string            — every word must appear in the title, an author or the ISBN
  * }
  */
+const fold = (s) =>
+  String(s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+function matchesQuery(book, query) {
+  const words = fold(query).split(/\s+/).filter(Boolean);
+  if (!words.length) return true;
+  const haystack = fold(
+    [book.title, ...(book.authors || []), book.isbn_13, book.isbn_10].filter(Boolean).join(" ")
+  ).replace(/[^a-z0-9 ]/g, " ");
+  return words.every((w) => haystack.includes(w.replace(/[^a-z0-9]/g, "")));
+}
+
 export function filterShelfBooks(books, filters) {
   return books.filter((shelfBook) => {
     const book = shelfBook.book || {};
     const userBook = shelfBook.user_book || {};
+
+    if (filters.query?.trim() && !matchesQuery(book, filters.query)) return false;
 
     // Genre filter — ALL typed genres must appear in the book's genres array
     if (filters.genres?.length) {
@@ -54,6 +72,7 @@ export function filterShelfBooks(books, filters) {
  */
 export function hasActiveFilters(filters) {
   return (
+    !!filters.query?.trim() ||
     filters.genres?.length > 0 ||
     (filters.minPages !== "" && filters.minPages !== undefined) ||
     (filters.maxPages !== "" && filters.maxPages !== undefined) ||
@@ -67,5 +86,6 @@ export const DEFAULT_FILTERS = {
   minPages: "",
   maxPages: "",
   minRating: 0,
-  hasReview: false
+  hasReview: false,
+  query: ""
 };
