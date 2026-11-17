@@ -72,6 +72,18 @@ const FORMAT_PAREN =
 // "Once There Were Heroes: Book 1 in A Time of Dragons"
 const SERIES_NOTE = /^(.+?)\s*[:(]\s*(?:book|volume|vol\.?)\s+(\d+(?:\.\d+)?)\s+(?:in|of)\s+(.+?)\)?$/i;
 
+// A shop's sales line after the title, written as a sentence: "Our Dark
+// Incantations: The devastating dark academia romantasy to fuel your
+// enemies-to-lovers desires". A real subtitle is in title case, so one with
+// three or more ordinary words in lower case isn't a subtitle.
+const SUBTITLE = /^(.+?)(?::\s+|\s+[-–—]\s+)(.+)$/;
+function dropSalesLine(title) {
+  const m = title.match(SUBTITLE);
+  if (!m) return title;
+  const lower = m[2].split(/[\s-]+/).filter((w) => /^\p{Ll}{4,}/u.test(w));
+  return lower.length >= 3 ? m[1].trim() : title;
+}
+
 export function cleanTitle(raw) {
   // Curly apostrophes too: "The Burning God Collector’s Edition".
   let title = tidyTitle(String(raw || "")).replace(/[‘’]/g, "'").trim();
@@ -84,7 +96,7 @@ export function cleanTitle(raw) {
       special ||= SPECIAL.test(open[0]);
       title = title.slice(0, open.index).trim();
     }
-    const next = title
+    const next = dropSalesLine(title)
       .replace(FORMAT_PAREN, "")
       .replace(EDITION_TAIL, "")
       .replace(EDITION_NOTE, "")
