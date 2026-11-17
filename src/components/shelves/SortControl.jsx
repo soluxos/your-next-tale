@@ -33,7 +33,7 @@ export default function SortControl({ value, onChange, allowCustomOrder = true, 
 
   return (
     <DropdownMenu modal={false}>
-      <DropdownMenuTrigger className={cn("btn btn-secondary btn-sm h-9 data-[state=open]:border-ink", className)}>
+      <DropdownMenuTrigger className={cn("btn btn-secondary btn-md data-[state=open]:border-ink", className)}>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-textSecondary" aria-hidden="true">
           <path d="M3 6h18M7 12h10M11 18h2" />
         </svg>

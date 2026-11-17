@@ -192,7 +192,7 @@ function SuggestedReader({ reader, className, coversClassName = "hidden xs:flex 
         </div>
       )}
       {/* 40px tall on phones so it's an easy tap */}
-      <FollowButton targetUserId={reader.id} initialStatus="none" className="btn-sm max-sm:h-10 !min-w-0 shrink-0" />
+      <FollowButton targetUserId={reader.id} initialStatus="none" className="sm:btn-sm !min-w-0 shrink-0" />
     </div>
   );
 }

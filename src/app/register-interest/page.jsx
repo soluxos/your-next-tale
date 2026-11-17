@@ -1,7 +1,6 @@
 "use client";
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export default function Preview() {
@@ -187,9 +186,9 @@ export default function Preview() {
                   className="h-[52px] px-5 font-departureMono text-[12px] bg-[#1a1a1a] border-[#2a2a2a] text-white placeholder:text-[#555] focus:border-white/30 focus:ring-1 focus:ring-white/30 focus:outline-none rounded-[8px]"
                   required
                 />
-                <Button
+                <button
                   type="submit"
-                  className="h-[48px] w-full font-departureMono uppercase text-[11px] rounded-[8px] bg-white text-black hover:bg-[#f0f0f0] transition-colors"
+                  className="btn btn-inverse btn-lg w-full"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -202,7 +201,7 @@ export default function Preview() {
                   ) : (
                     "JOIN THE WAITLIST"
                   )}
-                </Button>
+                </button>
               </form>
 
               {/* Trust text */}

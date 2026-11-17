@@ -495,7 +495,7 @@ export default function ShelfView({
 
   return (
     <>
-      <div className="ShelfView page-x pb-24">
+      <div className="ShelfView page-x mx-auto max-w-[1600px] pb-24">
         {/* Shelf heading + toolbar. On phones the view toggle shares the
             count's row (so the shelf name keeps the full width) and the
             toolbar is one 40px row: search + sort & filter. */}

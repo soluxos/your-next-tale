@@ -27,7 +27,7 @@ export async function withBookCounts(supabase, people, limit = 60) {
  */
 export default function FollowList({ title, people, emptyTitle, emptyText, emptyAction }) {
   return (
-    <div className="page-x pt-6 pb-24">
+    <div className="page-x mx-auto max-w-[1600px] pt-6 pb-24">
       <div className="max-w-2xl">
         <h2 className="font-ppMondwest text-ink text-[26px] sm:text-[30px] leading-none">{title}</h2>
         <p className="label text-textSecondary mt-2">
@@ -70,7 +70,7 @@ export default function FollowList({ title, people, emptyTitle, emptyText, empty
 /** Loading state for the lists above (used by the profile's loading.jsx). */
 export function FollowListSkeleton() {
   return (
-    <div className="page-x pt-6 pb-24" aria-busy="true" aria-label="Loading readers">
+    <div className="page-x mx-auto max-w-[1600px] pt-6 pb-24" aria-busy="true" aria-label="Loading readers">
       <div className="max-w-2xl">
         <div className="w-40 h-7 rounded-[8px] bg-paper-3 animate-pulse" />
         <div className="w-20 h-3 mt-3 rounded-[6px] bg-paper-3 animate-pulse" />

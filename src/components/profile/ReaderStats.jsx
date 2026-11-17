@@ -67,7 +67,7 @@ export default function ReaderStats({ userId, readCount, isOwner }) {
     // Hold the space for readers who will have stats, so the shelf doesn't jump.
     if (!readCount) return null;
     return (
-      <div className="page-x pb-6 sm:pb-8" aria-hidden="true">
+      <div className="page-x mx-auto max-w-[1600px] pb-6 sm:pb-8" aria-hidden="true">
         <div className="card h-[256px] md:h-[127px] bg-paper-2 border-transparent animate-pulse" />
       </div>
     );
@@ -100,7 +100,7 @@ export default function ReaderStats({ userId, readCount, isOwner }) {
   ].filter(Boolean);
 
   return (
-    <section aria-label="Reading stats" className="page-x pb-6 sm:pb-8">
+    <section aria-label="Reading stats" className="page-x mx-auto max-w-[1600px] pb-6 sm:pb-8">
       <div className="card">
         <div className="grid grid-cols-2 md:flex">
           {cells.map((cell, i) => (

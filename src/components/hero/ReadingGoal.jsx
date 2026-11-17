@@ -22,8 +22,9 @@ function pace(done, target, now = new Date()) {
 }
 
 /**
- * Home hero: books finished this year, against the goal if there is one,
- * with pace. Tapping it sets or edits the goal in place.
+ * Home hero: one quiet line with the books finished this year, against the
+ * goal and its pace if there is one ("7 of 24 books in 2026 · On pace"), else
+ * an invitation to set one. Tapping it sets or edits the goal in place.
  */
 export default function ReadingGoal({ className }) {
   const { user, profile, updateUISettings } = useAuth();
@@ -76,58 +77,43 @@ export default function ReadingGoal({ className }) {
 
   if (!user) return null;
   if (done === null) {
-    return (
-      <div className={className} aria-hidden="true">
-        <span className="block h-3 w-28 rounded bg-paper-2 animate-pulse" />
-        <span className="mt-3 block h-6 w-44 rounded bg-paper-2 animate-pulse" />
-      </div>
-    );
+    return <span className={cn("inline-block h-4 w-44 rounded bg-paper-2 animate-pulse", className)} aria-hidden="true" />;
   }
 
   const books = (n) => `${n} ${n === 1 ? "book" : "books"}`;
   const p = target ? pace(done, target) : null;
-  const pct = target ? Math.min(100, Math.round((done / target) * 100)) : 0;
 
   return (
     <Popover open={open} onOpenChange={openEditor}>
       <PopoverTrigger
-        className={cn("group block w-full text-left rounded-[6px] focus-ring", className)}
+        className={cn(
+          "group inline-flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-left text-[14px] leading-snug text-textSecondary rounded-[4px] focus-ring",
+          className
+        )}
+        title={target ? "Edit your reading goal" : undefined}
         aria-label={
           target
             ? `${year} reading goal: ${done} of ${target} books, ${p.text.toLowerCase()}. Edit goal`
             : `${books(done)} read in ${year}. Set a reading goal`
         }
       >
-        <span className="flex items-baseline justify-between gap-4">
-          <span className="label text-textSecondary">{target ? `${year} reading goal` : `Read in ${year}`}</span>
-          <span className="label text-textPrimary group-hover:text-ink transition-colors inline-flex items-center gap-1.5">
-            {target ? "Edit" : <><Flag /> Set a goal</>}
-          </span>
+        <span>
+          <span className="text-ink tabular-nums">{target ? `${done} of ${target}` : done}</span>{" "}
+          {target ? `books in ${year}` : `${done === 1 ? "book" : "books"} read in ${year}`}
         </span>
-        <span className="mt-2.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <span className="font-ppMondwest text-ink text-[24px] sm:text-[26px] leading-none tabular-nums">
-            {target ? (
-              <>
-                {done} <span className="text-textSecondary">of {books(target)}</span>
-              </>
-            ) : (
-              `${books(done)} so far`
+        <span aria-hidden="true" className="opacity-50">·</span>
+        {p ? (
+          <span
+            className={cn(
+              "whitespace-nowrap",
+              p.tone === "behind" ? "text-[#9a3412]" : p.tone === "on" ? "text-textSecondary" : "text-shelved"
             )}
+          >
+            {p.text}
           </span>
-          {p && (
-            <span
-              className={cn(
-                "label whitespace-nowrap",
-                p.tone === "behind" ? "text-[#9a3412]" : p.tone === "on" ? "text-textSecondary" : "text-shelved"
-              )}
-            >
-              {p.text}
-            </span>
-          )}
-        </span>
-        {target > 0 && (
-          <span className="mt-4 block h-[4px] rounded-full bg-paper-3 overflow-hidden" aria-hidden="true">
-            <span className="block h-full rounded-full bg-ink transition-[width] duration-500" style={{ width: `${pct}%` }} />
+        ) : (
+          <span className="whitespace-nowrap text-textPrimary underline decoration-1 underline-offset-[3px] decoration-black/25 group-hover:text-ink group-hover:decoration-ink transition-colors">
+            Set a goal
           </span>
         )}
       </PopoverTrigger>
@@ -159,13 +145,5 @@ export default function ReadingGoal({ className }) {
         </form>
       </PopoverContent>
     </Popover>
-  );
-}
-
-function Flag() {
-  return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M4 22V4M4 4h12l-2 4 2 4H4" />
-    </svg>
   );
 }

@@ -141,7 +141,7 @@ export default function ShelfToolbar({
           <button
             type="button"
             aria-label={active ? `Filter (${count} on)` : "Filter"}
-            className={cn("hidden md:inline-flex btn btn-sm h-9", active ? "btn-primary" : "btn-secondary data-[state=open]:border-ink")}
+            className={cn("hidden md:inline-flex btn btn-md", active ? "btn-primary" : "btn-secondary data-[state=open]:border-ink")}
           >
             {filterIcon}
             Filter
@@ -237,7 +237,7 @@ export function ActiveFilterChips({ filters, onChange, className }) {
         </button>
       ))}
       {chips.length > 1 && (
-        <button type="button" onClick={() => onChange(clearPanelFilters(filters))} className="btn btn-ghost btn-sm h-10 sm:h-8">
+        <button type="button" onClick={() => onChange(clearPanelFilters(filters))} className="btn btn-ghost sm:btn-sm">
           Clear all
         </button>
       )}

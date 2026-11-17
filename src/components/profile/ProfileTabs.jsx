@@ -56,7 +56,7 @@ export default function ProfileTabs({ tabs, activeKey, label }) {
   return (
     <div className="sticky top-16 z-[30] bg-white border-b border-line">
       <div className="relative">
-        <nav ref={navRef} aria-label={label} className="page-x flex gap-1 overflow-x-auto no-scrollbar">
+        <nav ref={navRef} aria-label={label} className="page-x mx-auto max-w-[1600px] flex gap-1 overflow-x-auto no-scrollbar">
           {tabs.map((tab) => {
             const active = tab.key === activeKey;
             return (
@@ -66,7 +66,8 @@ export default function ProfileTabs({ tabs, activeKey, label }) {
                 prefetch={true}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative shrink-0 h-12 px-3 inline-flex items-center gap-2 label whitespace-nowrap transition-colors",
+                  // The first tab starts on the page gutter, in line with the logo.
+                  "relative shrink-0 h-12 px-3 first:pl-0 first:after:left-0 inline-flex items-center gap-2 label whitespace-nowrap transition-colors",
                   "after:absolute after:left-2 after:right-2 after:bottom-0 after:h-[2px] after:rounded-full after:transition-colors",
                   active
                     ? "text-ink after:bg-ink"

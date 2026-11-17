@@ -92,7 +92,7 @@ export default function ReleasesPage({ snapshot, blurbs, initialGenre, initialWh
   const genreLabel = RELEASE_GENRES.find((g) => g.slug === genre)?.label || "";
 
   return (
-    <div className="page-x pt-8 sm:pt-12 pb-16">
+    <div className="page-x mx-auto max-w-[1600px] pt-8 sm:pt-12 pb-16">
       <header className="max-w-[720px]">
         <p className="label text-textSecondary">New & upcoming</p>
         <h1 className="mt-2 font-ppMondwest text-ink text-[34px] sm:text-[46px] leading-[1.02]">
@@ -679,7 +679,7 @@ function RefreshButton({ onDone, className, label = "Refresh now" }) {
 
 function NotReady({ isAdmin, onDone }) {
   return (
-    <div className="page-x pt-12 pb-24">
+    <div className="page-x mx-auto max-w-[1600px] pt-12 pb-24">
       <div className="card px-6 py-8 max-w-[560px]">
         <h1 className="font-ppMondwest text-[30px] text-ink leading-tight">New releases are on their way</h1>
         <p className="prose-book !text-[16px] !text-textPrimary mt-2">

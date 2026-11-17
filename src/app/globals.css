@@ -591,10 +591,16 @@ label {
   .btn:active:not(:disabled) { transform: translateY(1px); }
   .btn:disabled { opacity: 0.55; cursor: not-allowed; }
   .btn:focus-visible { outline: 2px solid #1f1f1f; outline-offset: 2px; }
+  /* Four sizes, each with one job, so no button sets its own height:
+     sm (32) inside cards, rows and chip rows; md (36) in the navigation and
+     toolbars, beside 36px fields; the default (40) for actions on a page or
+     in a dialog; lg (48) for a page's one main action and form submits. */
   .btn-sm { height: 32px; padding: 0 12px; gap: 6px; }
+  .btn-md { height: 36px; padding: 0 14px; }
   .btn-lg { height: 48px; padding: 0 20px; font-size: 12px; }
   .btn-icon { width: 40px; padding: 0; }
   .btn-sm.btn-icon { width: 32px; }
+  .btn-md.btn-icon { width: 36px; }
   .btn-primary {
     background: #1f1f1f;
     color: #fff;
@@ -608,6 +614,9 @@ label {
     box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
   }
   .btn-secondary:hover:not(:disabled) { background: #f6f6f6; border-color: #bdbdbd; }
+  /* On a dark surface. */
+  .btn-inverse { background: #fff; color: #1f1f1f; }
+  .btn-inverse:hover:not(:disabled) { background: #ececec; }
   .btn-ghost { background: transparent; color: #565656; }
   .btn-ghost:hover:not(:disabled) { background: #f1f1f1; color: #1f1f1f; }
   .btn-danger { background: #fff; color: #b42318; border-color: #f1c7c2; }

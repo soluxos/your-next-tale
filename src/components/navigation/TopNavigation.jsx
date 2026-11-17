@@ -178,7 +178,7 @@ export default function TopNavigation() {
                 aria-label="Add books"
                 aria-keyshortcuts={isMac ? "Meta+K" : "Control+K"}
                 title={`Add books (${shortcut})`}
-                className="btn btn-primary btn-icon md:!h-9 md:!w-9 lg:!w-auto lg:!px-4"
+                className="btn btn-primary btn-icon md:btn-md lg:!w-auto lg:!px-3.5"
               >
                 <PlusIcon />
                 <span className="hidden lg:inline">Add books</span>
@@ -254,10 +254,10 @@ export default function TopNavigation() {
             </>
           ) : (
             <>
-              <Link href="/login" className="hidden md:inline-flex btn btn-ghost !h-9">
+              <Link href="/login" className="hidden md:inline-flex btn btn-ghost btn-md">
                 Sign in
               </Link>
-              <Link href="/get-started" className="hidden xs:inline-flex btn btn-primary !h-9">
+              <Link href="/get-started" className="hidden xs:inline-flex btn btn-primary btn-md">
                 Get started
               </Link>
             </>
@@ -306,7 +306,7 @@ export default function TopNavigation() {
             transition={{ type: "spring", stiffness: 460, damping: 36 }}
             className="md:hidden absolute top-full inset-x-0 bg-white border-b border-line shadow-[0_24px_48px_-24px_rgba(0,0,0,0.35)] max-h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain"
           >
-            <div className="page-x pt-3 pb-6">
+            <div className="page-x mx-auto max-w-[1600px] pt-3 pb-6">
               {/* Where to go: the pages, large, the one you're on marked */}
               <nav aria-label="Main" className="flex flex-col">
                 {visibleNavItems.map((item) => {

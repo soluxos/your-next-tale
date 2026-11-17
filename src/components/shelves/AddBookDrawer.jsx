@@ -461,7 +461,7 @@ function ResultRow({ row, state, targetShelf, library, onAdd }) {
     );
   } else if (onTarget || status === "added") {
     action = (
-      <span className="btn btn-sm btn-shelved !h-9 pointer-events-none">
+      <span className="btn btn-md btn-shelved pointer-events-none">
         <CheckIcon /> {status === "added" ? "Added" : "On shelf"}
       </span>
     );
@@ -482,7 +482,7 @@ function ResultRow({ row, state, targetShelf, library, onAdd }) {
             : undefined
         }
         className={cn(
-          "btn btn-sm !h-9 min-w-[72px]",
+          "btn btn-md min-w-[72px]",
           status === "error" ? "btn-danger" : entry ? "btn-secondary" : "btn-primary"
         )}
       >

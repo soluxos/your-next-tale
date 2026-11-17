@@ -5,7 +5,7 @@ import UserListItem from "@/components/profile/UserListItem";
 export default function PeopleList({ profile, title, people, emptyTitle, emptyText }) {
   const name = profile.full_name || profile.username;
   return (
-    <div className="page-x pt-8 pb-24">
+    <div className="page-x mx-auto max-w-[1600px] pt-8 pb-24">
       <div className="max-w-2xl">
         <Link
           href={`/u/${encodeURIComponent(profile.username)}`}

@@ -333,8 +333,8 @@ export default function UserSettings({ user: serverUser, initialProfile = null, 
 
 function SettingsFrame({ bookcaseHref, children }) {
   return (
-    <div className="UserSettings min-h-[60vh] page-x pt-8 sm:pt-12 pb-24">
-      <div className="max-w-3xl mx-auto">
+    <div className="UserSettings min-h-[60vh] page-x mx-auto max-w-[1600px] pt-8 sm:pt-12 pb-24">
+      <div className="max-w-3xl">
         <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="font-ppMondwest text-ink text-[36px] sm:text-[44px] leading-none">Settings</h1>

@@ -251,14 +251,14 @@ export default function ManageShelvesPanel({
                         type="button"
                         autoFocus
                         onClick={() => handleDeleteConfirm(shelf.id)}
-                        className="btn btn-sm h-10 sm:h-8 btn-danger-solid"
+                        className="btn btn-danger-solid sm:btn-sm"
                       >
                         Delete shelf
                       </button>
                       <button
                         type="button"
                         onClick={() => setConfirmDeleteId(null)}
-                        className="btn btn-sm h-10 sm:h-8 btn-secondary"
+                        className="btn btn-secondary sm:btn-sm"
                       >
                         Cancel
                       </button>

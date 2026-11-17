@@ -41,7 +41,7 @@ export default function BookPage({ book, moreByAuthor = [] }) {
 
   return (
     <div className="BookPage">
-      <div className="page-x mx-auto max-w-6xl pt-2 sm:pt-6 md:pt-10 pb-24">
+      <div className="page-x mx-auto max-w-[1600px] pt-2 sm:pt-6 md:pt-10 pb-24">
         <nav aria-label="Breadcrumb" className="mb-3 sm:mb-6 md:mb-10">
           <ol className="flex items-center gap-1 label text-textSecondary min-w-0">
             <li className="shrink-0">

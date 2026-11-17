@@ -158,7 +158,7 @@ export default function ProfileLayout({
     <div className="ProfileLayout min-h-screen">
       {/* Profile header, stats and tabs live here in the layout, outside the
           route's loading boundary, so they stay put while you switch tabs. */}
-      <header className="page-x pt-8 sm:pt-12 pb-6 sm:pb-8">
+      <header className="page-x mx-auto max-w-[1600px] pt-8 sm:pt-12 pb-6 sm:pb-8">
         <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div className="flex items-center gap-4 sm:gap-5 min-w-0">
             <div className="shrink-0 hidden sm:block">
@@ -219,13 +219,13 @@ export default function ProfileLayout({
             </button>
             {isOwner && (
               <>
-                <button type="button" onClick={() => setManageShelvesOpen(true)} className="btn btn-secondary flex-1 sm:flex-none px-3 sm:px-4">
+                <button type="button" onClick={() => setManageShelvesOpen(true)} className="btn btn-secondary flex-1 sm:flex-none">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
                   </svg>
                   Manage shelves
                 </button>
-                <Link href="/account" className="btn btn-secondary flex-1 sm:flex-none px-3 sm:px-4">
+                <Link href="/account" className="btn btn-secondary flex-1 sm:flex-none">
                   Edit profile
                 </Link>
               </>

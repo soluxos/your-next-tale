@@ -7,7 +7,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { useLibrary } from "@/components/providers/LibraryProvider";
 import UpNext from "@/components/hero/UpNext";
 import ReadingGoal from "@/components/hero/ReadingGoal";
-import ReadingNow, { EmptySlot, useCurrentlyReading } from "@/components/hero/ReadingNow";
+import { useCurrentlyReading } from "@/components/hero/ReadingNow";
 import BookReviewModal from "@/components/shelves/BookReviewModal";
 import { readingProgress } from "@/components/shelves/CoverProgress";
 
@@ -30,28 +30,21 @@ export default function HeroNew() {
 function Pitch() {
   return (
     <section className="HeroNew relative">
-      <div className="page-x mx-auto max-w-5xl pt-16 sm:pt-24 pb-12 sm:pb-16 flex flex-col items-center text-center gap-5">
-        <motion.div {...rise(0)}>
-          <PixelBook />
-        </motion.div>
-        <motion.p {...rise(0.04)} className="label text-textSecondary">
-          A home for every book you read
-        </motion.p>
+      <div className="page-x mx-auto max-w-5xl pt-20 sm:pt-28 pb-16 sm:pb-24 flex flex-col items-center text-center">
         <motion.h1
-          {...rise(0.08)}
+          {...rise(0)}
           className="font-ppMondwest text-ink text-[40px] sm:text-[60px] leading-[1.02] max-w-[780px]"
         >
           Your whole reading life, on one beautiful bookcase
         </motion.h1>
         <motion.p
-          {...rise(0.12)}
-          className="prose-book !text-[17px] sm:!text-[19px] !text-textSecondary max-w-[560px]"
+          {...rise(0.06)}
+          className="mt-6 prose-book !text-[17px] sm:!text-[19px] !text-textSecondary max-w-[540px]"
         >
           Shelve what you’ve read, what you’re reading and what’s next. Track
-          your progress, rate and review, and browse friends’ shelves — without
-          the clutter.
+          your progress, rate and review, and browse friends’ shelves.
         </motion.p>
-        <motion.div {...rise(0.16)} className="flex flex-col xs:flex-row gap-3 mt-2 w-full xs:w-auto">
+        <motion.div {...rise(0.12)} className="mt-9 flex flex-col xs:flex-row gap-3 w-full xs:w-auto">
           <Link href="/get-started" className="btn btn-primary btn-lg">
             Start your bookcase
             <ArrowRight />
@@ -60,27 +53,17 @@ function Pitch() {
             Browse books
           </Link>
         </motion.div>
-        <motion.ul
-          {...rise(0.2)}
-          className="mt-3 flex flex-wrap justify-center gap-x-6 gap-y-2 label text-textSecondary"
-        >
-          {["Free to use", "Read · Reading · Want to read · DNF", "Progress, ratings & reviews"].map((t) => (
-            <li key={t} className="flex items-center gap-1.5">
-              <Tick /> {t}
-            </li>
-          ))}
-        </motion.ul>
       </div>
     </section>
   );
 }
 
-function greeting() {
+// "Good evening, Callum": the time of day, and your name when we have it.
+function greeting(first) {
   const h = new Date().getHours();
-  if (h < 5) return "Up late reading?";
-  if (h < 12) return "Good morning";
-  if (h < 18) return "Good afternoon";
-  return "Good evening";
+  if (h < 5) return first ? `Up late, ${first}?` : "Up late reading?";
+  const hello = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+  return first ? `${hello}, ${first}` : hello;
 }
 
 const WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
@@ -92,24 +75,49 @@ function pickFeatured(items) {
   return items.find((r) => readingProgress(r.user_books, r.user_books.books.page_count)) ?? items[0];
 }
 
-// One sentence on where your reading stands, naming the featured book.
-function ReadingLine({ featured, reading, want, total }) {
+// A title short enough to sit in a sentence: all of it when it's brief, else
+// without its subtitle.
+function briefTitle(title) {
+  const t = String(title || "");
+  if (t.length <= 36) return t;
+  const main = t.split(/:\s+|\s+[-–—]\s+/)[0];
+  return main.length >= 3 ? main : t;
+}
+
+// One short sentence on where your reading stands. The covers beside it show
+// the rest, so it names one book and counts the others (a link to the shelf).
+function ReadingLine({ featured, reading, want, total, shelfHref }) {
   if (!total) return "Your bookcase is empty. Add a book you loved and it starts here.";
   if (!featured) {
     return want
-      ? `Nothing on the go right now, and ${want} ${want === 1 ? "book is" : "books are"} waiting on your list.`
-      : "Nothing on the go right now. Your next read is somewhere below.";
+      ? `Nothing on the go, and ${want} ${want === 1 ? "book is" : "books are"} waiting on your list.`
+      : "Nothing on the go right now.";
   }
   const ub = featured.user_books;
   const book = ub.books;
   const p = readingProgress(ub, book.page_count);
   const where = p?.pct ? `You’re ${p.pct}% through` : ub.progress_pages ? `You’re on page ${ub.progress_pages} of` : "You’re reading";
   const more = reading - 1;
+  const others = `${word(more)} more`;
   return (
     <>
-      {where} <span className="text-ink">{book.title}</span>
-      {book.authors?.[0] && ` by ${book.authors[0]}`}
-      {more > 0 ? `, and ${word(more)} more ${more === 1 ? "is" : "are"} on the go.` : "."}
+      {where} <span className="text-ink">{briefTitle(book.title)}</span>
+      {more > 0 && (
+        <>
+          , and{" "}
+          {shelfHref ? (
+            <Link
+              href={shelfHref}
+              className="underline decoration-1 underline-offset-[3px] decoration-black/25 hover:decoration-ink hover:text-ink rounded-[3px] focus-ring"
+            >
+              {others}
+            </Link>
+          ) : (
+            others
+          )}
+        </>
+      )}
+      .
     </>
   );
 }
@@ -132,7 +140,6 @@ function WelcomeBack({ profile }) {
   const total = library.entries.size;
   const featured = ready && items.length ? pickFeatured(items) : null;
   const shelfHref = username && shelf ? `/u/${encodeURIComponent(username)}/${shelf.slug}` : null;
-  const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
 
   let action = null;
   if (ready && !total) {
@@ -159,55 +166,29 @@ function WelcomeBack({ profile }) {
     );
   }
 
-  const empty = !total ? (
-    <EmptySlot onClick={() => library.openAddBook()}>Add a book</EmptySlot>
-  ) : want ? (
-    <EmptySlot href="#up-next">Start a book</EmptySlot>
-  ) : (
-    <EmptySlot onClick={() => library.openAddBook()}>Add books</EmptySlot>
-  );
-
   return (
-    <section className="HeroNew page-x mx-auto max-w-[1600px] pt-10 sm:pt-16 lg:pt-20">
-      <div className="grid lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-x-16 xl:gap-x-24 lg:items-start">
-        <motion.div {...rise(0)} className="min-w-0 lg:col-start-1 lg:row-start-1">
-          <p className="label text-textSecondary min-h-5 flex items-center">
-            {greeting()}
-            <span aria-hidden="true" className="mx-2 opacity-60">·</span>
-            {today}
-          </p>
-          <h1 className="mt-4 sm:mt-5 font-ppMondwest text-ink text-[42px] sm:text-[58px] min-[1440px]:text-[66px] leading-[0.98] tracking-[-0.01em]">
-            Welcome back{first ? `, ${first}` : ""}
+    <section className="HeroNew page-x mx-auto max-w-[1600px] pt-12 sm:pt-20 lg:pt-24">
+      {/* One line of greeting, one of where you are, one thing to do. */}
+        <motion.div {...rise(0)} className="min-w-0">
+          <h1 className="font-ppMondwest text-ink text-[38px] sm:text-[50px] xl:text-[60px] leading-[1.02] tracking-[-0.01em]">
+            {greeting(first)}
           </h1>
-          <div className="mt-5 sm:mt-6 max-w-[34ch] font-ppMondwest text-[19px] sm:text-[22px] leading-[1.35] text-textSecondary min-h-[2.7em]">
+          <div className="mt-4 sm:mt-5 max-w-[46ch] font-ppMondwest text-[19px] sm:text-[21px] leading-[1.4] text-textSecondary min-h-[1.4em]">
             {ready ? (
-              <p>
-                <ReadingLine featured={featured} reading={count} want={want} total={total} />
+              <p className="text-balance">
+                <ReadingLine featured={featured} reading={count} want={want} total={total} shelfHref={shelfHref} />
               </p>
             ) : (
-              <span aria-hidden="true" className="block space-y-2.5 pt-1">
-                <span className="block h-[18px] w-[92%] rounded bg-paper-2 animate-pulse" />
-                <span className="block h-[18px] w-[60%] rounded bg-paper-2 animate-pulse" />
+              <span aria-hidden="true" className="block pt-1.5">
+                <span className="block h-[18px] w-[min(100%,24rem)] rounded bg-paper-2 animate-pulse" />
               </span>
             )}
           </div>
-          <div className="mt-7 sm:mt-8 min-h-12 flex flex-wrap gap-3">{action}</div>
+          <div className="mt-7 sm:mt-8 min-h-12 flex flex-wrap items-center gap-x-6 gap-y-4">
+            {action}
+            {(!ready || total > 0) && <ReadingGoal />}
+          </div>
         </motion.div>
-
-        {/* The covers keep their own width, so the column is as wide as they are. */}
-        <motion.div
-          {...rise(0.08)}
-          className="min-w-0 mt-12 sm:mt-14 lg:mt-0 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:w-[444px] xl:w-[632px]"
-        >
-          <ReadingNow items={items} count={count} shelfHref={shelfHref} onOpen={setOpen} empty={empty} />
-        </motion.div>
-
-        {(!ready || total > 0) && (
-          <motion.div {...rise(0.12)} className="min-w-0 mt-12 lg:col-start-1 lg:row-start-2">
-            <ReadingGoal className="pt-6 border-t border-line max-w-[440px]" />
-          </motion.div>
-        )}
-      </div>
 
       <motion.div {...rise(0.16)} className="mt-24 sm:mt-32">
         <UpNext username={username} />
@@ -246,31 +227,6 @@ function Plus() {
   return (
     <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
       <path d="M8 2v12M2 8h12" />
-    </svg>
-  );
-}
-
-function Tick() {
-  return (
-    <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M3 8.5l3 3 7-7" />
-    </svg>
-  );
-}
-
-// The pixel-art open book from the brand mark.
-function PixelBook() {
-  const r = (x, y, w, h) => <rect key={`${x}-${y}-${w}-${h}`} x={x} y={y} width={w} height={h} />;
-  return (
-    <svg width="36" height="30" viewBox="0 0 24 20" fill="#565656" aria-hidden="true" shapeRendering="crispEdges">
-      {[
-        [0, 2, 2, 15], [11, 4, 2, 15], [22, 2, 2, 15], [1, 1, 2, 2], [21, 1, 2, 2],
-        [8, 1, 2, 2], [8, 17, 2, 2], [14, 1, 2, 2], [14, 17, 2, 2], [9, 2, 2, 2],
-        [10, 17, 1, 3], [11, 3, 1, 2], [12, 3, 1, 2], [12, 19, 1, 1], [11, 19, 1, 1],
-        [13, 2, 2, 2], [13, 17, 1, 3], [2, 0, 6, 2], [2, 16, 7, 2], [16, 0, 6, 2],
-        [15, 16, 7, 2], [2, 15, 1, 1], [21, 15, 1, 1], [14, 7, 2, 2], [20, 6, 1, 2],
-        [16, 5, 4, 2], [8, 7, 2, 2], [3, 6, 1, 2], [4, 5, 4, 2], [17, 9, 2, 2], [5, 9, 2, 2]
-      ].map((a) => r(...a))}
     </svg>
   );
 }

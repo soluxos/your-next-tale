@@ -232,7 +232,7 @@ export default function UpNext({ username }) {
                 </button>
               ))}
             </div>
-            <button type="button" onClick={surpriseMe} className="btn btn-secondary max-sm:btn-icon sm:h-10" disabled={!pool.length} aria-label="Surprise me">
+            <button type="button" onClick={surpriseMe} className="btn btn-secondary max-sm:btn-icon" disabled={!pool.length} aria-label="Surprise me">
               <Dice /> <span className="max-sm:hidden">Surprise me</span>
             </button>
           </>

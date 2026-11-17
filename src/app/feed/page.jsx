@@ -40,8 +40,8 @@ export default async function FeedPage() {
   }
 
   return (
-    <div className="FeedPage page-x pt-8 sm:pt-12 pb-24">
-      <div className="mx-auto max-w-5xl">
+    <div className="FeedPage page-x mx-auto max-w-[1600px] pt-8 sm:pt-12 pb-24">
+      <div className="max-w-5xl">
         <header className="mb-8">
           <h1 className="font-ppMondwest text-ink text-[36px] sm:text-[44px] leading-none">Feed</h1>
           <p className="font-ppMondwest text-[17px] text-textSecondary mt-2">
