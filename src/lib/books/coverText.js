@@ -37,8 +37,22 @@ const pool = (globalThis[Symbol.for("yournexttale.coverReaders")] ||= {
   readers: 1,
   started: [], // promises of every worker created
   idle: [],
-  waiting: []
+  waiting: [], // { resolve, reject } of each caller queueing for a worker
+  owners: new Map(), // worker → its promise in `started`
+  reads: new Map() // worker → how many images it has read
 });
+// A pool left by an older copy of this module (a hot reload in dev) has neither.
+pool.owners ||= new Map();
+pool.reads ||= new Map();
+
+// tesseract.js never forgets a finished job: everything a worker has read
+// stays in memory until the worker is gone, about 5 MB a cover when every
+// reading returns word boxes, hOCR and TSV. A bulk import ran out of memory
+// after 800 books. So each reading asks only for what it uses, and a worker
+// is retired after this many readings (some forty covers) for a fresh one.
+const READS_PER_WORKER = 1500;
+const TEXT_ONLY = { text: true, blocks: false, hocr: false, tsv: false };
+const WITH_WORDS = { text: true, blocks: true, hocr: false, tsv: false };
 
 /** How many covers may be read at once (each takes a worker thread). */
 export function setCoverReaders(n) {
@@ -64,24 +78,44 @@ async function borrowReader() {
     const p = createReader();
     pool.started.push(p);
     try {
-      return await p;
+      const worker = await p;
+      pool.owners.set(worker, p);
+      return worker;
     } catch (e) {
       pool.started.splice(pool.started.indexOf(p), 1);
       throw e;
     }
   }
-  return new Promise((resolve) => pool.waiting.push(resolve));
+  return new Promise((resolve, reject) => pool.waiting.push({ resolve, reject }));
 }
 
-function returnReader(worker) {
+// Hands the worker back after `reads` readings: to the next caller in the
+// queue, or to the idle pile. One that has read its fill is shut down, and
+// the next caller gets a new one.
+function returnReader(worker, reads = 0) {
+  const total = (pool.reads.get(worker) || 0) + reads;
   const next = pool.waiting.shift();
-  if (next) next(worker);
+  if (total >= READS_PER_WORKER) {
+    const at = pool.started.indexOf(pool.owners.get(worker));
+    if (at >= 0) pool.started.splice(at, 1);
+    pool.owners.delete(worker);
+    pool.reads.delete(worker);
+    Promise.resolve()
+      .then(() => worker.terminate())
+      .catch(() => {});
+    if (next) borrowReader().then(next.resolve, next.reject);
+    return;
+  }
+  pool.reads.set(worker, total);
+  if (next) next.resolve(worker);
   else pool.idle.push(worker);
 }
 
 export async function closeCoverReader() {
   const all = pool.started.splice(0);
   pool.idle.length = 0;
+  pool.owners.clear();
+  pool.reads.clear();
   for (const p of all) {
     try {
       await (await p).terminate();
@@ -187,14 +221,17 @@ async function readViews(buffer) {
   const worker = await borrowReader();
   const texts = [];
   const display = new Set();
+  let reads = 0;
   try {
     for (const view of [...straight, ...corners, ...tilted]) {
-      const { data } = await worker.recognize(await view.png().toBuffer());
+      reads++;
+      const { data } = await worker.recognize(await view.png().toBuffer(), {}, TEXT_ONLY);
       texts.push(String(data?.text || ""));
       if (placeholderPhrase(texts.join(" "))) return { text: texts.join(" ").replace(/\s+/g, " ").trim(), display: [] };
     }
     for (const view of thumbnails) {
-      const { data } = await worker.recognize(await view.png().toBuffer());
+      reads++;
+      const { data } = await worker.recognize(await view.png().toBuffer(), {}, WITH_WORDS);
       texts.push(String(data?.text || ""));
       for (const word of data?.words || []) {
         const letters = String(word.text || "").toLowerCase().replace(/[^a-z]/g, "");
@@ -202,7 +239,7 @@ async function readViews(buffer) {
       }
     }
   } finally {
-    returnReader(worker);
+    returnReader(worker, reads);
   }
   return { text: texts.join(" ").replace(/\s+/g, " ").trim(), display: [...display] };
 }
